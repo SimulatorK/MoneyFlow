@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Create Account | MoneyFlow</title>
+    <link rel="stylesheet" href="/static/app.css">
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            margin: 0; min-height: 100vh;
+            background: linear-gradient(135deg, #1a3366 0%, #243869 40%, #2d4a7c 70%, #3875e8 100%);
+            display: flex; align-items: center; justify-content: center;
+            padding: 2em;
+        }
+        
+        .register-container {
+            width: 100%; max-width: 460px;
+        }
+        
+        .brand {
+            text-align: center; margin-bottom: 2em;
+        }
+        .brand-title {
+            font-size: 2.8em; font-weight: 700; color: #fff;
+            text-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            margin: 0;
+        }
+        .brand-icon { margin-right: 0.2em; }
+        .brand-tagline {
+            color: rgba(255,255,255,0.8); font-size: 1em;
+            margin-top: 0.5em;
+        }
+        
+        .register-card {
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3), 0 4px 20px rgba(0,0,0,0.1);
+            padding: 2.5em;
+            animation: slideUp 0.4s ease;
+        }
+        
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .register-card h2 {
+            margin: 0 0 0.3em 0; color: #1a3366;
+            font-size: 1.8em; font-weight: 700;
+        }
+        .register-card .subtitle {
+            color: #667a9a; margin-bottom: 1.5em; font-size: 0.95em;
+        }
+        
+        .features {
+            display: flex; gap: 0.8em; margin-bottom: 1.5em; flex-wrap: wrap;
+        }
+        .feature {
+            background: #f0f7ff; color: #2d5cc9;
+            padding: 0.4em 0.8em; border-radius: 20px;
+            font-size: 0.8em; font-weight: 500;
+        }
+        
+        .form-group {
+            margin-bottom: 1.2em;
+        }
+        .form-group label {
+            display: block; font-weight: 600; color: #344a7a;
+            margin-bottom: 0.4em; font-size: 0.9em;
+        }
+        .form-group input {
+            width: 100%; padding: 0.85em 1em;
+            border: 2px solid #e8eef8; border-radius: 10px;
+            font-size: 1em; transition: all 0.2s;
+            background: #f8fafc;
+        }
+        .form-group input:focus {
+            outline: none; border-color: #3875e8;
+            background: #fff; box-shadow: 0 0 0 4px rgba(56,117,232,0.1);
+        }
+        .form-group .hint {
+            font-size: 0.8em; color: #98a3b8; margin-top: 0.3em;
+        }
+        
+        .error-message {
+            background: #fee2e2; color: #b91c1c;
+            padding: 0.8em 1em; border-radius: 8px;
+            margin-bottom: 1em; font-size: 0.9em;
+            border-left: 4px solid #dc2626;
+        }
+        
+        .btn-register {
+            width: 100%; padding: 0.9em;
+            background: linear-gradient(135deg, #28a745 0%, #1e8739 100%);
+            color: #fff; border: none; border-radius: 10px;
+            font-size: 1.1em; font-weight: 600; cursor: pointer;
+            transition: all 0.2s; margin-top: 0.5em;
+            box-shadow: 0 4px 15px rgba(40,167,69,0.3);
+        }
+        .btn-register:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(40,167,69,0.4);
+        }
+        .btn-register:active { transform: translateY(0); }
+        
+        .divider {
+            display: flex; align-items: center; margin: 1.8em 0;
+            color: #98a3b8; font-size: 0.85em;
+        }
+        .divider::before, .divider::after {
+            content: ''; flex: 1; height: 1px; background: #e8eef8;
+        }
+        .divider span { padding: 0 1em; }
+        
+        .btn-login {
+            width: 100%; padding: 0.85em;
+            background: #f0f4fa; color: #344a7a;
+            border: 2px solid #e8eef8; border-radius: 10px;
+            font-size: 1em; font-weight: 600; cursor: pointer;
+            transition: all 0.2s; text-decoration: none;
+            text-align: center; display: block;
+        }
+        .btn-login:hover {
+            background: #e8eef8; border-color: #c5d4e8;
+            text-decoration: none;
+        }
+        
+        .footer-links {
+            text-align: center; margin-top: 2em; color: rgba(255,255,255,0.7);
+            font-size: 0.9em;
+        }
+        .footer-links a { color: #fff; text-decoration: none; font-weight: 500; }
+        .footer-links a:hover { text-decoration: underline; }
+        
+        @media (max-width: 480px) {
+            body { padding: 1em; }
+            .register-card { padding: 1.5em; }
+            .brand-title { font-size: 2.2em; }
+        }
+    </style>
+</head>
+<body>
+    <div class="register-container">
+        <div class="brand">
+            <h1 class="brand-title">
+                <span class="brand-icon">💸</span>MoneyFlow
+            </h1>
+            <p class="brand-tagline">Take control of your financial future</p>
+        </div>
+        
+        <div class="register-card">
+            <h2>Create Your Account</h2>
+            <p class="subtitle">Start tracking your finances in minutes</p>
+            
+            <div class="features">
+                <span class="feature">📊 Budget Tracking</span>
+                <span class="feature">💰 Expense Management</span>
+                <span class="feature">📈 Tax Calculator</span>
+                <span class="feature">🏠 Mortgage Tools</span>
+            </div>
+            
+            {% if error %}
+            <div class="error-message">{{ error }}</div>
+            {% endif %}
+            
+            <form method="post" action="/register">
+                <div class="form-group">
+                    <label for="name">Full Name</label>
+                    <input type="text" id="name" name="name" placeholder="Enter your full name" required autofocus>
+                </div>
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" placeholder="Choose a username" required>
+                    <div class="hint">This will be used to log in to your account</div>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" placeholder="Create a password" required>
+                    <div class="hint">Use at least 8 characters for better security</div>
+                </div>
+                <button type="submit" class="btn-register">Create Account</button>
+            </form>
+            
+            <div class="divider"><span>Already have an account?</span></div>
+            
+            <a href="/login" class="btn-login">Sign In</a>
+        </div>
+        
+        <div class="footer-links">
+            <a href="/about">Learn more about MoneyFlow</a>
+        </div>
+    </div>
+</body>
+</html>

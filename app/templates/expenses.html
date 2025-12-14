@@ -1,0 +1,1401 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="{% if dark_mode %}dark{% else %}light{% endif %}">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ title }} | MoneyFlow</title>
+    <link rel="stylesheet" href="/static/app.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <style>
+        :root {
+            --bg-primary: #f5f6fa;
+            --bg-card: #fff;
+            --bg-input: #fff;
+            --bg-hover: #f0f4fa;
+            --bg-header: linear-gradient(135deg, #1a3366 0%, #243869 50%, #2d4a7c 100%);
+            --text-primary: #222;
+            --text-secondary: #667a9a;
+            --text-heading: #1a3366;
+            --border-color: #ccd;
+            --border-light: #e8eef8;
+            --nav-bg: #243869;
+            --accent: #3875e8;
+            --danger: #b03030;
+        }
+        [data-theme="dark"] {
+            --bg-primary: #1a1d24;
+            --bg-card: #242830;
+            --bg-input: #2d323c;
+            --bg-hover: #353a47;
+            --bg-header: linear-gradient(135deg, #0d1117 0%, #161920 50%, #1f242d 100%);
+            --text-primary: #e4e6eb;
+            --text-secondary: #98a3b8;
+            --text-heading: #b8c5db;
+            --border-color: #3d4450;
+            --border-light: #353a47;
+            --nav-bg: #161920;
+            --accent: #4d8ef0;
+            --danger: #e66;
+        }
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-primary); color: var(--text-primary); }
+        
+        /* App Header with Profile */
+        .app-header {
+            background: var(--bg-header);
+            padding: 1em 2em;
+            display: flex; align-items: center; justify-content: space-between;
+            border-bottom: 3px solid var(--accent);
+        }
+        .header-left { flex: 1; }
+        .header-center { flex: 2; text-align: center; }
+        .header-right { flex: 1; display: flex; justify-content: flex-end; align-items: center; gap: 1em; }
+        .app-title { margin: 0; font-size: 2.2em; font-weight: 700; color: #fff; }
+        .app-title .icon { margin-right: 0.3em; }
+        .app-subtitle { margin: 0.3em 0 0 0; font-size: 0.9em; color: rgba(255,255,255,0.75); }
+        .app-version { display: inline-block; background: rgba(255,255,255,0.15); padding: 0.15em 0.6em; border-radius: 12px; font-size: 0.75em; color: rgba(255,255,255,0.9); margin-left: 0.5em; }
+        .about-link { color: rgba(255,255,255,0.8); text-decoration: none; font-size: 0.9em; padding: 0.5em 1em; border-radius: 6px; background: rgba(255,255,255,0.1); }
+        .about-link:hover { background: rgba(255,255,255,0.2); color: #fff; }
+        
+        /* Profile dropdown */
+        .profile-dropdown { position: relative; }
+        .profile-btn { display: flex; align-items: center; gap: 0.5em; background: rgba(255,255,255,0.1); border: none; padding: 0.5em 1em; border-radius: 8px; cursor: pointer; color: #fff; font-size: 0.9em; }
+        .profile-btn:hover { background: rgba(255,255,255,0.2); }
+        .profile-avatar { width: 44px; height: 44px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 1.1em; overflow: hidden; border: 2px solid rgba(255,255,255,0.3); }
+        .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .dropdown-menu { display: none; position: absolute; right: 0; top: 100%; background: var(--bg-card); border-radius: 10px; box-shadow: 0 8px 30px rgba(0,0,0,0.25); min-width: 200px; margin-top: 0.5em; z-index: 1000; overflow: hidden; }
+        .dropdown-menu.active { display: block; }
+        .dropdown-header { padding: 1em; background: var(--border-light); }
+        .dropdown-header .name { font-weight: 600; color: var(--text-heading); }
+        .dropdown-header .username { font-size: 0.85em; color: var(--text-secondary); }
+        .dropdown-item { display: block; padding: 0.8em 1em; color: var(--text-primary); text-decoration: none; font-size: 0.9em; }
+        .dropdown-item:hover { background: var(--border-light); }
+        .dropdown-item.danger { color: #dc3545; }
+        .dropdown-divider { height: 1px; background: var(--border-light); }
+        
+        /* Navigation */
+        nav { background: var(--nav-bg); padding: 0; display: flex; justify-content: center; }
+        .tabs { display: flex; gap: 0; }
+        .tab { color: rgba(255,255,255,0.8); text-decoration: none; padding: 1em 1.5em; font-size: 0.95em; font-weight: 500; border-bottom: 3px solid transparent; }
+        .tab:hover { color: #fff; background: rgba(255,255,255,0.05); }
+        .tab.active { color: #fff; background: rgba(255,255,255,0.1); border-bottom-color: var(--accent); font-weight: 600; }
+        
+        .page-content { 
+            display: flex; gap: 2em; padding: 1.5em; 
+            max-width: 1500px; margin: 0 auto; flex-wrap: wrap;
+        }
+        
+        /* Left Column */
+        .left-column { flex: 1 1 500px; min-width: 320px; }
+        
+        /* Right Column - Visualizations */
+        .right-column { flex: 1 1 450px; min-width: 320px; }
+        
+        /* Card styling */
+        .card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(60,90,170,0.08);
+            padding: 1.5em;
+            margin-bottom: 1.5em;
+        }
+        .card h3 {
+            margin: 0 0 1em 0;
+            color: var(--text-heading);
+            font-size: 1.1em;
+            border-bottom: 2px solid var(--border-light);
+            padding-bottom: 0.5em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .card h3 .filter-label {
+            font-size: 0.8em;
+            font-weight: 400;
+            color: var(--text-secondary);
+        }
+        
+        /* Form styling */
+        .expense-form { display: flex; flex-direction: column; gap: 1em; }
+        .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1em; }
+        .form-row label { display: flex; flex-direction: column; gap: 0.3em; font-size: 0.95em; color: var(--text-secondary); font-weight: 500; }
+        .form-row input, .form-row select, .form-row textarea {
+            padding: 0.5em; font-size: 1em; border: 1px solid var(--border-color); border-radius: 6px;
+            background: var(--bg-input); color: var(--text-primary);
+        }
+        .form-row textarea { resize: vertical; min-height: 60px; }
+        .form-row.full-width { grid-template-columns: 1fr; }
+        
+        .btn-row { display: flex; gap: 0.8em; flex-wrap: wrap; margin-top: 0.5em; }
+        .btn-primary {
+            background: #3875e8; color: #fff; border: none;
+            padding: 0.6em 1.5em; border-radius: 6px; font-weight: 600;
+            cursor: pointer; font-size: 1em; transition: background 0.15s;
+        }
+        .btn-primary:hover { background: #2a5bb8; }
+        .btn-secondary {
+            background: #e8eef8; color: #344a7a; border: 1px solid #c5d4e8;
+            padding: 0.5em 1em; border-radius: 6px; font-weight: 500;
+            cursor: pointer; font-size: 0.9em; transition: background 0.15s;
+        }
+        .btn-secondary:hover { background: #d4e0f0; }
+        .btn-danger {
+            background: #fee; color: #c44; border: 1px solid #fcc;
+            padding: 0.4em 0.8em; border-radius: 5px; font-size: 0.85em;
+            cursor: pointer; transition: background 0.15s;
+        }
+        .btn-danger:hover { background: #fdd; }
+        
+        /* Filter bar */
+        .filter-bar {
+            display: flex; gap: 1em; margin-bottom: 1em; flex-wrap: wrap;
+            padding: 0.8em; background: #f0f4fa; border-radius: 8px;
+        }
+        .filter-bar label {
+            display: flex; flex-direction: column; gap: 0.3em;
+            font-size: 0.85em; color: #455a8a;
+        }
+        .filter-bar select {
+            padding: 0.4em 0.6em; border-radius: 5px; border: 1px solid #c5d4e8;
+            font-size: 0.95em; min-width: 140px;
+        }
+        .filter-bar .clear-filter {
+            background: none; border: none; color: #3875e8; cursor: pointer;
+            font-size: 0.85em; text-decoration: underline; align-self: flex-end;
+            padding-bottom: 0.4em;
+        }
+        
+        /* Multi-select checkboxes */
+        .category-checkboxes {
+            display: flex; flex-wrap: wrap; gap: 0.5em; max-height: 150px;
+            overflow-y: auto; padding: 0.5em; background: var(--bg-input);
+            border: 1px solid var(--border-color); border-radius: 6px;
+        }
+        .category-checkbox {
+            display: flex; align-items: center; gap: 0.3em;
+            padding: 0.3em 0.6em; background: #f8fafd; border-radius: 4px;
+            font-size: 0.85em; cursor: pointer; transition: background 0.15s;
+        }
+        .category-checkbox:hover { background: #e8eef8; }
+        .category-checkbox input { cursor: pointer; }
+        .category-checkbox.checked { background: #d4e8ff; }
+        
+        /* Selected categories display */
+        .selected-cats {
+            display: flex; flex-wrap: wrap; gap: 0.4em; margin-top: 0.5em;
+        }
+        .selected-cat-tag {
+            display: inline-flex; align-items: center; gap: 0.3em;
+            padding: 0.2em 0.5em; background: #3875e8; color: #fff;
+            border-radius: 4px; font-size: 0.8em;
+        }
+        .selected-cat-tag button {
+            background: none; border: none; color: #fff; cursor: pointer;
+            padding: 0; font-size: 1em; line-height: 1;
+        }
+        
+        /* Chart type selector */
+        .chart-type-selector {
+            display: flex; gap: 0.5em; margin-bottom: 0.8em;
+        }
+        .chart-type-btn {
+            padding: 0.4em 0.8em; border: 1px solid #c5d4e8; border-radius: 5px;
+            background: #f8fafd; cursor: pointer; font-size: 0.85em;
+            transition: all 0.15s;
+        }
+        .chart-type-btn:hover { background: #e8eef8; }
+        .chart-type-btn.active { background: #3875e8; color: #fff; border-color: #3875e8; }
+        
+        .chart-container.tall { height: 300px; }
+        
+        /* Expense list */
+        .expense-list { display: flex; flex-direction: column; gap: 0.8em; }
+        .expense-item {
+            display: grid;
+            grid-template-columns: auto 1fr auto auto;
+            gap: 1em;
+            align-items: center;
+            padding: 0.8em 1em;
+            background: #f8fafd;
+            border-radius: 8px;
+            border-left: 4px solid #3875e8;
+        }
+        .expense-date { color: #667a9a; font-size: 0.9em; min-width: 80px; }
+        .expense-details { }
+        .expense-category { font-weight: 600; color: #2a4a7a; font-size: 0.95em; }
+        .expense-subcategory { color: #667a9a; font-size: 0.85em; }
+        .expense-notes { color: #889ab0; font-size: 0.85em; font-style: italic; margin-top: 0.2em; }
+        .expense-amount { font-weight: 600; color: #b03030; font-size: 1.05em; white-space: nowrap; }
+        .expense-delete, .expense-edit {
+            background: none; border: none; cursor: pointer;
+            padding: 0.3em; font-size: 1.1em; opacity: 0.6; transition: opacity 0.15s;
+        }
+        .expense-delete { color: #c44; }
+        .expense-edit { color: #3875e8; }
+        .expense-delete:hover, .expense-edit:hover { opacity: 1; }
+        .expense-actions { display: flex; gap: 0.3em; }
+        
+        .pagination { display: flex; gap: 0.5em; margin-top: 1em; justify-content: center; align-items: center; }
+        .pagination a, .pagination span {
+            padding: 0.4em 0.8em; border-radius: 4px; text-decoration: none;
+            font-size: 0.9em;
+        }
+        .pagination a { background: #e8eef8; color: #344a7a; }
+        .pagination a:hover { background: #d4e0f0; }
+        .pagination .current { background: #3875e8; color: #fff; }
+        
+        .empty-state { text-align: center; color: #889ab0; padding: 2em; }
+        
+        /* Stats */
+        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1em; margin-bottom: 1.5em; }
+        .stat-box {
+            background: linear-gradient(135deg, #f0f4fa, #e8eef8);
+            border-radius: 10px; padding: 1em; text-align: center;
+        }
+        .stat-value { font-size: 1.4em; font-weight: 700; color: #2a4a7a; }
+        .stat-label { font-size: 0.8em; color: #667a9a; margin-top: 0.3em; }
+        
+        /* Charts */
+        .chart-container { position: relative; height: 220px; margin-bottom: 1em; }
+        
+        /* Category averages table */
+        .avg-table { width: 100%; border-collapse: collapse; font-size: 0.9em; }
+        .avg-table th, .avg-table td { padding: 0.5em 0.6em; text-align: left; }
+        .avg-table th { color: #455a8a; font-weight: 600; border-bottom: 2px solid #e8eef8; }
+        .avg-table td { border-bottom: 1px solid #f0f4fa; }
+        .avg-table tr:last-child td { border-bottom: none; }
+        .avg-table .amount { text-align: right; font-weight: 500; color: #b03030; }
+        .avg-table .count { text-align: center; color: #667a9a; }
+        
+        /* Category management */
+        .category-manager {
+            display: flex; flex-direction: column; gap: 0.5em;
+            max-height: 300px; overflow-y: auto;
+        }
+        .cat-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0.5em 0.8em; background: #f8fafd; border-radius: 6px;
+        }
+        .cat-item .cat-name { font-weight: 500; color: #2a4a7a; }
+        .cat-item .cat-count { font-size: 0.85em; color: #889ab0; }
+        .cat-item .cat-actions { display: flex; gap: 0.3em; }
+        .subcat-list { margin-left: 1.5em; }
+        .subcat-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0.3em 0.6em; background: var(--bg-card); border-radius: 4px;
+            margin-top: 0.3em; border: 1px solid var(--border-light);
+        }
+        
+        /* Profile dropdown (positioned in header) */
+        .profile-dropdown { position: relative; }
+        .profile-btn {
+            display: flex; align-items: center; gap: 0.5em;
+            background: rgba(255,255,255,0.1); border: none;
+            padding: 0.4em 0.8em; border-radius: 8px;
+            cursor: pointer; color: #fff; font-size: 0.95em;
+        }
+        .profile-btn:hover { background: rgba(255,255,255,0.2); }
+        .profile-avatar {
+            width: 44px; height: 44px; border-radius: 50%;
+            background: var(--accent); display: flex; align-items: center;
+            justify-content: center; font-weight: 600; font-size: 1.1em; overflow: hidden;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+        .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .dropdown-menu {
+            display: none; position: absolute; right: 0; top: 100%;
+            background: #fff; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            min-width: 180px; margin-top: 0.5em; z-index: 1000; overflow: hidden;
+        }
+        .dropdown-menu.active { display: block; }
+        .dropdown-header { padding: 0.8em 1em; background: #f8fafd; border-bottom: 1px solid #e8eef8; }
+        .dropdown-header .name { font-weight: 600; color: #243869; font-size: 0.95em; }
+        .dropdown-header .username { font-size: 0.8em; color: #667a9a; }
+        .dropdown-item {
+            display: block; padding: 0.7em 1em; color: #344a7a;
+            text-decoration: none; font-size: 0.9em;
+        }
+        .dropdown-item:hover { background: #f0f4fa; }
+        .dropdown-item.danger { color: #c44; }
+        .dropdown-item.danger:hover { background: #fee; }
+        .dropdown-divider { height: 1px; background: #e8eef8; }
+        
+        /* Modal for adding categories */
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.4); z-index: 1000; justify-content: center; align-items: center;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal {
+            background: var(--bg-card); border-radius: 12px; padding: 1.5em 2em;
+            max-width: 500px; width: 90%; box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            max-height: 80vh; overflow-y: auto;
+        }
+        .modal h4 { margin: 0 0 1em 0; color: var(--text-heading); }
+        .modal input { width: 100%; padding: 0.6em; font-size: 1em; border: 1px solid var(--border-color); border-radius: 6px; margin-bottom: 1em; background: var(--bg-input); color: var(--text-primary); }
+        .modal-btns { display: flex; gap: 0.8em; justify-content: flex-end; }
+        
+        @media (max-width: 900px) {
+            .page-content { flex-direction: column; }
+            .stats-grid { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+  <!-- App Header with Profile Dropdown -->
+  <header class="app-header">
+    <div class="header-left"></div>
+    <div class="header-center">
+      <h1 class="app-title"><span class="icon">💸</span>MoneyFlow<span class="app-version">v1.2.0</span></h1>
+      <p class="app-subtitle">Your personal finance command center</p>
+    </div>
+    <div class="header-right">
+      <a href="/about" class="about-link">ℹ️ About</a>
+      <div class="profile-dropdown">
+        <button class="profile-btn" onclick="toggleProfileDropdown()">
+          <div class="profile-avatar">
+            {% if profile_picture_b64 %}<img src="data:{{ profile_picture_type }};base64,{{ profile_picture_b64 }}" alt="">{% else %}{{ user.name[0].upper() }}{% endif %}
+          </div>
+          <span>{{ user.name.split()[0] }}</span>
+          <span style="font-size:0.7em;">▼</span>
+        </button>
+        <div class="dropdown-menu" id="profileDropdown">
+          <div class="dropdown-header">
+            <div class="name">{{ user.name }}</div>
+            <div class="username">@{{ user.username }}</div>
+          </div>
+          <a href="/profile" class="dropdown-item">⚙️ Account Settings</a>
+          <a href="/profile#data" class="dropdown-item">📊 Manage Data</a>
+          <div class="dropdown-divider"></div>
+          <a href="/logout" class="dropdown-item danger">🚪 Sign Out</a>
+        </div>
+      </div>
+    </div>
+  </header>
+  
+  <nav>
+    <div class="tabs">
+      <a href="/home" class="tab">Dashboard</a>
+      <a href="/budget" class="tab">Budget</a>
+      <a href="/expenses" class="tab active">Expenses</a>
+      <a href="/income-taxes" class="tab">Income & Taxes</a>
+      <a href="/tools" class="tab">Tools</a>
+      <a href="/forum" class="tab">Resources</a>
+    </div>
+  </nav>
+  
+  <div class="page-content">
+    <!-- LEFT COLUMN -->
+    <div class="left-column">
+      <!-- Add Expense Form -->
+      <div class="card">
+        <h3>Add Expense</h3>
+        <form class="expense-form" method="post" action="/expenses/add">
+          <div class="form-row">
+            <label>Date
+              <input type="date" name="expense_date" value="{{ today }}" required>
+            </label>
+            <label>Amount ($)
+              <input type="number" name="amount" step="0.01" min="0.01" required placeholder="0.00">
+            </label>
+          </div>
+          
+          <div class="form-row">
+            <label>Category
+              <select name="category_id" id="categorySelect" required onchange="loadSubcategories()">
+                <option value="">Select category...</option>
+                {% for cat in categories %}
+                  <option value="{{ cat.id }}">{{ cat.name }}</option>
+                {% endfor %}
+              </select>
+            </label>
+            <label>Sub-Category (Optional)
+              <select name="subcategory_id" id="subcategorySelect">
+                <option value="">Select sub-category...</option>
+              </select>
+            </label>
+          </div>
+          
+          <!-- Recurring Expense Option -->
+          <div class="form-row" style="align-items: center;">
+            <label style="flex-direction: row; gap: 0.5em; align-items: center;">
+              <input type="checkbox" name="is_recurring" id="isRecurringCheck" value="yes" onchange="toggleRecurringOptions()">
+              <span>This is a recurring expense</span>
+            </label>
+          </div>
+          
+          <div id="recurringOptions" style="display: none; background: #f8fafd; padding: 0.8em; border-radius: 6px; margin-bottom: 0.8em;">
+            <label style="font-size: 0.9em; color: #344a7a; font-weight: 500;">Frequency
+              <select name="frequency" style="width: 100%; margin-top: 0.3em; padding: 0.5em; border-radius: 6px; border: 1px solid #ccd;">
+                <option value="weekly">Weekly</option>
+                <option value="bi-weekly">Bi-Weekly (Every 2 weeks)</option>
+                <option value="semi-monthly">Semi-Monthly (Twice a month)</option>
+                <option value="monthly" selected>Monthly</option>
+                <option value="bi-monthly">Bi-Monthly (Every 2 months)</option>
+                <option value="quarterly">Quarterly (Every 3 months)</option>
+                <option value="semi-annually">Semi-Annually (Twice a year)</option>
+                <option value="annually">Annually</option>
+              </select>
+            </label>
+          </div>
+          
+          <div class="btn-row">
+            <button type="button" class="btn-secondary" onclick="showCategoryModal()">+ New Category</button>
+            <button type="button" class="btn-secondary" onclick="showSubcategoryModal()">+ New Sub-Category</button>
+            <button type="button" class="btn-secondary" onclick="showManageCategoriesModal()">Manage Categories</button>
+          </div>
+          
+          <div class="form-row full-width">
+            <label>Notes (Optional)
+              <textarea name="notes" placeholder="Add any notes about this expense..."></textarea>
+            </label>
+          </div>
+          
+          <div class="btn-row">
+            <button type="submit" class="btn-primary">Add Expense</button>
+          </div>
+        </form>
+      </div>
+      
+      <!-- Bulk Upload CSV -->
+      <div class="card">
+        <h3>📤 Bulk Upload Expenses</h3>
+        <p style="color: var(--text-secondary); font-size: 0.9em; margin-bottom: 1em;">
+          Import multiple expenses at once from a CSV file.
+        </p>
+        <div style="display: flex; gap: 1em; flex-wrap: wrap; align-items: flex-start;">
+          <a href="/expenses/csv-template" class="btn-secondary" style="text-decoration: none;">
+            📥 Download Template
+          </a>
+          <div style="flex: 1; min-width: 200px;">
+            <form id="csvUploadForm" style="display: flex; gap: 0.5em; align-items: center;">
+              <div class="file-input-wrapper" style="flex: 1; position: relative;">
+                <input type="file" id="csvFileInput" accept=".csv" required 
+                       style="position: absolute; inset: 0; opacity: 0; cursor: pointer;">
+                <button type="button" class="btn-secondary" style="width: 100%; pointer-events: none;">
+                  Choose CSV File
+                </button>
+              </div>
+              <button type="button" class="btn-primary" onclick="uploadCSV()">Upload</button>
+            </form>
+            <div id="csvFileName" style="margin-top: 0.3em; font-size: 0.85em; color: var(--text-secondary);"></div>
+            <div id="csvUploadStatus" style="margin-top: 0.5em; font-size: 0.9em;"></div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Recent Expenses -->
+      <div class="card">
+        <h3>Recent Expenses ({{ total_expenses }} total)</h3>
+        {% if recent_expenses %}
+        <div class="expense-list">
+          {% for expense in recent_expenses %}
+          <div class="expense-item" data-id="{{ expense.id }}">
+            <div class="expense-date">{{ expense.expense_date.strftime('%b %d') }}</div>
+            <div class="expense-details">
+              <div class="expense-category">{{ expense.category.name if expense.category else 'Uncategorized' }}</div>
+              {% if expense.subcategory %}
+              <div class="expense-subcategory">{{ expense.subcategory.name }}</div>
+              {% endif %}
+              {% if expense.notes %}
+              <div class="expense-notes">{{ expense.notes[:50] }}{% if expense.notes|length > 50 %}...{% endif %}</div>
+              {% endif %}
+            </div>
+            <div class="expense-amount">−${{ "{:,.2f}".format(expense.amount) }}</div>
+            <div class="expense-actions">
+              <button class="expense-edit" onclick="editExpense({{ expense.id }})" title="Edit">✏️</button>
+              <button class="expense-delete" onclick="deleteExpense({{ expense.id }})" title="Delete">🗑</button>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        
+        {% if total_expenses > 10 and not show_all %}
+        <div class="pagination">
+          <a href="/expenses?show_all=true&lookback={{ current_lookback }}{% if category_filter %}&category_filter={{ category_filter }}{% endif %}">View All {{ total_expenses }} Expenses →</a>
+        </div>
+        {% elif show_all and total_pages > 1 %}
+        <div class="pagination">
+          {% if page > 1 %}
+          <a href="/expenses?show_all=true&page={{ page - 1 }}&lookback={{ current_lookback }}{% if category_filter %}&category_filter={{ category_filter }}{% endif %}">← Prev</a>
+          {% endif %}
+          <span class="current">Page {{ page }} of {{ total_pages }}</span>
+          {% if page < total_pages %}
+          <a href="/expenses?show_all=true&page={{ page + 1 }}&lookback={{ current_lookback }}{% if category_filter %}&category_filter={{ category_filter }}{% endif %}">Next →</a>
+          {% endif %}
+        </div>
+        {% endif %}
+        
+        {% else %}
+        <div class="empty-state">
+          <p>No expenses recorded yet.</p>
+          <p>Add your first expense above!</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    
+    <!-- RIGHT COLUMN - Visualizations -->
+    <div class="right-column">
+      <!-- Filter Bar -->
+      <div class="card">
+        <h3>Visualization Filters</h3>
+        <div class="filter-bar">
+          <label>Time Period
+            <select id="lookbackSelect" onchange="applyFilters()">
+              {% for key, val in lookback_periods.items() %}
+              <option value="{{ key }}" {% if current_lookback == key %}selected{% endif %}>{{ val.label }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <div style="flex:1; min-width:200px;">
+            <label style="margin-bottom:0.3em; display:block;">Categories (select multiple)</label>
+            <div class="category-checkboxes" id="categoryCheckboxes">
+              {% for cat in categories %}
+              <label class="category-checkbox {% if cat.id in category_filters %}checked{% endif %}">
+                <input type="checkbox" value="{{ cat.id }}" {% if cat.id in category_filters %}checked{% endif %} onchange="updateCategorySelection()">
+                {{ cat.name }}
+              </label>
+              {% endfor %}
+            </div>
+            {% if selected_category_names %}
+            <div class="selected-cats" id="selectedCatsTags">
+              {% for name in selected_category_names %}
+              <span class="selected-cat-tag">{{ name }}</span>
+              {% endfor %}
+            </div>
+            {% endif %}
+          </div>
+          <div style="display:flex; flex-direction:column; gap:0.5em; align-self:flex-end;">
+            <button class="btn-secondary" onclick="applyFilters()">Apply Filters</button>
+            {% if category_filters %}
+            <button class="clear-filter" onclick="clearFilters()">Clear Categories</button>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      
+      <!-- Stats Overview -->
+      <div class="card">
+        <h3>
+          {{ stats.lookback_label }} Summary
+          {% if selected_category_names %}
+          <span class="filter-label">Filtered: {{ selected_category_names | join(", ") }}</span>
+          {% endif %}
+        </h3>
+        <div class="stats-grid">
+          <div class="stat-box">
+            <div class="stat-value">${{ "{:,.2f}".format(stats.total_in_period) }}</div>
+            <div class="stat-label">Total Spent</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-value">{{ stats.expense_count }}</div>
+            <div class="stat-label">Transactions</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-value">${{ "{:,.2f}".format(stats.daily_avg) }}</div>
+            <div class="stat-label">Daily Average</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-value">${{ "{:,.2f}".format(stats.overall_avg) }}</div>
+            <div class="stat-label">Avg per Expense</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Spending Over Time (Stacked Bar) -->
+      <div class="card">
+        <h3>📊 Spending Over Time</h3>
+        <div class="chart-container tall">
+          <canvas id="stackedChart"></canvas>
+        </div>
+      </div>
+      
+      <!-- Category Breakdown Chart (Doughnut) -->
+      <div class="card">
+        <h3>🥧 Category Breakdown</h3>
+        <div class="chart-container">
+          <canvas id="categoryChart"></canvas>
+        </div>
+      </div>
+      
+      <!-- Subcategory Breakdown -->
+      <div class="card">
+        <h3>🏷️ Subcategory Breakdown</h3>
+        <div class="chart-container tall">
+          <canvas id="subcategoryChart"></canvas>
+        </div>
+      </div>
+      
+      <!-- Category Totals Table -->
+      {% if stats.category_averages %}
+      <div class="card">
+        <h3>📋 Category Summary</h3>
+        <table class="avg-table">
+          <thead>
+            <tr>
+              <th>Category</th>
+              <th class="count"># Expenses</th>
+              <th class="amount">Total</th>
+              <th class="amount">% of Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for cat in stats.category_averages %}
+            <tr>
+              <td>{{ cat.name }}</td>
+              <td class="count">{{ cat.count }}</td>
+              <td class="amount">${{ "{:,.2f}".format(cat.total) }}</td>
+              <td class="amount">{{ "{:.1f}".format((cat.total / stats.total_spending * 100) if stats.total_spending > 0 else 0) }}%</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+      
+      <!-- Subcategory Totals Table -->
+      {% if subcategory_stats %}
+      <div class="card">
+        <h3 style="display: flex; justify-content: space-between; align-items: center;">
+          <span>🔍 Category & Subcategory Details</span>
+          <a href="/expenses/csv-export?lookback={{ current_lookback }}" class="btn-secondary" style="text-decoration:none; font-size:0.8em; font-weight:normal;">📥 Export CSV</a>
+        </h3>
+        <table class="avg-table">
+          <thead>
+            <tr>
+              <th>Category / Subcategory</th>
+              <th class="count">#</th>
+              <th class="amount">Total</th>
+              <th class="amount">Avg/Month</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for sub in subcategory_stats %}
+            <tr style="{% if not sub.is_subcategory %}font-weight: 600; background: var(--border-light);{% endif %}">
+              <td style="padding-left: {% if sub.is_subcategory %}1.5em{% else %}0{% endif %};">
+                {% if sub.is_subcategory %}↳ {% endif %}{{ sub.name }}
+              </td>
+              <td class="count">{{ sub.count }}</td>
+              <td class="amount">${{ "{:,.2f}".format(sub.total) }}</td>
+              <td class="amount" style="color: var(--accent);">${{ "{:,.2f}".format(sub.monthly_avg) }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  
+  <!-- Category Modal -->
+  <div class="modal-overlay" id="categoryModal">
+    <div class="modal">
+      <h4>Add New Category</h4>
+      <input type="text" id="newCategoryName" placeholder="Category name...">
+      <div class="modal-btns">
+        <button class="btn-secondary" onclick="closeCategoryModal()">Cancel</button>
+        <button class="btn-primary" onclick="createCategory()">Add</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Subcategory Modal -->
+  <div class="modal-overlay" id="subcategoryModal">
+    <div class="modal">
+      <h4>Add New Sub-Category</h4>
+      <p style="font-size:0.9em; color:#667a9a; margin-bottom:1em;">For: <span id="selectedCategoryName">-</span></p>
+      <input type="text" id="newSubcategoryName" placeholder="Sub-category name...">
+      <div class="modal-btns">
+        <button class="btn-secondary" onclick="closeSubcategoryModal()">Cancel</button>
+        <button class="btn-primary" onclick="createSubcategory()">Add</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Manage Categories Modal -->
+  <div class="modal-overlay" id="manageCategoriesModal">
+    <div class="modal">
+      <h4>Manage Categories</h4>
+      <p style="font-size:0.85em; color:#667a9a; margin-bottom:1em;">Delete categories or subcategories. Categories with expenses cannot be deleted.</p>
+      <div class="category-manager" id="categoryManager">
+        <p style="color:#889ab0;">Loading...</p>
+      </div>
+      <div class="modal-btns" style="margin-top:1em;">
+        <button class="btn-secondary" onclick="closeManageCategoriesModal()">Close</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Edit Expense Modal -->
+  <div class="modal-overlay" id="editExpenseModal">
+    <div class="modal">
+      <h4>Edit Expense</h4>
+      <form id="editExpenseForm" method="post">
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1em; margin-bottom:1em;">
+          <label style="display:flex; flex-direction:column; gap:0.3em; font-size:0.95em; color:#344a7a;">
+            Date
+            <input type="date" name="expense_date" id="editExpenseDate" required>
+          </label>
+          <label style="display:flex; flex-direction:column; gap:0.3em; font-size:0.95em; color:#344a7a;">
+            Amount ($)
+            <input type="number" name="amount" id="editExpenseAmount" step="0.01" min="0.01" required>
+          </label>
+        </div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1em; margin-bottom:1em;">
+          <label style="display:flex; flex-direction:column; gap:0.3em; font-size:0.95em; color:#344a7a;">
+            Category
+            <select name="category_id" id="editExpenseCategory" required onchange="loadEditSubcategories()">
+              <option value="">Select category...</option>
+              {% for cat in categories %}
+              <option value="{{ cat.id }}">{{ cat.name }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label style="display:flex; flex-direction:column; gap:0.3em; font-size:0.95em; color:#344a7a;">
+            Sub-Category
+            <select name="subcategory_id" id="editExpenseSubcategory">
+              <option value="">Select sub-category...</option>
+            </select>
+          </label>
+        </div>
+        <label style="display:flex; flex-direction:column; gap:0.3em; font-size:0.95em; color:#344a7a; margin-bottom:1em;">
+          Notes (Optional)
+          <textarea name="notes" id="editExpenseNotes" style="padding:0.5em; border:1px solid #ccd; border-radius:6px; resize:vertical; min-height:60px;"></textarea>
+        </label>
+        <div class="modal-btns">
+          <button type="button" class="btn-secondary" onclick="closeEditExpenseModal()">Cancel</button>
+          <button type="submit" class="btn-primary">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  
+  <script>
+    // Category colors for consistent visualization
+    const CATEGORY_COLORS = [
+      '#3875e8', '#e8385a', '#38e878', '#e8a838', '#a838e8', 
+      '#38c8e8', '#e8e838', '#8838e8', '#38e8a8', '#e85838',
+      '#5838e8', '#e8d838', '#38a8e8', '#e86838', '#6838e8'
+    ];
+    
+    function getCategoryColor(index) {
+      return CATEGORY_COLORS[index % CATEGORY_COLORS.length];
+    }
+    
+    // Filter functions
+    function updateCategorySelection() {
+      // Update visual state of checkboxes
+      document.querySelectorAll('.category-checkbox').forEach(label => {
+        const checkbox = label.querySelector('input');
+        if (checkbox.checked) {
+          label.classList.add('checked');
+        } else {
+          label.classList.remove('checked');
+        }
+      });
+    }
+    
+    function applyFilters() {
+      const lookback = document.getElementById('lookbackSelect').value;
+      
+      // Get all checked category IDs
+      const checkedBoxes = document.querySelectorAll('#categoryCheckboxes input:checked');
+      const categoryIds = Array.from(checkedBoxes).map(cb => cb.value);
+      
+      let url = '/expenses?lookback=' + lookback;
+      if (categoryIds.length > 0) {
+        url += '&categories_filter=' + categoryIds.join(',');
+      }
+      window.location.href = url;
+    }
+    
+    function clearFilters() {
+      window.location.href = '/expenses?lookback=' + document.getElementById('lookbackSelect').value;
+    }
+    
+    // Format currency helper
+    function formatCurrency(value) {
+      return '$' + value.toLocaleString('en-US', { maximumFractionDigits: 0 });
+    }
+    
+    // Toggle recurring expense options
+    function toggleRecurringOptions() {
+      const isRecurring = document.getElementById('isRecurringCheck').checked;
+      const optionsDiv = document.getElementById('recurringOptions');
+      optionsDiv.style.display = isRecurring ? 'block' : 'none';
+    }
+    
+    // Load subcategories when category changes
+    async function loadSubcategories() {
+      const categoryId = document.getElementById('categorySelect').value;
+      const subcategorySelect = document.getElementById('subcategorySelect');
+      
+      subcategorySelect.innerHTML = '<option value="">Select sub-category...</option>';
+      
+      if (!categoryId) return;
+      
+      try {
+        const response = await fetch(`/api/subcategories/${categoryId}`);
+        const data = await response.json();
+        
+        data.subcategories.forEach(sub => {
+          const option = document.createElement('option');
+          option.value = sub.id;
+          option.textContent = sub.name;
+          subcategorySelect.appendChild(option);
+        });
+      } catch (err) {
+        console.error('Error loading subcategories:', err);
+      }
+    }
+    
+    // Category modal
+    function showCategoryModal() {
+      document.getElementById('categoryModal').classList.add('active');
+      document.getElementById('newCategoryName').focus();
+    }
+    
+    function closeCategoryModal() {
+      document.getElementById('categoryModal').classList.remove('active');
+      document.getElementById('newCategoryName').value = '';
+    }
+    
+    async function createCategory() {
+      const name = document.getElementById('newCategoryName').value.trim();
+      if (!name) return;
+      
+      try {
+        const formData = new FormData();
+        formData.append('category_name', name);
+        
+        const response = await fetch('/expenses/category/add', {
+          method: 'POST',
+          body: formData
+        });
+        
+        const data = await response.json();
+        
+        // Add to dropdown
+        const select = document.getElementById('categorySelect');
+        const option = document.createElement('option');
+        option.value = data.id;
+        option.textContent = data.name;
+        select.appendChild(option);
+        select.value = data.id;
+        
+        closeCategoryModal();
+        loadSubcategories();
+      } catch (err) {
+        console.error('Error creating category:', err);
+      }
+    }
+    
+    // Subcategory modal
+    function showSubcategoryModal() {
+      const categorySelect = document.getElementById('categorySelect');
+      if (!categorySelect.value) {
+        alert('Please select a category first');
+        return;
+      }
+      
+      document.getElementById('selectedCategoryName').textContent = 
+        categorySelect.options[categorySelect.selectedIndex].text;
+      document.getElementById('subcategoryModal').classList.add('active');
+      document.getElementById('newSubcategoryName').focus();
+    }
+    
+    function closeSubcategoryModal() {
+      document.getElementById('subcategoryModal').classList.remove('active');
+      document.getElementById('newSubcategoryName').value = '';
+    }
+    
+    async function createSubcategory() {
+      const name = document.getElementById('newSubcategoryName').value.trim();
+      const categoryId = document.getElementById('categorySelect').value;
+      if (!name || !categoryId) return;
+      
+      try {
+        const formData = new FormData();
+        formData.append('category_id', categoryId);
+        formData.append('subcategory_name', name);
+        
+        const response = await fetch('/expenses/subcategory/add', {
+          method: 'POST',
+          body: formData
+        });
+        
+        const data = await response.json();
+        
+        // Add to dropdown
+        const select = document.getElementById('subcategorySelect');
+        const option = document.createElement('option');
+        option.value = data.id;
+        option.textContent = data.name;
+        select.appendChild(option);
+        select.value = data.id;
+        
+        closeSubcategoryModal();
+      } catch (err) {
+        console.error('Error creating subcategory:', err);
+      }
+    }
+    
+    // Manage categories modal
+    function showManageCategoriesModal() {
+      document.getElementById('manageCategoriesModal').classList.add('active');
+      loadCategoriesForManagement();
+    }
+    
+    function closeManageCategoriesModal() {
+      document.getElementById('manageCategoriesModal').classList.remove('active');
+    }
+    
+    async function loadCategoriesForManagement() {
+      const container = document.getElementById('categoryManager');
+      
+      try {
+        const response = await fetch('/api/categories');
+        const data = await response.json();
+        
+        if (!data.categories || data.categories.length === 0) {
+          container.innerHTML = '<p style="color:#889ab0; text-align:center;">No categories yet.</p>';
+          return;
+        }
+        
+        let html = '';
+        for (const cat of data.categories) {
+          html += `
+            <div class="cat-item">
+              <div>
+                <span class="cat-name">${cat.name}</span>
+                <span class="cat-count">(${cat.expense_count} expenses)</span>
+              </div>
+              <div class="cat-actions">
+                <button class="btn-danger" onclick="deleteCategory(${cat.id}, ${cat.expense_count})" ${cat.expense_count > 0 ? 'disabled title="Has expenses"' : ''}>Delete</button>
+              </div>
+            </div>
+          `;
+          
+          if (cat.subcategories && cat.subcategories.length > 0) {
+            html += '<div class="subcat-list">';
+            for (const sub of cat.subcategories) {
+              html += `
+                <div class="subcat-item">
+                  <span>${sub.name} <span class="cat-count">(${sub.expense_count})</span></span>
+                  <button class="btn-danger" onclick="deleteSubcategory(${sub.id})">Delete</button>
+                </div>
+              `;
+            }
+            html += '</div>';
+          }
+        }
+        
+        container.innerHTML = html;
+      } catch (err) {
+        console.error('Error loading categories:', err);
+        container.innerHTML = '<p style="color:#c44;">Error loading categories.</p>';
+      }
+    }
+    
+    async function deleteCategory(categoryId, expenseCount) {
+      if (expenseCount > 0) {
+        alert('Cannot delete a category that has expenses. Delete or reassign the expenses first.');
+        return;
+      }
+      
+      if (!confirm('Delete this category and all its subcategories?')) return;
+      
+      try {
+        const response = await fetch(`/expenses/category/${categoryId}`, { method: 'DELETE' });
+        const data = await response.json();
+        
+        if (data.error) {
+          alert(data.error);
+        } else {
+          loadCategoriesForManagement();
+          location.reload(); // Refresh to update dropdowns
+        }
+      } catch (err) {
+        console.error('Error deleting category:', err);
+      }
+    }
+    
+    async function deleteSubcategory(subcategoryId) {
+      if (!confirm('Delete this subcategory? Expenses using it will have their subcategory cleared.')) return;
+      
+      try {
+        const response = await fetch(`/expenses/subcategory/${subcategoryId}`, { method: 'DELETE' });
+        const data = await response.json();
+        
+        if (data.error) {
+          alert(data.error);
+        } else {
+          loadCategoriesForManagement();
+        }
+      } catch (err) {
+        console.error('Error deleting subcategory:', err);
+      }
+    }
+    
+    // Delete expense
+    async function deleteExpense(expenseId) {
+      if (!confirm('Delete this expense?')) return;
+      
+      try {
+        await fetch(`/expenses/${expenseId}`, { method: 'DELETE' });
+        location.reload();
+      } catch (err) {
+        console.error('Error deleting expense:', err);
+      }
+    }
+    
+    // Edit expense
+    let currentEditExpenseId = null;
+    
+    async function editExpense(expenseId) {
+      currentEditExpenseId = expenseId;
+      
+      try {
+        const response = await fetch(`/api/expense/${expenseId}`);
+        const data = await response.json();
+        
+        if (data.error) {
+          alert(data.error);
+          return;
+        }
+        
+        // Set form values
+        document.getElementById('editExpenseDate').value = data.expense_date;
+        document.getElementById('editExpenseAmount').value = data.amount;
+        document.getElementById('editExpenseCategory').value = data.category_id;
+        document.getElementById('editExpenseNotes').value = data.notes || '';
+        
+        // Load subcategories for this category, then set the value
+        await loadEditSubcategories();
+        if (data.subcategory_id) {
+          document.getElementById('editExpenseSubcategory').value = data.subcategory_id;
+        }
+        
+        // Update form action
+        document.getElementById('editExpenseForm').action = `/expenses/update/${expenseId}`;
+        
+        // Show modal
+        document.getElementById('editExpenseModal').classList.add('active');
+      } catch (err) {
+        console.error('Error loading expense:', err);
+        alert('Error loading expense data');
+      }
+    }
+    
+    function closeEditExpenseModal() {
+      document.getElementById('editExpenseModal').classList.remove('active');
+      currentEditExpenseId = null;
+    }
+    
+    async function loadEditSubcategories() {
+      const categoryId = document.getElementById('editExpenseCategory').value;
+      const subcategorySelect = document.getElementById('editExpenseSubcategory');
+      
+      subcategorySelect.innerHTML = '<option value="">Select sub-category...</option>';
+      
+      if (!categoryId) return;
+      
+      try {
+        const response = await fetch(`/api/subcategories/${categoryId}`);
+        const data = await response.json();
+        
+        data.subcategories.forEach(sub => {
+          const option = document.createElement('option');
+          option.value = sub.id;
+          option.textContent = sub.name;
+          subcategorySelect.appendChild(option);
+        });
+      } catch (err) {
+        console.error('Error loading subcategories:', err);
+      }
+    }
+    
+    // Close modals on overlay click
+    document.querySelectorAll('.modal-overlay').forEach(overlay => {
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+          overlay.classList.remove('active');
+        }
+      });
+    });
+    
+    // Charts data
+    const monthlyData = {{ stats.monthly_trend | tojson }};
+    const scatterData = {{ stats.scatter_data | tojson }};
+    const stackedData = {{ stats.stacked_data | tojson }};
+    const monthsList = {{ stats.months_list | tojson }};
+    
+    // Build category color map for consistent colors
+    const categoryColorMap = {};
+    let colorIndex = 0;
+    
+    // Also build from stacked data for consistency
+    stackedData.forEach(cat => {
+      if (!categoryColorMap[cat.category]) {
+        categoryColorMap[cat.category] = getCategoryColor(colorIndex++);
+      }
+    });
+    scatterData.forEach(point => {
+      if (!categoryColorMap[point.category]) {
+        categoryColorMap[point.category] = getCategoryColor(colorIndex++);
+      }
+    });
+    
+    // Stacked Bar Chart - Monthly totals by category
+    const stackedCtx = document.getElementById('stackedChart');
+    if (stackedCtx) {
+      if (stackedData.length > 0 && monthsList.length > 0) {
+        const stackedDatasets = stackedData.map((cat, idx) => ({
+          label: cat.category,
+          data: cat.data,
+          backgroundColor: categoryColorMap[cat.category] || getCategoryColor(idx),
+          borderWidth: 1,
+          borderColor: '#fff'
+        }));
+        
+        new Chart(stackedCtx, {
+          type: 'bar',
+          data: {
+            labels: monthsList,
+            datasets: stackedDatasets
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { position: 'top', labels: { boxWidth: 12, font: { size: 10 } } },
+              tooltip: {
+                callbacks: {
+                  label: function(context) {
+                    return `${context.dataset.label}: $${context.parsed.y.toLocaleString()}`;
+                  }
+                }
+              }
+            },
+            scales: {
+              x: { stacked: true },
+              y: {
+                stacked: true,
+                beginAtZero: true,
+                ticks: { callback: v => '$' + v.toLocaleString() }
+              }
+            }
+          }
+        });
+      } else {
+        // Show empty state with placeholder months
+        const emptyMonths = monthsList.length > 0 ? monthsList : ['No Data'];
+        new Chart(stackedCtx, {
+          type: 'bar',
+          data: {
+            labels: emptyMonths,
+            datasets: [{
+              label: 'No expenses',
+              data: emptyMonths.map(() => 0),
+              backgroundColor: '#e8eef8'
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              title: { display: true, text: 'No expenses recorded yet', font: { size: 14 }, color: '#889ab0' }
+            },
+            scales: {
+              x: { stacked: true },
+              y: { stacked: true, beginAtZero: true, max: 100, ticks: { callback: v => '$' + v } }
+            }
+          }
+        });
+      }
+    }
+    
+    // Subcategory Horizontal Bar Chart
+    const subcategoryCtx = document.getElementById('subcategoryChart');
+    if (subcategoryCtx) {
+      const subcategoryData = {{ subcategory_chart_data | tojson }};
+      
+      if (subcategoryData && subcategoryData.length > 0) {
+        // Sort by total and take top 15
+        const sortedData = [...subcategoryData].sort((a, b) => b.total - a.total).slice(0, 15);
+        
+        new Chart(subcategoryCtx, {
+          type: 'bar',
+          data: {
+            labels: sortedData.map(d => d.label),
+            datasets: [{
+              label: 'Spending',
+              data: sortedData.map(d => d.total),
+              backgroundColor: sortedData.map((d, i) => categoryColorMap[d.category] || getCategoryColor(i)),
+              borderRadius: 4
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            indexAxis: 'y',
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  label: function(context) {
+                    return formatCurrency(context.raw);
+                  }
+                }
+              }
+            },
+            scales: {
+              x: {
+                beginAtZero: true,
+                ticks: { callback: v => formatCurrency(v) }
+              },
+              y: {
+                ticks: { font: { size: 11 } }
+              }
+            }
+          }
+        });
+      } else {
+        new Chart(subcategoryCtx, {
+          type: 'bar',
+          data: { labels: ['No Data'], datasets: [{ data: [0] }] },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            indexAxis: 'y',
+            plugins: {
+              legend: { display: false },
+              title: { display: true, text: 'No subcategory data available', font: { size: 14 }, color: '#889ab0' }
+            }
+          }
+        });
+      }
+    }
+    
+    // Category Doughnut Chart
+    const categoryCtx = document.getElementById('categoryChart');
+    if (categoryCtx) {
+      const categoryData = {{ stats.by_category | tojson }};
+      
+      if (categoryData && categoryData.length > 0) {
+        new Chart(categoryCtx, {
+          type: 'doughnut',
+          data: {
+            labels: categoryData.map(d => d[0]),
+            datasets: [{
+              data: categoryData.map(d => d[1]),
+              backgroundColor: categoryData.map((d, i) => categoryColorMap[d[0]] || getCategoryColor(i))
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 } } },
+              tooltip: {
+                callbacks: {
+                  label: function(context) {
+                    const value = context.parsed;
+                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                    const percentage = ((value / total) * 100).toFixed(1);
+                    return `$${value.toLocaleString()} (${percentage}%)`;
+                  }
+                }
+              }
+            }
+          }
+        });
+      } else {
+        // Empty doughnut chart
+        new Chart(categoryCtx, {
+          type: 'doughnut',
+          data: {
+            labels: ['No Data'],
+            datasets: [{
+              data: [1],
+              backgroundColor: ['#e8eef8']
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              title: { display: true, text: 'No expenses recorded yet', font: { size: 14 }, color: '#889ab0' }
+            }
+          }
+        });
+      }
+    }
+    
+    // Profile dropdown toggle
+    function toggleProfileDropdown() {
+      document.getElementById('profileDropdown').classList.toggle('active');
+    }
+    document.addEventListener('click', function(e) {
+      const dropdown = document.querySelector('.profile-dropdown');
+      if (dropdown && !dropdown.contains(e.target)) {
+        document.getElementById('profileDropdown').classList.remove('active');
+      }
+    });
+    
+    // CSV file name display
+    document.getElementById('csvFileInput').addEventListener('change', function(e) {
+      const fileName = e.target.files[0]?.name || '';
+      document.getElementById('csvFileName').textContent = fileName ? `Selected: ${fileName}` : '';
+    });
+    
+    // CSV Upload
+    async function uploadCSV() {
+      const fileInput = document.getElementById('csvFileInput');
+      const statusDiv = document.getElementById('csvUploadStatus');
+      
+      if (!fileInput.files.length) {
+        statusDiv.innerHTML = '<span style="color:var(--danger);">Please select a CSV file first</span>';
+        return;
+      }
+      
+      const formData = new FormData();
+      formData.append('csv_file', fileInput.files[0]);
+      
+      statusDiv.innerHTML = '<span style="color:var(--accent);">Uploading...</span>';
+      
+      try {
+        const response = await fetch('/expenses/bulk-upload', {
+          method: 'POST',
+          body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          let msg = `<span style="color:#28a745;">✓ ${data.imported} expense(s) imported</span>`;
+          if (data.skipped > 0) {
+            msg += `<br><span style="color:#ffc107;">⚠ ${data.skipped} row(s) skipped</span>`;
+          }
+          if (data.new_categories?.length > 0) {
+            msg += `<br><small>New categories created: ${data.new_categories.join(', ')}</small>`;
+          }
+          statusDiv.innerHTML = msg;
+          // Reload page after a short delay to show new expenses
+          setTimeout(() => window.location.reload(), 1500);
+        } else {
+          statusDiv.innerHTML = `<span style="color:var(--danger);">✗ ${data.error || 'Upload failed'}</span>`;
+          if (data.details) {
+            statusDiv.innerHTML += `<br><small>${data.details}</small>`;
+          }
+        }
+      } catch (err) {
+        statusDiv.innerHTML = `<span style="color:var(--danger);">✗ Upload failed: ${err.message}</span>`;
+      }
+    }
+  </script>
+</body>
+</html>

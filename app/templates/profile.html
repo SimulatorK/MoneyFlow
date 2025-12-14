@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="{% if dark_mode %}dark{% else %}light{% endif %}">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ title }} | MoneyFlow</title>
+    <link rel="stylesheet" href="/static/app.css">
+    <style>
+        :root {
+            --bg-primary: #f5f6fa;
+            --bg-card: #fff;
+            --bg-input: #fff;
+            --bg-hover: #f0f4fa;
+            --bg-header: linear-gradient(135deg, #1a3366 0%, #243869 50%, #2d4a7c 100%);
+            --text-primary: #222;
+            --text-secondary: #667a9a;
+            --text-heading: #1a3366;
+            --border-color: #ccd;
+            --border-light: #e8eef8;
+            --nav-bg: #243869;
+            --accent: #3875e8;
+            --accent-hover: #2a5bb8;
+            --danger: #c44;
+            --danger-bg: #fee;
+            --success-bg: #d4edda;
+            --success-text: #155724;
+        }
+        
+        [data-theme="dark"] {
+            --bg-primary: #1a1d24;
+            --bg-card: #242830;
+            --bg-input: #2d323c;
+            --bg-hover: #353a47;
+            --bg-header: linear-gradient(135deg, #0d1117 0%, #161920 50%, #1f242d 100%);
+            --text-primary: #e4e6eb;
+            --text-secondary: #98a3b8;
+            --text-heading: #b8c5db;
+            --border-color: #3d4450;
+            --border-light: #353a47;
+            --nav-bg: #161920;
+            --accent: #4d8ef0;
+            --accent-hover: #6ba1f4;
+            --danger: #e66;
+            --danger-bg: #3a2525;
+            --success-bg: #1f3a27;
+            --success-text: #7fd98c;
+        }
+        
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-primary); color: var(--text-primary); }
+        
+        /* App Header with Profile */
+        .app-header {
+            background: var(--bg-header);
+            padding: 1em 2em;
+            display: flex; align-items: center; justify-content: space-between;
+            border-bottom: 3px solid var(--accent);
+        }
+        .header-left { flex: 1; }
+        .header-center { flex: 2; text-align: center; }
+        .header-right { flex: 1; display: flex; justify-content: flex-end; align-items: center; gap: 1em; }
+        .app-title { margin: 0; font-size: 2.2em; font-weight: 700; color: #fff; }
+        .app-title .icon { margin-right: 0.3em; }
+        .app-subtitle { margin: 0.3em 0 0 0; font-size: 0.9em; color: rgba(255,255,255,0.75); }
+        .app-version { display: inline-block; background: rgba(255,255,255,0.15); padding: 0.15em 0.6em; border-radius: 12px; font-size: 0.75em; color: rgba(255,255,255,0.9); margin-left: 0.5em; }
+        .about-link { color: rgba(255,255,255,0.8); text-decoration: none; font-size: 0.9em; padding: 0.5em 1em; border-radius: 6px; background: rgba(255,255,255,0.1); }
+        .about-link:hover { background: rgba(255,255,255,0.2); color: #fff; }
+        .header-logout { color: rgba(255,255,255,0.8); text-decoration: none; font-size: 0.9em; padding: 0.5em 1em; border-radius: 6px; background: rgba(220,53,69,0.3); border: none; cursor: pointer; }
+        .header-logout:hover { background: rgba(220,53,69,0.5); color: #fff; }
+        
+        /* Navigation */
+        nav { background: var(--nav-bg); padding: 0; display: flex; justify-content: center; }
+        .tabs { display: flex; gap: 0; }
+        .tab { color: rgba(255,255,255,0.8); text-decoration: none; padding: 1em 1.5em; font-size: 0.95em; font-weight: 500; border-bottom: 3px solid transparent; }
+        .tab:hover { color: #fff; background: rgba(255,255,255,0.05); }
+        .tab.active { color: #fff; background: rgba(255,255,255,0.1); border-bottom-color: var(--accent); font-weight: 600; }
+        
+        .page-content {
+            max-width: 800px; margin: 0 auto; padding: 2em;
+        }
+        
+        .card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(60,90,170,0.08);
+            padding: 1.5em 2em;
+            margin-bottom: 1.5em;
+        }
+        .card h3 {
+            margin: 0 0 1em 0;
+            color: var(--text-heading);
+            font-size: 1.15em;
+            border-bottom: 2px solid var(--border-light);
+            padding-bottom: 0.5em;
+        }
+        
+        /* Toggle Switch */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 26px;
+        }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccd;
+            transition: 0.3s;
+            border-radius: 26px;
+        }
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+        input:checked + .toggle-slider {
+            background-color: var(--accent);
+        }
+        input:checked + .toggle-slider:before {
+            transform: translateX(24px);
+        }
+        
+        /* Profile Picture */
+        .profile-section {
+            display: flex; align-items: center; gap: 2em; flex-wrap: wrap;
+        }
+        .profile-pic-container {
+            position: relative; width: 150px; height: 150px;
+        }
+        .profile-pic {
+            width: 150px; height: 150px; border-radius: 50%;
+            object-fit: cover; background: #e8eef8;
+            border: 4px solid #3875e8;
+        }
+        .profile-pic-placeholder {
+            width: 150px; height: 150px; border-radius: 50%;
+            background: linear-gradient(135deg, #e8eef8, #d4e0f0);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 3em; color: #8899bb;
+            border: 4px solid #3875e8;
+        }
+        .pic-actions {
+            margin-top: 1em; display: flex; flex-direction: column; gap: 0.5em;
+        }
+        
+        /* Forms */
+        .form-group {
+            margin-bottom: 1.2em;
+        }
+        .form-group label {
+            display: block; font-weight: 500; color: var(--text-secondary);
+            margin-bottom: 0.4em; font-size: 0.95em;
+        }
+        .form-group input {
+            width: 100%; max-width: 350px; padding: 0.6em 0.8em;
+            font-size: 1em; border: 1px solid var(--border-color);
+            border-radius: 6px; transition: border 0.2s;
+            background: var(--bg-input); color: var(--text-primary);
+        }
+        .form-group input:focus {
+            outline: none; border-color: var(--accent);
+        }
+        .form-row {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1em;
+        }
+        
+        .btn-primary {
+            background: var(--accent); color: #fff; border: none;
+            padding: 0.6em 1.5em; border-radius: 6px;
+            font-weight: 600; cursor: pointer; font-size: 1em;
+            transition: background 0.2s;
+        }
+        .btn-primary:hover { background: var(--accent-hover); }
+        .btn-secondary {
+            background: var(--bg-hover); color: var(--text-secondary); border: 1px solid var(--border-color);
+            padding: 0.5em 1.2em; border-radius: 6px;
+            cursor: pointer; font-size: 0.9em;
+        }
+        .btn-secondary:hover { background: var(--border-light); }
+        .btn-danger {
+            background: var(--danger-bg); color: var(--danger); border: 1px solid var(--danger);
+            padding: 0.5em 1em; border-radius: 6px;
+            cursor: pointer; font-size: 0.9em;
+        }
+        .btn-danger:hover { opacity: 0.9; }
+        
+        /* Alerts */
+        .alert {
+            padding: 0.8em 1.2em; border-radius: 8px; margin-bottom: 1em;
+            font-size: 0.95em;
+        }
+        .alert-success {
+            background: var(--success-bg); border: 1px solid var(--success-text); color: var(--success-text);
+        }
+        .alert-error {
+            background: var(--danger-bg); border: 1px solid var(--danger); color: var(--danger);
+        }
+        
+        /* File Input Styling */
+        .file-input-wrapper {
+            position: relative; overflow: hidden; display: inline-block;
+        }
+        .file-input-wrapper input[type="file"] {
+            position: absolute; left: 0; top: 0; opacity: 0;
+            cursor: pointer; width: 100%; height: 100%;
+        }
+        
+        /* Nav */
+        .user-label { margin: 0.4em 0 0.6em 0; text-align: center; color: #22409d; font-size: 1em; }
+        nav {
+            background: #243869; padding: 0.5em 0;
+            display: flex; justify-content: center; position: relative;
+            box-shadow: 0 2px 6px rgba(60,60,100,0.07);
+        }
+        .tabs { display: flex; gap: 1.5em; }
+        .tab {
+            color: #fff; text-decoration: none; padding: 0.5em 1.2em;
+            font-size: 1.05em; border-radius: 3px 3px 0 0;
+            transition: background 0.15s;
+        }
+        .tab.active, .tab:hover { background: #3875e8; }
+        .logout-btn {
+            position: absolute; right: 1.5em; top: 0.55em;
+            background: #ee4747; color: #fff; border: none;
+            font-size: 1em; border-radius: 6px; padding: 0.4em 1em;
+            cursor: pointer; font-weight: 600;
+        }
+        .logout-btn:hover { background: #b10c0c; }
+        
+        .back-link {
+            display: inline-block; margin-bottom: 1em;
+            color: #3875e8; text-decoration: none; font-size: 0.95em;
+        }
+        .back-link:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+  <!-- App Header -->
+  <header class="app-header">
+    <div class="header-left"></div>
+    <div class="header-center">
+      <h1 class="app-title"><span class="icon">💸</span>MoneyFlow<span class="app-version">v1.2.0</span></h1>
+      <p class="app-subtitle">Your personal finance command center</p>
+    </div>
+    <div class="header-right">
+      <a href="/about" class="about-link">ℹ️ About</a>
+      <a href="/logout" class="header-logout">🚪 Sign Out</a>
+    </div>
+  </header>
+  
+  <nav>
+    <div class="tabs">
+      <a href="/home" class="tab">Dashboard</a>
+      <a href="/budget" class="tab">Budget</a>
+      <a href="/expenses" class="tab">Expenses</a>
+      <a href="/income-taxes" class="tab">Income & Taxes</a>
+      <a href="/tools" class="tab">Tools</a>
+      <a href="/forum" class="tab">Resources</a>
+    </div>
+  </nav>
+  
+  <div class="page-content">
+    <a href="/home" class="back-link">← Back to Home</a>
+    
+    {% if success %}
+    <div class="alert alert-success">✓ {{ success }}</div>
+    {% endif %}
+    {% if error %}
+    <div class="alert alert-error">⚠ {{ error }}</div>
+    {% endif %}
+    
+    <!-- Profile Picture -->
+    <div class="card">
+      <h3>Profile Picture</h3>
+      <div class="profile-section">
+        <div class="profile-pic-container">
+          {% if profile_pic_data %}
+          <img src="data:{{ user.profile_picture_type }};base64,{{ profile_pic_data }}" alt="Profile" class="profile-pic">
+          {% else %}
+          <div class="profile-pic-placeholder">{{ user.name[0].upper() }}</div>
+          {% endif %}
+        </div>
+        <div class="pic-actions">
+          <form method="post" action="/profile/upload-picture" enctype="multipart/form-data" style="display:flex; flex-direction:column; gap:0.5em;">
+            <div class="file-input-wrapper">
+              <button type="button" class="btn-secondary">Choose Image</button>
+              <input type="file" name="picture" accept="image/jpeg,image/png,image/gif,image/webp" onchange="this.form.submit()" required>
+            </div>
+            <small style="color:#889ab0;">Max 10MB. JPEG, PNG, GIF, or WebP.</small>
+          </form>
+          {% if profile_pic_data %}
+          <form method="post" action="/profile/remove-picture">
+            <button type="submit" class="btn-danger">Remove Picture</button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    
+    <!-- Basic Info -->
+    <div class="card">
+      <h3>Account Information</h3>
+      <form method="post" action="/profile/update-info">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Display Name</label>
+            <input type="text" name="name" value="{{ user.name }}" required>
+          </div>
+          <div class="form-group">
+            <label>Username</label>
+            <input type="text" name="username" value="{{ user.username }}" required pattern="[a-zA-Z0-9_]+" title="Letters, numbers, and underscores only">
+          </div>
+        </div>
+        <button type="submit" class="btn-primary">Save Changes</button>
+      </form>
+    </div>
+    
+    <!-- Change Password -->
+    <div class="card">
+      <h3>Change Password</h3>
+      <form method="post" action="/profile/update-password">
+        <div class="form-group">
+          <label>Current Password</label>
+          <input type="password" name="current_password" required>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>New Password</label>
+            <input type="password" name="new_password" required minlength="6">
+          </div>
+          <div class="form-group">
+            <label>Confirm New Password</label>
+            <input type="password" name="confirm_password" required minlength="6">
+          </div>
+        </div>
+        <button type="submit" class="btn-primary">Update Password</button>
+      </form>
+    </div>
+    
+    <!-- Appearance Settings -->
+    <div class="card">
+      <h3>🎨 Appearance</h3>
+      <div style="display:flex; align-items:center; justify-content:space-between; padding:0.5em 0;">
+        <div>
+          <div style="font-weight:500; color:var(--text-primary);">Dark Mode</div>
+          <div style="font-size:0.9em; color:var(--text-secondary);">Switch between light and dark themes</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="darkModeToggle" {% if dark_mode %}checked{% endif %} onchange="toggleDarkMode()">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+    
+    <!-- Data Management -->
+    <div class="card" id="data">
+      <h3>📊 Data Management</h3>
+      <p style="color:#667a9a; font-size:0.95em; margin-bottom:1.5em;">
+        Manage your expense data including bulk imports.
+      </p>
+      
+      <div style="display:flex; gap:1em; flex-wrap:wrap; align-items:center;">
+        <a href="/expenses" class="btn-secondary" style="text-decoration:none;">
+          📈 View Expenses
+        </a>
+        <span style="color:#889ab0; font-size:0.9em;">
+          Bulk upload expenses via CSV on the Expenses page
+        </span>
+      </div>
+    </div>
+    
+    <!-- Danger Zone -->
+    <div class="card" style="border: 2px solid #f5c6cb;">
+      <h3 style="color:#c44;">⚠️ Danger Zone</h3>
+      <p style="color:#667a9a; font-size:0.95em; margin-bottom:1em;">
+        Once you delete your account and data, there is no going back. Please be certain.
+      </p>
+      
+      <button type="button" class="btn-danger" onclick="showDeleteModal()">
+        Delete My Account and All Data
+      </button>
+    </div>
+  </div>
+  
+  <!-- Delete Account Modal -->
+  <div class="modal-overlay" id="deleteModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:1000; justify-content:center; align-items:center;">
+    <div class="modal" style="background:#fff; border-radius:12px; padding:2em; max-width:500px; width:90%; box-shadow:0 4px 20px rgba(0,0,0,0.2);">
+      <h4 style="color:#c44; margin:0 0 1em 0;">⚠️ Delete Account - This Cannot Be Undone</h4>
+      
+      <div id="deleteStep1">
+        <p style="color:#667a9a; margin-bottom:1.5em;">
+          This will permanently delete:<br>
+          • Your account and profile<br>
+          • All income and tax data<br>
+          • All expenses and categories<br>
+          • All budget settings and fixed costs
+        </p>
+        <p style="font-weight:600; color:#c44; margin-bottom:1em;">
+          To proceed, complete the following confirmations:
+        </p>
+        
+        <form method="post" action="/profile/delete-all-data" id="deleteForm">
+          <div class="form-group">
+            <label style="color:#c44;">Type "DELETE" to confirm:</label>
+            <input type="text" name="confirmation1" id="deleteConfirm1" required placeholder="DELETE" autocomplete="off" style="max-width:100%;">
+          </div>
+          
+          <div class="form-group">
+            <label style="color:#c44;">Type your username "{{ user.username }}" to confirm:</label>
+            <input type="text" name="confirmation2" id="deleteConfirm2" required placeholder="{{ user.username }}" autocomplete="off" style="max-width:100%;">
+          </div>
+          
+          <div class="form-group">
+            <label style="color:#c44;">Enter your password to verify:</label>
+            <input type="password" name="password" id="deletePassword" required style="max-width:100%;">
+          </div>
+          
+          <div style="display:flex; gap:1em; margin-top:1.5em;">
+            <button type="button" class="btn-secondary" onclick="hideDeleteModal()">Cancel</button>
+            <button type="submit" class="btn-danger" style="background:#c44; color:#fff; padding:0.6em 1.5em;">
+              Permanently Delete Everything
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    function showDeleteModal() {
+      document.getElementById('deleteModal').style.display = 'flex';
+    }
+    
+    function hideDeleteModal() {
+      document.getElementById('deleteModal').style.display = 'none';
+      document.getElementById('deleteConfirm1').value = '';
+      document.getElementById('deleteConfirm2').value = '';
+      document.getElementById('deletePassword').value = '';
+    }
+    
+    // Close modal on background click
+    document.getElementById('deleteModal').addEventListener('click', function(e) {
+      if (e.target === this) {
+        hideDeleteModal();
+      }
+    });
+    
+    // Dark Mode Toggle
+    async function toggleDarkMode() {
+      try {
+        const response = await fetch('/profile/toggle-dark-mode', { method: 'POST' });
+        const data = await response.json();
+        document.documentElement.setAttribute('data-theme', data.dark_mode ? 'dark' : 'light');
+      } catch (err) {
+        console.error('Error toggling dark mode:', err);
+        // Revert checkbox
+        document.getElementById('darkModeToggle').checked = !document.getElementById('darkModeToggle').checked;
+      }
+    }
+  </script>
+</body>
+</html>
+

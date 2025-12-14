@@ -1,0 +1,2751 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="{% if dark_mode %}dark{% else %}light{% endif %}">
+<head>
+    <meta charset="UTF-8">
+    <title>Tools | MoneyFlow</title>
+    <link rel="stylesheet" href="/static/app.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-primary: #f5f6fa;
+            --bg-card: #fff;
+            --bg-input: #fff;
+            --bg-header: linear-gradient(135deg, #1a3366 0%, #243869 50%, #2d4a7c 100%);
+            --text-primary: #222;
+            --text-secondary: #667a9a;
+            --text-heading: #243869;
+            --border-light: #e8eef8;
+            --border-color: #ccd;
+            --nav-bg: #243869;
+            --accent: #3875e8;
+        }
+        [data-theme="dark"] {
+            --bg-primary: #1a1d24;
+            --bg-card: #242830;
+            --bg-input: #2d323c;
+            --bg-header: linear-gradient(135deg, #0d1117 0%, #161920 50%, #1f242d 100%);
+            --text-primary: #e4e6eb;
+            --text-secondary: #98a3b8;
+            --text-heading: #b8c5db;
+            --border-light: #353a47;
+            --border-color: #3d4450;
+            --nav-bg: #161920;
+            --accent: #4d8ef0;
+        }
+        
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-primary); color: var(--text-primary); }
+        
+        /* App Header */
+        .app-header { background: var(--bg-header); padding: 1em 2em; display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid var(--accent); }
+        .header-left { flex: 1; }
+        .header-center { flex: 2; text-align: center; }
+        .header-right { flex: 1; display: flex; justify-content: flex-end; align-items: center; gap: 1em; }
+        .app-title { margin: 0; font-size: 2.2em; font-weight: 700; color: #fff; }
+        .app-title .icon { margin-right: 0.3em; }
+        .app-subtitle { margin: 0.3em 0 0 0; font-size: 0.9em; color: rgba(255,255,255,0.75); }
+        .app-version { display: inline-block; background: rgba(255,255,255,0.15); padding: 0.15em 0.6em; border-radius: 12px; font-size: 0.75em; color: rgba(255,255,255,0.9); margin-left: 0.5em; }
+        .about-link { color: rgba(255,255,255,0.8); text-decoration: none; font-size: 0.9em; padding: 0.5em 1em; border-radius: 6px; background: rgba(255,255,255,0.1); transition: all 0.2s; }
+        .about-link:hover { background: rgba(255,255,255,0.2); color: #fff; }
+        
+        /* Profile dropdown */
+        .profile-dropdown { position: relative; }
+        .profile-btn { display: flex; align-items: center; gap: 0.5em; background: rgba(255,255,255,0.1); border: none; padding: 0.5em 1em; border-radius: 8px; cursor: pointer; color: #fff; font-size: 0.9em; }
+        .profile-btn:hover { background: rgba(255,255,255,0.2); }
+        .profile-avatar { width: 44px; height: 44px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 1.1em; overflow: hidden; border: 2px solid rgba(255,255,255,0.3); }
+        .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .dropdown-menu { display: none; position: absolute; right: 0; top: 100%; background: var(--bg-card); border-radius: 10px; box-shadow: 0 8px 30px rgba(0,0,0,0.25); min-width: 200px; margin-top: 0.5em; z-index: 1000; overflow: hidden; }
+        .dropdown-menu.active { display: block; }
+        .dropdown-header { padding: 1em; background: var(--border-light); }
+        .dropdown-header .name { font-weight: 600; color: var(--text-heading); }
+        .dropdown-header .username { font-size: 0.85em; color: var(--text-secondary); }
+        .dropdown-item { display: block; padding: 0.8em 1em; color: var(--text-primary); text-decoration: none; font-size: 0.9em; }
+        .dropdown-item:hover { background: var(--border-light); }
+        .dropdown-item.danger { color: #dc3545; }
+        .dropdown-divider { height: 1px; background: var(--border-light); }
+        
+        /* Navigation */
+        nav { background: var(--nav-bg); padding: 0; display: flex; justify-content: center; }
+        .tabs { display: flex; gap: 0; }
+        .tab { color: rgba(255,255,255,0.8); text-decoration: none; padding: 1em 1.5em; font-size: 0.95em; font-weight: 500; border-bottom: 3px solid transparent; }
+        .tab:hover { color: #fff; background: rgba(255,255,255,0.05); }
+        .tab.active { color: #fff; background: rgba(255,255,255,0.1); border-bottom-color: var(--accent); font-weight: 600; }
+        
+        /* Page Content */
+        .page-content { max-width: 1600px; margin: 0 auto; padding: 1.5em; }
+        
+        .tools-nav { display: flex; gap: 0.5em; flex-wrap: wrap; margin-bottom: 1.5em; align-items: center; }
+        .tool-tab { padding: 0.8em 1.5em; background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 8px; cursor: pointer; font-size: 0.95em; color: var(--text-primary); transition: all 0.2s; }
+        .tool-tab:hover { background: var(--border-light); }
+        .tool-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+        
+        /* Saved Scenarios */
+        .saved-scenarios-section { margin-left: auto; display: flex; align-items: center; gap: 0.5em; }
+        .saved-scenarios-select { padding: 0.6em 1em; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-input); color: var(--text-primary); font-size: 0.9em; min-width: 200px; }
+        .btn-load { background: var(--border-light); border: 1px solid var(--border-color); padding: 0.6em 1em; border-radius: 6px; cursor: pointer; font-size: 0.9em; }
+        .btn-load:hover { background: var(--accent); color: #fff; }
+        
+        /* Calculator Card */
+        .calculator-card { background: var(--bg-card); border-radius: 12px; box-shadow: 0 2px 12px rgba(60,90,170,0.08); padding: 1.5em; }
+        .calculator-card h2 { margin: 0 0 0.3em 0; color: var(--text-heading); font-size: 1.5em; }
+        .calculator-card .subtitle { color: var(--text-secondary); margin-bottom: 1.5em; }
+        
+        /* Toggle Row */
+        .toggle-row { display: flex; align-items: center; gap: 1.5em; margin-bottom: 1.5em; padding: 1em; background: var(--border-light); border-radius: 8px; flex-wrap: wrap; }
+        .toggle-row label { display: flex; align-items: center; gap: 0.5em; cursor: pointer; font-weight: 500; }
+        .toggle-row input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
+        
+        /* Calculator Layout */
+        .calculator-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 1.5em; }
+        .calculator-grid.single { grid-template-columns: 1fr; max-width: 520px; }
+        
+        .scenario-box { background: var(--bg-primary); border-radius: 10px; padding: 1.5em; border: 2px solid var(--border-light); }
+        .scenario-box h3 { margin: 0 0 1em 0; color: var(--text-heading); font-size: 1.1em; display: flex; align-items: center; gap: 0.5em; }
+        .scenario-box.scenario-a { border-color: var(--accent); }
+        .scenario-box.scenario-b { border-color: #28a745; }
+        .scenario-box.scenario-a h3::before { content: ''; width: 12px; height: 12px; border-radius: 50%; background: var(--accent); }
+        .scenario-box.scenario-b h3::before { content: ''; width: 12px; height: 12px; border-radius: 50%; background: #28a745; }
+        
+        /* Form Groups */
+        .form-section { margin-bottom: 1.5em; }
+        .form-section h4 { margin: 0 0 0.8em 0; color: var(--text-heading); font-size: 0.95em; padding-bottom: 0.3em; border-bottom: 1px solid var(--border-light); }
+        
+        .form-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1em; margin-bottom: 0.8em; }
+        .form-row.single { grid-template-columns: 1fr; }
+        .form-row.triple { grid-template-columns: repeat(3, 1fr); }
+        
+        .form-group { display: flex; flex-direction: column; gap: 0.3em; }
+        .form-group label { font-size: 0.85em; color: var(--text-secondary); font-weight: 500; }
+        .form-group input, .form-group select {
+            padding: 0.6em 0.8em; border: 1px solid var(--border-color); border-radius: 6px;
+            font-size: 0.95em; background: var(--bg-input); color: var(--text-primary);
+        }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(56,117,232,0.1); }
+        .form-group .hint { font-size: 0.75em; color: var(--text-secondary); }
+        
+        /* Input with toggle */
+        .input-with-toggle { display: flex; gap: 0; }
+        .input-with-toggle input { flex: 1; border-radius: 6px 0 0 6px; }
+        .input-with-toggle .toggle-btn { 
+            padding: 0.6em 0.8em; border: 1px solid var(--border-color); border-left: none;
+            background: var(--border-light); cursor: pointer; font-size: 0.9em; font-weight: 600;
+            border-radius: 0 6px 6px 0; min-width: 40px; text-align: center;
+        }
+        .input-with-toggle .toggle-btn:hover { background: var(--accent); color: #fff; }
+        .input-with-toggle .toggle-btn.active { background: var(--accent); color: #fff; }
+        
+        .btn-row { display: flex; gap: 0.8em; margin-top: 1em; flex-wrap: wrap; }
+        .btn-calculate { background: var(--accent); color: #fff; border: none; padding: 0.8em 2em; border-radius: 8px; font-size: 1em; font-weight: 600; cursor: pointer; flex: 1; }
+        .btn-calculate:hover { background: #2d5cc9; }
+        .btn-save { background: #28a745; color: #fff; border: none; padding: 0.8em 1.5em; border-radius: 8px; font-size: 1em; font-weight: 600; cursor: pointer; }
+        .btn-save:hover { background: #1e7e34; }
+        
+        /* Results Section */
+        .results-section { margin-top: 2em; }
+        .results-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5em; }
+        
+        .result-card { background: var(--bg-card); border-radius: 10px; padding: 1.2em; box-shadow: 0 2px 8px rgba(60,90,170,0.06); }
+        .result-card h4 { margin: 0 0 1em 0; color: var(--text-heading); font-size: 1em; border-bottom: 2px solid var(--border-light); padding-bottom: 0.5em; }
+        
+        .result-row { display: flex; justify-content: space-between; padding: 0.5em 0; border-bottom: 1px solid var(--border-light); }
+        .result-row:last-child { border-bottom: none; }
+        .result-row .label { color: var(--text-secondary); font-size: 0.9em; }
+        .result-row .value { font-weight: 600; color: var(--text-heading); }
+        .result-row .value.highlight { color: var(--accent); font-size: 1.1em; }
+        .result-row .value.positive { color: #28a745; }
+        .result-row .value.negative { color: #dc3545; }
+        
+        /* Chart Section */
+        .chart-section { margin-top: 2em; }
+        .chart-card { background: var(--bg-card); border-radius: 10px; padding: 1.5em; box-shadow: 0 2px 8px rgba(60,90,170,0.06); }
+        .chart-card h4 { margin: 0 0 1em 0; color: var(--text-heading); font-size: 1.1em; }
+        .chart-container { height: 350px; position: relative; }
+        
+        /* Comparison Results */
+        .comparison-summary { background: linear-gradient(135deg, var(--accent) 0%, #2d5cc9 100%); border-radius: 10px; padding: 1.5em; color: #fff; margin-top: 1.5em; }
+        .comparison-summary h4 { margin: 0 0 1em 0; font-size: 1.1em; }
+        .comparison-row { display: flex; justify-content: space-between; padding: 0.5em 0; }
+        .comparison-row .label { opacity: 0.9; }
+        .comparison-row .value { font-weight: 600; }
+        
+        /* Amortization Tables - Side by Side */
+        .amortization-section { margin-top: 2em; }
+        .amortization-header { display: flex; gap: 0.5em; margin-bottom: 1em; flex-wrap: wrap; }
+        .amortization-toggle { background: var(--border-light); border: none; padding: 0.8em 1.5em; border-radius: 8px; cursor: pointer; font-size: 0.9em; color: var(--text-primary); }
+        .amortization-toggle:hover { background: var(--accent); color: #fff; }
+        .amortization-toggle.active { background: var(--accent); color: #fff; }
+        
+        .amortization-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 1.5em; }
+        .amortization-card { background: var(--bg-card); border-radius: 10px; padding: 1em; box-shadow: 0 2px 8px rgba(60,90,170,0.06); }
+        .amortization-card h5 { margin: 0 0 0.8em 0; color: var(--text-heading); font-size: 0.95em; }
+        .amortization-table { max-height: 400px; overflow-y: auto; }
+        .amortization-table table { width: 100%; border-collapse: collapse; font-size: 0.8em; }
+        .amortization-table th { background: var(--border-light); padding: 0.6em; text-align: left; position: sticky; top: 0; }
+        .amortization-table td { padding: 0.5em; border-bottom: 1px solid var(--border-light); }
+        .amortization-table tr:nth-child(even) { background: rgba(0,0,0,0.02); }
+        
+        /* Save Modal */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-overlay.active { display: flex; }
+        .modal { background: var(--bg-card); border-radius: 12px; padding: 1.5em; max-width: 400px; width: 90%; }
+        .modal h3 { margin: 0 0 1em 0; color: var(--text-heading); }
+        .modal input { width: 100%; padding: 0.8em; border: 1px solid var(--border-color); border-radius: 6px; font-size: 1em; margin-bottom: 1em; background: var(--bg-input); color: var(--text-primary); }
+        .modal-btns { display: flex; gap: 0.8em; justify-content: flex-end; }
+        .modal-btns button { padding: 0.7em 1.5em; border-radius: 6px; font-weight: 600; cursor: pointer; }
+        .modal-btns .btn-cancel { background: var(--border-light); border: none; color: var(--text-primary); }
+        .modal-btns .btn-confirm { background: var(--accent); border: none; color: #fff; }
+        
+        @media (max-width: 900px) {
+            .calculator-grid { grid-template-columns: 1fr; }
+            .form-row { grid-template-columns: 1fr; }
+            .form-row.triple { grid-template-columns: 1fr; }
+            .amortization-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+  <!-- App Header -->
+  <header class="app-header">
+    <div class="header-left"></div>
+    <div class="header-center">
+      <h1 class="app-title"><span class="icon">💸</span>MoneyFlow<span class="app-version">v1.2.0</span></h1>
+      <p class="app-subtitle">Your personal finance command center</p>
+    </div>
+    <div class="header-right">
+      <a href="/about" class="about-link">ℹ️ About</a>
+      <div class="profile-dropdown">
+        <button class="profile-btn" onclick="toggleProfileDropdown()">
+          <div class="profile-avatar">
+            {% if profile_picture_b64 %}<img src="data:{{ profile_picture_type }};base64,{{ profile_picture_b64 }}" alt="">{% else %}{{ user.name[0].upper() }}{% endif %}
+          </div>
+          <span>{{ user.name.split()[0] }}</span>
+          <span style="font-size:0.7em;">▼</span>
+        </button>
+        <div class="dropdown-menu" id="profileDropdown">
+          <div class="dropdown-header">
+            <div class="name">{{ user.name }}</div>
+            <div class="username">@{{ user.username }}</div>
+          </div>
+          <a href="/profile" class="dropdown-item">⚙️ Account Settings</a>
+          <a href="/profile#data" class="dropdown-item">📊 Manage Data</a>
+          <div class="dropdown-divider"></div>
+          <a href="/logout" class="dropdown-item danger">🚪 Sign Out</a>
+        </div>
+      </div>
+    </div>
+  </header>
+  
+  <!-- Navigation -->
+  <nav>
+    <div class="tabs">
+      <a href="/home" class="tab">Dashboard</a>
+      <a href="/budget" class="tab">Budget</a>
+      <a href="/expenses" class="tab">Expenses</a>
+      <a href="/income-taxes" class="tab">Income & Taxes</a>
+      <a href="/tools" class="tab active">Tools</a>
+      <a href="/forum" class="tab">Resources</a>
+    </div>
+  </nav>
+
+  <div class="page-content">
+    <div class="tools-nav">
+      <button class="tool-tab active" id="mortgageTab" onclick="showTool('mortgage')">🏠 Mortgage Calculator</button>
+      <button class="tool-tab" id="networthTab" onclick="showTool('networth')">💰 Net Worth Manager</button>
+      <button class="tool-tab" id="projectionsTab" onclick="showTool('projections')">📈 Investment Projections</button>
+      <button class="tool-tab" id="montecarloTab" onclick="showTool('montecarlo')">🎲 Monte Carlo</button>
+      
+      <div class="saved-scenarios-section" id="mortgageSavedSection">
+        <select id="savedScenarios" class="saved-scenarios-select">
+          <option value="">-- Load Saved Scenario --</option>
+          {% for scenario in saved_scenarios %}
+          <option value="{{ scenario.id }}">{{ scenario.name }} ({{ scenario.created_at.strftime('%m/%d/%Y') }})</option>
+          {% endfor %}
+        </select>
+        <button class="btn-load" onclick="loadScenario()">Load</button>
+        <button class="btn-delete" onclick="deleteMortgageScenario()" style="background: #fee; border: 1px solid #fcc; color: #c44; padding: 0.4em 0.8em; border-radius: 5px; cursor: pointer; margin-left: 0.3em;">🗑</button>
+      </div>
+    </div>
+    
+    <div id="mortgage-calculator" class="calculator-card">
+      <h2>🏠 Mortgage / Home Loan Calculator</h2>
+      <p class="subtitle">Calculate your monthly payments, total interest, and compare different loan scenarios.</p>
+      
+      <div class="toggle-row">
+        <label>
+          <input type="checkbox" id="compareMode" onchange="toggleCompareMode()">
+          <strong>Compare Two Scenarios</strong>
+        </label>
+        <span style="color: var(--text-secondary); font-size: 0.9em;">Enable to compare different loan options side by side</span>
+      </div>
+      
+      <div class="calculator-grid single" id="calculatorGrid">
+        <!-- Scenario A -->
+        <div class="scenario-box scenario-a">
+          <h3>Scenario A</h3>
+          
+          <div class="form-section">
+            <h4>Loan Details</h4>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Home Price</label>
+                <input type="number" id="homePriceA" value="400000" min="0" step="1000" oninput="updateDownPaymentDisplay('A')">
+              </div>
+              <div class="form-group">
+                <label>Down Payment</label>
+                <div class="input-with-toggle">
+                  <input type="number" id="downPaymentA" value="80000" min="0" step="1000" oninput="updateDownPaymentDisplay('A')">
+                  <button type="button" class="toggle-btn active" id="dpToggleA" onclick="toggleDownPaymentMode('A')">$</button>
+                </div>
+                <span class="hint" id="downPaymentHintA">20.0% of home price</span>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Loan Amount</label>
+                <input type="number" id="loanAmountA" value="320000" readonly style="background: var(--border-light);">
+              </div>
+              <div class="form-group">
+                <label>Interest Rate (%)</label>
+                <input type="number" id="interestRateA" value="6.5" min="0" max="20" step="0.125">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Loan Term</label>
+                <select id="loanTermA">
+                  <option value="30">30 years</option>
+                  <option value="20">20 years</option>
+                  <option value="15">15 years</option>
+                  <option value="10">10 years</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Start Date</label>
+                <input type="date" id="startDateA" value="{{ current_date }}">
+              </div>
+            </div>
+          </div>
+          
+          <div class="form-section">
+            <h4>Additional Costs (Optional)</h4>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Property Tax ($/year)</label>
+                <input type="number" id="propertyTaxA" value="4800" min="0" step="100">
+              </div>
+              <div class="form-group">
+                <label>Home Insurance ($/year)</label>
+                <input type="number" id="homeInsuranceA" value="1800" min="0" step="100">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>PMI ($/month)</label>
+                <input type="number" id="pmiA" value="0" min="0" step="10">
+                <span class="hint">Usually required if down payment < 20%</span>
+              </div>
+              <div class="form-group">
+                <label>HOA Fees ($/month)</label>
+                <input type="number" id="hoaA" value="0" min="0" step="10">
+              </div>
+            </div>
+          </div>
+          
+          <div class="form-section">
+            <h4>Extra Payments (Optional)</h4>
+            <div class="form-row triple">
+              <div class="form-group">
+                <label>Extra Monthly ($)</label>
+                <input type="number" id="extraMonthlyA" value="0" min="0" step="50">
+              </div>
+              <div class="form-group">
+                <label>Extra Yearly ($)</label>
+                <input type="number" id="extraYearlyA" value="0" min="0" step="100">
+              </div>
+              <div class="form-group">
+                <label>Start Extra From</label>
+                <input type="date" id="extraStartDateA" value="{{ current_date }}">
+                <span class="hint">When to begin extra payments</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Scenario B (hidden by default) -->
+        <div class="scenario-box scenario-b" id="scenarioB" style="display: none;">
+          <h3>Scenario B</h3>
+          
+          <div class="form-section">
+            <h4>Loan Details</h4>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Home Price</label>
+                <input type="number" id="homePriceB" value="400000" min="0" step="1000" oninput="updateDownPaymentDisplay('B')">
+              </div>
+              <div class="form-group">
+                <label>Down Payment</label>
+                <div class="input-with-toggle">
+                  <input type="number" id="downPaymentB" value="100000" min="0" step="1000" oninput="updateDownPaymentDisplay('B')">
+                  <button type="button" class="toggle-btn active" id="dpToggleB" onclick="toggleDownPaymentMode('B')">$</button>
+                </div>
+                <span class="hint" id="downPaymentHintB">25.0% of home price</span>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Loan Amount</label>
+                <input type="number" id="loanAmountB" value="300000" readonly style="background: var(--border-light);">
+              </div>
+              <div class="form-group">
+                <label>Interest Rate (%)</label>
+                <input type="number" id="interestRateB" value="6.25" min="0" max="20" step="0.125">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Loan Term</label>
+                <select id="loanTermB">
+                  <option value="30">30 years</option>
+                  <option value="20">20 years</option>
+                  <option value="15" selected>15 years</option>
+                  <option value="10">10 years</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Start Date</label>
+                <input type="date" id="startDateB" value="{{ current_date }}">
+              </div>
+            </div>
+          </div>
+          
+          <div class="form-section">
+            <h4>Additional Costs (Optional)</h4>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Property Tax ($/year)</label>
+                <input type="number" id="propertyTaxB" value="4800" min="0" step="100">
+              </div>
+              <div class="form-group">
+                <label>Home Insurance ($/year)</label>
+                <input type="number" id="homeInsuranceB" value="1800" min="0" step="100">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>PMI ($/month)</label>
+                <input type="number" id="pmiB" value="0" min="0" step="10">
+              </div>
+              <div class="form-group">
+                <label>HOA Fees ($/month)</label>
+                <input type="number" id="hoaB" value="0" min="0" step="10">
+              </div>
+            </div>
+          </div>
+          
+          <div class="form-section">
+            <h4>Extra Payments (Optional)</h4>
+            <div class="form-row triple">
+              <div class="form-group">
+                <label>Extra Monthly ($)</label>
+                <input type="number" id="extraMonthlyB" value="0" min="0" step="50">
+              </div>
+              <div class="form-group">
+                <label>Extra Yearly ($)</label>
+                <input type="number" id="extraYearlyB" value="0" min="0" step="100">
+              </div>
+              <div class="form-group">
+                <label>Start Extra From</label>
+                <input type="date" id="extraStartDateB" value="{{ current_date }}">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="btn-row">
+        <button class="btn-calculate" onclick="calculateMortgage()">Calculate</button>
+        <button class="btn-save" onclick="showSaveModal()">💾 Save Scenario</button>
+      </div>
+      
+      <!-- Results -->
+      <div class="results-section" id="resultsSection" style="display: none;">
+        <div class="results-grid" id="resultsGrid">
+          <!-- Results will be populated by JavaScript -->
+        </div>
+        
+        <div class="comparison-summary" id="comparisonSummary" style="display: none;">
+          <!-- Comparison summary will be populated -->
+        </div>
+        
+        <!-- Chart -->
+        <div class="chart-section">
+          <div class="chart-card">
+            <h4>📈 Mortgage Balance Over Time</h4>
+            <div class="chart-container">
+              <canvas id="mortgageChart"></canvas>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Amortization Tables - Side by Side -->
+        <div class="amortization-section">
+          <div class="amortization-header">
+            <button class="amortization-toggle" id="amortToggle" onclick="toggleAmortization()">📊 Show Amortization Schedule</button>
+          </div>
+          <div class="amortization-grid" id="amortizationGrid" style="display: none;">
+            <div class="amortization-card" id="amortCardA">
+              <h5 style="color: var(--accent);">Scenario A</h5>
+              <div class="amortization-table" id="amortizationTableA"></div>
+            </div>
+            <div class="amortization-card" id="amortCardB" style="display: none;">
+              <h5 style="color: #28a745;">Scenario B</h5>
+              <div class="amortization-table" id="amortizationTableB"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Net Worth Manager Section -->
+    <div id="networth-manager" class="calculator-card" style="display: none;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1em; margin-bottom: 1em;">
+        <div>
+          <h2 style="margin: 0;">💰 Net Worth Manager</h2>
+          <p class="subtitle" style="margin: 0.3em 0 0 0;">Track your assets and liabilities to monitor your net worth over time.</p>
+        </div>
+        <a href="/tools/networth/csv-export" style="background: var(--bg-primary); border: 1px solid var(--border-color); padding: 0.5em 1em; border-radius: 6px; text-decoration: none; color: var(--text-primary); font-size: 0.85em;">📥 Export CSV</a>
+      </div>
+      
+      <!-- Net Worth Summary with Performance -->
+      <div class="networth-summary" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1em; margin-bottom: 1em;">
+        <div class="summary-card" style="background: linear-gradient(135deg, rgba(40,167,69,0.1), rgba(40,167,69,0.2)); padding: 1.2em; border-radius: 10px; text-align: center; border-left: 4px solid #28a745;">
+          <div style="font-size: 0.85em; color: var(--text-secondary);">Total Assets</div>
+          <div style="font-size: 1.8em; font-weight: 700; color: #28a745;">${{ "{:,.0f}".format(networth_summary.total_assets) }}</div>
+        </div>
+        <div class="summary-card" style="background: linear-gradient(135deg, rgba(220,53,69,0.1), rgba(220,53,69,0.2)); padding: 1.2em; border-radius: 10px; text-align: center; border-left: 4px solid #dc3545;">
+          <div style="font-size: 0.85em; color: var(--text-secondary);">Total Liabilities</div>
+          <div style="font-size: 1.8em; font-weight: 700; color: #dc3545;">${{ "{:,.0f}".format(networth_summary.total_liabilities) }}</div>
+        </div>
+        <div class="summary-card" style="background: linear-gradient(135deg, rgba(56,117,232,0.1), rgba(56,117,232,0.2)); padding: 1.2em; border-radius: 10px; text-align: center; border-left: 4px solid var(--accent);">
+          <div style="font-size: 0.85em; color: var(--text-secondary);">Net Worth</div>
+          <div style="font-size: 1.8em; font-weight: 700; color: var(--accent);">${{ "{:,.0f}".format(networth_summary.net_worth) }}</div>
+        </div>
+      </div>
+      
+      <!-- Performance Metrics -->
+      {% if networth_summary.performance and networth_summary.performance.days_tracked > 0 %}
+      <div style="background: var(--bg-primary); border-radius: 10px; padding: 1em 1.2em; margin-bottom: 1.5em; border: 1px solid var(--border-light);">
+        <h4 style="margin: 0 0 0.8em 0; color: var(--text-heading); font-size: 0.95em;">📊 Performance Metrics</h4>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1em;">
+          <div>
+            <div style="font-size: 0.8em; color: var(--text-secondary);">Total Change</div>
+            <div style="font-size: 1.3em; font-weight: 600; color: {% if networth_summary.performance.cumulative_change >= 0 %}#28a745{% else %}#dc3545{% endif %};">
+              {{ "+" if networth_summary.performance.cumulative_change >= 0 else "" }}${{ "{:,.0f}".format(networth_summary.performance.cumulative_change) }}
+            </div>
+          </div>
+          <div>
+            <div style="font-size: 0.8em; color: var(--text-secondary);">Cumulative Return</div>
+            <div style="font-size: 1.3em; font-weight: 600; color: {% if networth_summary.performance.cumulative_pct >= 0 %}#28a745{% else %}#dc3545{% endif %};">
+              {{ "+" if networth_summary.performance.cumulative_pct >= 0 else "" }}{{ "{:.1f}".format(networth_summary.performance.cumulative_pct) }}%
+            </div>
+          </div>
+          <div>
+            <div style="font-size: 0.8em; color: var(--text-secondary);">Annualized Return</div>
+            <div style="font-size: 1.3em; font-weight: 600; color: {% if networth_summary.performance.annualized_pct >= 0 %}#28a745{% else %}#dc3545{% endif %};">
+              {{ "+" if networth_summary.performance.annualized_pct >= 0 else "" }}{{ "{:.1f}".format(networth_summary.performance.annualized_pct) }}%
+            </div>
+          </div>
+          <div>
+            <div style="font-size: 0.8em; color: var(--text-secondary);">Days Tracked</div>
+            <div style="font-size: 1.3em; font-weight: 600; color: var(--text-heading);">
+              {{ networth_summary.performance.days_tracked }}
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+      
+      <!-- Tax Analysis -->
+      {% if networth_summary.tax_analysis and networth_summary.tax_analysis.total_assets > 0 %}
+      <div style="background: var(--bg-primary); border-radius: 10px; padding: 1em 1.2em; margin-bottom: 1.5em; border: 1px solid var(--border-light);">
+        <h4 style="margin: 0 0 0.8em 0; color: var(--text-heading); font-size: 0.95em;">🏛️ Tax Treatment Analysis</h4>
+        <p style="font-size: 0.8em; color: var(--text-secondary); margin: 0 0 1em 0;">Understand how your portfolio will be taxed in retirement</p>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1em;">
+          <div style="background: linear-gradient(135deg, rgba(40,167,69,0.1), rgba(40,167,69,0.2)); padding: 0.8em; border-radius: 8px; border-left: 4px solid #28a745;">
+            <div style="font-size: 0.75em; color: var(--text-secondary);">Tax-Free (Roth, HSA)</div>
+            <div style="font-size: 1.2em; font-weight: 600; color: #28a745;">${{ "{:,.0f}".format(networth_summary.tax_analysis.tax_free.amount) }}</div>
+            <div style="font-size: 0.8em; color: var(--text-secondary);">{{ "{:.1f}".format(networth_summary.tax_analysis.tax_free.percentage) }}% of assets</div>
+          </div>
+          <div style="background: linear-gradient(135deg, rgba(255,193,7,0.1), rgba(255,193,7,0.2)); padding: 0.8em; border-radius: 8px; border-left: 4px solid #ffc107;">
+            <div style="font-size: 0.75em; color: var(--text-secondary);">Tax-Deferred (401k, IRA)</div>
+            <div style="font-size: 1.2em; font-weight: 600; color: #ffc107;">${{ "{:,.0f}".format(networth_summary.tax_analysis.tax_deferred.amount) }}</div>
+            <div style="font-size: 0.8em; color: var(--text-secondary);">{{ "{:.1f}".format(networth_summary.tax_analysis.tax_deferred.percentage) }}% of assets</div>
+          </div>
+          <div style="background: linear-gradient(135deg, rgba(220,53,69,0.1), rgba(220,53,69,0.2)); padding: 0.8em; border-radius: 8px; border-left: 4px solid #dc3545;">
+            <div style="font-size: 0.75em; color: var(--text-secondary);">Taxable (Brokerage)</div>
+            <div style="font-size: 1.2em; font-weight: 600; color: #dc3545;">${{ "{:,.0f}".format(networth_summary.tax_analysis.taxable.amount) }}</div>
+            <div style="font-size: 0.8em; color: var(--text-secondary);">{{ "{:.1f}".format(networth_summary.tax_analysis.taxable.percentage) }}% of assets</div>
+          </div>
+          {% if networth_summary.tax_analysis.partially_taxable.amount > 0 %}
+          <div style="background: linear-gradient(135deg, rgba(108,117,125,0.1), rgba(108,117,125,0.2)); padding: 0.8em; border-radius: 8px; border-left: 4px solid #6c757d;">
+            <div style="font-size: 0.75em; color: var(--text-secondary);">Partially Taxable</div>
+            <div style="font-size: 1.2em; font-weight: 600; color: #6c757d;">${{ "{:,.0f}".format(networth_summary.tax_analysis.partially_taxable.amount) }}</div>
+            <div style="font-size: 0.8em; color: var(--text-secondary);">{{ "{:.1f}".format(networth_summary.tax_analysis.partially_taxable.percentage) }}% of assets</div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+      
+      <!-- Accounts Grid -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 1.5em;">
+        <!-- Assets Section -->
+        <div class="accounts-section" style="background: var(--bg-primary); border-radius: 10px; padding: 1.2em; border: 2px solid #28a745;">
+          <h3 style="margin: 0 0 1em 0; color: #28a745; display: flex; align-items: center; gap: 0.5em; font-size: 1.1em;">
+            <span>📈 Assets</span>
+            <button type="button" onclick="showAddAccountModal(true)" style="margin-left: auto; background: #28a745; color: #fff; border: none; padding: 0.4em 0.8em; border-radius: 6px; font-size: 0.85em; cursor: pointer;">+ Add Asset</button>
+          </h3>
+          {% for account in networth_accounts if account.is_asset %}
+          <div class="account-item" style="background: var(--bg-card); border-radius: 8px; padding: 0.8em 1em; margin-bottom: 0.5em; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <div style="font-weight: 600; color: var(--text-heading);">{{ account.name }}</div>
+              <div style="font-size: 0.8em; color: var(--text-secondary);">{{ account.account_type | replace('_', ' ') | title }}{% if account.institution %} • {{ account.institution }}{% endif %}</div>
+            </div>
+            <div style="text-align: right;">
+              <div style="font-weight: 700; color: #28a745; font-size: 1.1em;">
+                {% set latest_balance = account.balances | sort(attribute='balance_date', reverse=True) | first %}
+                ${{ "{:,.0f}".format(latest_balance.balance if latest_balance else 0) }}
+              </div>
+              <div style="display: flex; gap: 0.5em; margin-top: 0.3em;">
+                <button onclick="showAccountDetails({{ account.id }})" style="background: none; border: none; color: var(--accent); cursor: pointer; font-size: 0.8em;">Details</button>
+                <button onclick="showAddBalanceModal({{ account.id }}, '{{ account.name }}')" style="background: none; border: none; color: #28a745; cursor: pointer; font-size: 0.8em;">+ Balance</button>
+              </div>
+            </div>
+          </div>
+          {% else %}
+          <p style="color: var(--text-secondary); font-size: 0.9em; text-align: center; padding: 1em;">No asset accounts yet. Click "Add Asset" to get started.</p>
+          {% endfor %}
+        </div>
+        
+        <!-- Liabilities Section -->
+        <div class="accounts-section" style="background: var(--bg-primary); border-radius: 10px; padding: 1.2em; border: 2px solid #dc3545;">
+          <h3 style="margin: 0 0 1em 0; color: #dc3545; display: flex; align-items: center; gap: 0.5em; font-size: 1.1em;">
+            <span>📉 Liabilities</span>
+            <button type="button" onclick="showAddAccountModal(false)" style="margin-left: auto; background: #dc3545; color: #fff; border: none; padding: 0.4em 0.8em; border-radius: 6px; font-size: 0.85em; cursor: pointer;">+ Add Liability</button>
+          </h3>
+          {% for account in networth_accounts if not account.is_asset %}
+          <div class="account-item" style="background: var(--bg-card); border-radius: 8px; padding: 0.8em 1em; margin-bottom: 0.5em; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <div style="font-weight: 600; color: var(--text-heading);">{{ account.name }}</div>
+              <div style="font-size: 0.8em; color: var(--text-secondary);">{{ account.account_type | replace('_', ' ') | title }}{% if account.institution %} • {{ account.institution }}{% endif %}</div>
+            </div>
+            <div style="text-align: right;">
+              <div style="font-weight: 700; color: #dc3545; font-size: 1.1em;">
+                {% set latest_balance = account.balances | sort(attribute='balance_date', reverse=True) | first %}
+                ${{ "{:,.0f}".format(latest_balance.balance if latest_balance else 0) }}
+              </div>
+              <div style="display: flex; gap: 0.5em; margin-top: 0.3em;">
+                <button onclick="showAccountDetails({{ account.id }})" style="background: none; border: none; color: var(--accent); cursor: pointer; font-size: 0.8em;">Details</button>
+                <button onclick="showAddBalanceModal({{ account.id }}, '{{ account.name }}')" style="background: none; border: none; color: #dc3545; cursor: pointer; font-size: 0.8em;">+ Balance</button>
+              </div>
+            </div>
+          </div>
+          {% else %}
+          <p style="color: var(--text-secondary); font-size: 0.9em; text-align: center; padding: 1em;">No liability accounts yet. Click "Add Liability" to add debts.</p>
+          {% endfor %}
+        </div>
+      </div>
+      
+      <!-- Net Worth Chart -->
+      <div class="chart-section" style="margin-top: 2em;">
+        <div class="chart-card">
+          <h4>📊 Net Worth Over Time</h4>
+          <div class="chart-container">
+            <canvas id="networthChart"></canvas>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Account Performance Table -->
+      <div style="margin-top: 1.5em;">
+        <button class="amortization-toggle" onclick="toggleNetworthTable()" id="networthTableToggle">📋 Show Account Performance Table</button>
+        <div id="networthTable" style="display: none; margin-top: 1em; background: var(--bg-card); border-radius: 10px; padding: 1em; overflow-x: auto;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 0.85em;">
+            <thead>
+              <tr style="background: var(--border-light);">
+                <th style="padding: 0.7em; text-align: left;">Account</th>
+                <th style="padding: 0.7em; text-align: left;">Type</th>
+                <th style="padding: 0.7em; text-align: right;">Current Balance</th>
+                <th style="padding: 0.7em; text-align: right;">First Balance</th>
+                <th style="padding: 0.7em; text-align: right;">Change</th>
+                <th style="padding: 0.7em; text-align: right;">Cumulative %</th>
+                <th style="padding: 0.7em; text-align: right;">Annualized %</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for acct in networth_summary.accounts %}
+              <tr style="border-bottom: 1px solid var(--border-light);">
+                <td style="padding: 0.6em; font-weight: 500;">{{ acct.name }}</td>
+                <td style="padding: 0.6em; color: var(--text-secondary);">{{ acct.account_type | replace('_', ' ') | title }}</td>
+                <td style="padding: 0.6em; text-align: right; font-weight: 600; color: {% if acct.is_asset %}#28a745{% else %}#dc3545{% endif %};">
+                  ${{ "{:,.0f}".format(acct.current_balance) }}
+                </td>
+                <td style="padding: 0.6em; text-align: right; color: var(--text-secondary);">
+                  ${{ "{:,.0f}".format(acct.performance.first_balance if acct.performance else 0) }}
+                </td>
+                <td style="padding: 0.6em; text-align: right; color: {% if (acct.performance.cumulative_change if acct.performance else 0) >= 0 %}#28a745{% else %}#dc3545{% endif %};">
+                  {{ "+" if (acct.performance.cumulative_change if acct.performance else 0) >= 0 else "" }}${{ "{:,.0f}".format(acct.performance.cumulative_change if acct.performance else 0) }}
+                </td>
+                <td style="padding: 0.6em; text-align: right; color: {% if (acct.performance.cumulative_pct if acct.performance else 0) >= 0 %}#28a745{% else %}#dc3545{% endif %};">
+                  {{ "+" if (acct.performance.cumulative_pct if acct.performance else 0) >= 0 else "" }}{{ "{:.1f}".format(acct.performance.cumulative_pct if acct.performance else 0) }}%
+                </td>
+                <td style="padding: 0.6em; text-align: right; color: {% if (acct.performance.annualized_pct if acct.performance else 0) >= 0 %}#28a745{% else %}#dc3545{% endif %};">
+                  {{ "+" if (acct.performance.annualized_pct if acct.performance else 0) >= 0 else "" }}{{ "{:.1f}".format(acct.performance.annualized_pct if acct.performance else 0) }}%
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      
+      <!-- CSV Bulk Upload -->
+      <div style="background: var(--bg-primary); border-radius: 10px; padding: 1.2em; margin-top: 1.5em; border: 1px solid var(--border-light);">
+        <h4 style="margin: 0 0 0.8em 0; color: var(--text-heading);">📤 Bulk Import from CSV</h4>
+        <p style="color: var(--text-secondary); font-size: 0.9em; margin-bottom: 1em;">
+          Import multiple account balances at once from a CSV file.
+        </p>
+        <div style="display: flex; gap: 1em; flex-wrap: wrap; align-items: flex-start;">
+          <a href="/tools/networth/csv-template" style="background: var(--bg-card); border: 1px solid var(--border-color); padding: 0.6em 1.2em; border-radius: 6px; text-decoration: none; color: var(--text-primary); font-size: 0.9em;">
+            📥 Download Template
+          </a>
+          <div style="flex: 1; min-width: 200px;">
+            <form id="networthCsvForm" style="display: flex; gap: 0.5em; align-items: center;">
+              <div style="flex: 1; position: relative;">
+                <input type="file" id="networthCsvInput" accept=".csv" required 
+                       style="position: absolute; inset: 0; opacity: 0; cursor: pointer;">
+                <button type="button" style="width: 100%; padding: 0.6em 1em; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; color: var(--text-primary); pointer-events: none;">
+                  Choose CSV File
+                </button>
+              </div>
+              <button type="button" onclick="uploadNetworthCSV()" style="background: var(--accent); color: #fff; border: none; padding: 0.6em 1.2em; border-radius: 6px; cursor: pointer;">Upload</button>
+            </form>
+            <div id="networthCsvFileName" style="margin-top: 0.3em; font-size: 0.85em; color: var(--text-secondary);"></div>
+            <div id="networthCsvStatus" style="margin-top: 0.5em; font-size: 0.9em;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Investment Projections Section -->
+    <div id="investment-projections" class="calculator-card" style="display: none;">
+      <h2>📈 Investment Projections</h2>
+      <p class="subtitle">Project future account values based on contributions and expected returns.</p>
+      
+      <!-- How It Works -->
+      <div style="background: rgba(56,117,232,0.1); border-radius: 10px; padding: 1em; margin-bottom: 1.5em; border: 1px solid rgba(56,117,232,0.2);">
+        <h4 style="margin: 0 0 0.5em 0; color: var(--accent); font-size: 0.95em;">ℹ️ Parameter Guide</h4>
+        <ul style="margin: 0; padding-left: 1.5em; font-size: 0.85em; color: var(--text-secondary);">
+          <li><strong>Contribution Amount</strong>: Regular deposit/payment amount per period</li>
+          <li><strong>Frequency</strong>: How often contributions occur (monthly, bi-weekly, etc.)</li>
+          <li><strong>Expected Return</strong>: Annual growth rate for assets (7% is typical for balanced portfolio)</li>
+          <li><strong>Interest Rate</strong>: APR for liabilities (mortgages, loans)</li>
+          <li><strong>Portfolio Allocation</strong>: Stocks/Bonds/Cash mix - used for Monte Carlo simulations</li>
+        </ul>
+      </div>
+      
+      <!-- Projection Controls -->
+      <div style="background: var(--bg-primary); border-radius: 10px; padding: 1.2em; margin-bottom: 1.5em; border: 1px solid var(--border-light);">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1em; margin-bottom: 1em;">
+          <div class="form-group">
+            <label>Projection Period</label>
+            <select id="projectionYears" onchange="updateProjections()">
+              <option value="5">5 Years</option>
+              <option value="10" selected>10 Years</option>
+              <option value="15">15 Years</option>
+              <option value="20">20 Years</option>
+              <option value="30">30 Years</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Filter Account</label>
+            <select id="projectionFilter" onchange="updateProjections()">
+              <option value="all">All Accounts</option>
+              <option value="assets">Assets Only</option>
+              <option value="liabilities">Liabilities Only</option>
+              {% for acct in networth_summary.accounts %}
+              <option value="{{ acct.id }}">{{ acct.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <button class="btn-calculate" onclick="updateProjections()" style="width: auto;">Update Projections</button>
+      </div>
+      
+      <!-- Account Settings for Projections -->
+      <div style="margin-bottom: 1.5em;">
+        <h4 style="margin: 0 0 1em 0; color: var(--text-heading);">Account Contribution & Return Settings</h4>
+        <div style="max-height: 300px; overflow-y: auto;">
+          {% for acct in networth_summary.accounts %}
+          <div style="background: var(--bg-card); border-radius: 8px; padding: 0.8em 1em; margin-bottom: 0.5em; border-left: 4px solid {% if acct.is_asset %}#28a745{% else %}#dc3545{% endif %};">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5em;">
+              <div>
+                <strong style="color: var(--text-heading);">{{ acct.name }}</strong>
+                <span style="font-size: 0.85em; color: var(--text-secondary); margin-left: 0.5em;">
+                  Current: ${{ "{:,.0f}".format(acct.current_balance) }}
+                </span>
+              </div>
+              <button onclick="showContributionModal({{ acct.id }}, '{{ acct.name }}', {{ acct.is_asset | tojson }}, {{ (acct.contribution.amount if acct.contribution else 0) }}, '{{ acct.contribution.frequency if acct.contribution else "monthly" }}', {{ (acct.contribution.expected_return if acct.contribution else 7.0) }}, {{ (acct.contribution.interest_rate if acct.contribution else 0) }}, {{ (acct.contribution.stocks_pct if acct.contribution and acct.contribution.stocks_pct else 80) }}, {{ (acct.contribution.bonds_pct if acct.contribution and acct.contribution.bonds_pct else 15) }}, {{ (acct.contribution.cash_pct if acct.contribution and acct.contribution.cash_pct else 5) }})" 
+                      style="background: var(--border-light); border: none; padding: 0.4em 0.8em; border-radius: 5px; font-size: 0.85em; cursor: pointer; color: var(--text-primary);">
+                {% if acct.contribution and acct.contribution.amount > 0 %}
+                  ${{ "{:,.0f}".format(acct.contribution.amount) }}/{{ acct.contribution.frequency }} @ {{ "{:.1f}".format(acct.contribution.expected_return if acct.is_asset else acct.contribution.interest_rate) }}% ✏️
+                {% else %}
+                  Set Contribution ➕
+                {% endif %}
+              </button>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      
+      <!-- Projection Chart -->
+      <div class="chart-section">
+        <div class="chart-card">
+          <h4>📈 Projected Growth</h4>
+          <div class="chart-container" style="height: 400px;">
+            <canvas id="projectionChart"></canvas>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Projection Summary -->
+      <div id="projectionSummary" style="margin-top: 1.5em; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1em;">
+        <!-- Will be populated by JavaScript -->
+      </div>
+    </div>
+    
+    <!-- Monte Carlo Simulation Section -->
+    <div id="montecarlo-section" class="calculator-card" style="display: none;">
+      <h2>🎲 Monte Carlo Simulation</h2>
+      <p class="subtitle">Run thousands of simulations using historical market data (1928-2023) to project possible investment outcomes.</p>
+      
+      <!-- How It Works -->
+      <div style="background: rgba(56,117,232,0.1); border-radius: 10px; padding: 1em; margin-bottom: 1.5em; border: 1px solid rgba(56,117,232,0.2);">
+        <h4 style="margin: 0 0 0.5em 0; color: var(--accent); font-size: 0.95em;">ℹ️ How It Works</h4>
+        <ul style="margin: 0; padding-left: 1.5em; font-size: 0.85em; color: var(--text-secondary);">
+          <li><strong>Historical Data</strong>: Uses actual stock, bond, and cash returns from 1928-2023</li>
+          <li><strong>Portfolio Allocation</strong>: Your stocks/bonds/cash % determines how returns are weighted</li>
+          <li><strong>Inflation</strong>: Historical inflation rates are factored in to show purchasing power</li>
+          <li><strong>Randomization</strong>: Each simulation picks random historical years to simulate market uncertainty</li>
+        </ul>
+      </div>
+      
+      <!-- Simulation Controls -->
+      <div style="background: var(--bg-primary); border-radius: 10px; padding: 1.2em; margin-bottom: 1.5em; border: 1px solid var(--border-light);">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1em; margin-bottom: 1em;">
+          <div class="form-group">
+            <label>Projection Years</label>
+            <select id="mcYears">
+              <option value="10">10 Years</option>
+              <option value="15">15 Years</option>
+              <option value="20">20 Years</option>
+              <option value="25">25 Years</option>
+              <option value="30" selected>30 Years</option>
+              <option value="40">40 Years</option>
+            </select>
+            <small style="color: var(--text-secondary);">How far into the future to project</small>
+          </div>
+          <div class="form-group">
+            <label>Number of Simulations</label>
+            <select id="mcSimulations">
+              <option value="500">500 (Fast)</option>
+              <option value="1000" selected>1,000 (Standard)</option>
+              <option value="2500">2,500 (Detailed)</option>
+              <option value="5000">5,000 (High Precision)</option>
+            </select>
+            <small style="color: var(--text-secondary);">More sims = smoother results</small>
+          </div>
+          <div class="form-group">
+            <label>Show Results In</label>
+            <select id="mcInflationMode">
+              <option value="true" selected>Today's Dollars (inflation-adjusted)</option>
+              <option value="false">Future Dollars (nominal)</option>
+            </select>
+            <small style="color: var(--text-secondary);">Purchasing power vs raw numbers</small>
+          </div>
+        </div>
+        <div style="display: flex; gap: 1em; flex-wrap: wrap; align-items: center;">
+          <button class="btn-calculate" onclick="runMonteCarlo()" id="mcRunBtn">🚀 Run Simulation</button>
+          <button onclick="saveMCScenario()" style="background: var(--bg-card); border: 1px solid var(--border-color); padding: 0.6em 1.2em; border-radius: 6px; cursor: pointer; color: var(--text-primary);" id="mcSaveBtn" disabled>💾 Save Scenario</button>
+          <span id="mcInflationLabel" style="font-size: 0.85em; color: var(--text-secondary);">Results shown in today's dollars</span>
+        </div>
+      </div>
+      
+      <!-- Simulation Results -->
+      <div id="mcResults" style="display: none;">
+        <!-- Percentile Chart -->
+        <div class="chart-section" style="margin-bottom: 1.5em;">
+          <div class="chart-card">
+            <h4>📊 Monte Carlo Projection Percentiles</h4>
+            <div class="chart-container" style="height: 400px;">
+              <canvas id="mcChart"></canvas>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Results Summary -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1em; margin-bottom: 1.5em;">
+          <div style="background: linear-gradient(135deg, rgba(40,167,69,0.1), rgba(40,167,69,0.2)); padding: 1em; border-radius: 10px; text-align: center;">
+            <div style="font-size: 0.8em; color: var(--text-secondary);">90th Percentile (Best)</div>
+            <div id="mcP90" style="font-size: 1.5em; font-weight: 700; color: #28a745;">-</div>
+          </div>
+          <div style="background: linear-gradient(135deg, rgba(56,117,232,0.1), rgba(56,117,232,0.2)); padding: 1em; border-radius: 10px; text-align: center;">
+            <div style="font-size: 0.8em; color: var(--text-secondary);">75th Percentile</div>
+            <div id="mcP75" style="font-size: 1.5em; font-weight: 700; color: var(--accent);">-</div>
+          </div>
+          <div style="background: linear-gradient(135deg, rgba(108,117,125,0.1), rgba(108,117,125,0.2)); padding: 1em; border-radius: 10px; text-align: center;">
+            <div style="font-size: 0.8em; color: var(--text-secondary);">50th Percentile (Median)</div>
+            <div id="mcP50" style="font-size: 1.5em; font-weight: 700; color: #6c757d;">-</div>
+          </div>
+          <div style="background: linear-gradient(135deg, rgba(255,193,7,0.1), rgba(255,193,7,0.2)); padding: 1em; border-radius: 10px; text-align: center;">
+            <div style="font-size: 0.8em; color: var(--text-secondary);">25th Percentile</div>
+            <div id="mcP25" style="font-size: 1.5em; font-weight: 700; color: #ffc107;">-</div>
+          </div>
+          <div style="background: linear-gradient(135deg, rgba(220,53,69,0.1), rgba(220,53,69,0.2)); padding: 1em; border-radius: 10px; text-align: center;">
+            <div style="font-size: 0.8em; color: var(--text-secondary);">10th Percentile (Worst)</div>
+            <div id="mcP10" style="font-size: 1.5em; font-weight: 700; color: #dc3545;">-</div>
+          </div>
+        </div>
+        
+        <!-- Distribution Stats -->
+        <div style="background: var(--bg-primary); border-radius: 10px; padding: 1.2em; border: 1px solid var(--border-light);">
+          <h4 style="margin: 0 0 0.8em 0; color: var(--text-heading);">📈 Simulation Statistics</h4>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1em;">
+            <div>
+              <div style="font-size: 0.8em; color: var(--text-secondary);">Mean Outcome</div>
+              <div id="mcMean" style="font-weight: 600;">-</div>
+            </div>
+            <div>
+              <div style="font-size: 0.8em; color: var(--text-secondary);">Std. Deviation</div>
+              <div id="mcStd" style="font-weight: 600;">-</div>
+            </div>
+            <div>
+              <div style="font-size: 0.8em; color: var(--text-secondary);">Best Case</div>
+              <div id="mcMax" style="font-weight: 600; color: #28a745;">-</div>
+            </div>
+            <div>
+              <div style="font-size: 0.8em; color: var(--text-secondary);">Worst Case</div>
+              <div id="mcMin" style="font-weight: 600; color: #dc3545;">-</div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Tax Analysis -->
+        <div id="mcTaxAnalysis" style="background: var(--bg-primary); border-radius: 10px; padding: 1.2em; margin-top: 1.5em; border: 1px solid var(--border-light);">
+          <h4 style="margin: 0 0 0.8em 0; color: var(--text-heading);">🏛️ Projected Tax Treatment Analysis</h4>
+          <p style="font-size: 0.8em; color: var(--text-secondary); margin: 0 0 1em 0;">Estimated breakdown of projected portfolio by tax treatment (median outcome)</p>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5em;">
+            <div>
+              <h5 style="margin: 0 0 0.5em 0; font-size: 0.85em; color: var(--text-secondary);">Current Portfolio</h5>
+              <div style="display: grid; gap: 0.5em;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span style="color: #28a745;">● Tax-Free</span>
+                  <span id="mcTaxCurrentFree" style="font-weight: 600;">-</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span style="color: #ffc107;">● Tax-Deferred</span>
+                  <span id="mcTaxCurrentDeferred" style="font-weight: 600;">-</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span style="color: #dc3545;">● Taxable</span>
+                  <span id="mcTaxCurrentTaxable" style="font-weight: 600;">-</span>
+                </div>
+              </div>
+            </div>
+            <div>
+              <h5 style="margin: 0 0 0.5em 0; font-size: 0.85em; color: var(--text-secondary);">Projected Portfolio</h5>
+              <div style="display: grid; gap: 0.5em;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span style="color: #28a745;">● Tax-Free</span>
+                  <span id="mcTaxProjectedFree" style="font-weight: 600;">-</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span style="color: #ffc107;">● Tax-Deferred</span>
+                  <span id="mcTaxProjectedDeferred" style="font-weight: 600;">-</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span style="color: #dc3545;">● Taxable</span>
+                  <span id="mcTaxProjectedTaxable" style="font-weight: 600;">-</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Saved Scenarios -->
+      <div style="margin-top: 1.5em;">
+        <h4 style="color: var(--text-heading); margin-bottom: 0.8em;">📁 Saved Scenarios</h4>
+        <div id="mcSavedScenarios" style="max-height: 200px; overflow-y: auto;">
+          <p style="color: var(--text-secondary); font-size: 0.9em;">Run a simulation to save it as a scenario.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Add Account Modal -->
+  <div class="modal-overlay" id="addAccountModal">
+    <div class="modal" style="max-width: 450px;">
+      <h3 id="addAccountTitle">➕ Add Account</h3>
+      <form action="/tools/networth/account/add" method="post">
+        <input type="hidden" id="addAccountIsAsset" name="is_asset" value="true">
+        <div style="margin-bottom: 1em;">
+          <label style="display: block; font-size: 0.9em; color: var(--text-secondary); margin-bottom: 0.3em;">Account Name *</label>
+          <input type="text" name="name" required placeholder="e.g., Fidelity 401k" style="width: 100%; padding: 0.7em; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-input); color: var(--text-primary);">
+        </div>
+        <div style="margin-bottom: 1em;">
+          <label style="display: block; font-size: 0.9em; color: var(--text-secondary); margin-bottom: 0.3em;">Account Type *</label>
+          <select name="account_type" id="addAccountType" required style="width: 100%; padding: 0.7em; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-input); color: var(--text-primary);">
+            <option value="">Select type...</option>
+            <optgroup label="Assets" id="assetTypeOptions">
+              {% for value, label in account_types.assets %}
+              <option value="{{ value }}">{{ label }}</option>
+              {% endfor %}
+            </optgroup>
+            <optgroup label="Liabilities" id="liabilityTypeOptions">
+              {% for value, label in account_types.liabilities %}
+              <option value="{{ value }}">{{ label }}</option>
+              {% endfor %}
+            </optgroup>
+          </select>
+        </div>
+        <div style="margin-bottom: 1em;">
+          <label style="display: block; font-size: 0.9em; color: var(--text-secondary); margin-bottom: 0.3em;">Institution (Optional)</label>
+          <input type="text" name="institution" placeholder="e.g., Fidelity, Chase, etc." style="width: 100%; padding: 0.7em; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-input); color: var(--text-primary);">
+        </div>
+        <div style="margin-bottom: 1em;">
+          <label style="display: block; font-size: 0.9em; color: var(--text-secondary); margin-bottom: 0.3em;">Current Balance</label>
+          <input type="number" name="initial_balance" step="0.01" value="0" placeholder="0.00" style="width: 100%; padding: 0.7em; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-input); color: var(--text-primary);">
+        </div>
+        <div style="margin-bottom: 1em;">
+          <label style="display: block; font-size: 0.9em; color: var(--text-secondary); margin-bottom: 0.3em;">Notes (Optional)</label>
+          <textarea name="notes" rows="2" placeholder="Any notes about this account..." style="width: 100%; padding: 0.7em; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-input); color: var(--text-primary); resize: vertical;"></textarea>
+        </div>
+        <div class="modal-btns">
+          <button type="button" class="btn-cancel" onclick="closeAddAccountModal()">Cancel</button>
+          <button type="submit" class="btn-confirm">Add Account</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  
+  <!-- Add Balance Modal -->
+  <div class="modal-overlay" id="addBalanceModal">
+    <div class="modal" style="max-width: 400px;">
+      <h3>📊 Add Balance Entry</h3>
+      <p style="color: var(--text-secondary); font-size: 0.9em; margin-bottom: 1em;" id="balanceAccountName">Account: </p>
+      <form action="/tools/networth/balance/add" method="post">
+        <input type="hidden" name="account_id" id="balanceAccountId">
+        <div style="margin-bottom: 1em;">
+          <label style="display: block; font-size: 0.9em; color: var(--text-secondary); margin-bottom: 0.3em;">Date *</label>
+          <input type="date" name="balance_date" value="{{ current_date }}" required style="width: 100%; padding: 0.7em; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-input); color: var(--text-primary);">
+        </div>
+        <div style="margin-bottom: 1em;">
+          <label style="display: block; font-size: 0.9em; color: var(--text-secondary); margin-bottom: 0.3em;">Balance *</label>
+          <input type="number" name="balance" step="0.01" required placeholder="0.00" style="width: 100%; padding: 0.7em; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-input); color: var(--text-primary);">
+        </div>
+        <div style="margin-bottom: 1em;">
+          <label style="display: block; font-size: 0.9em; color: var(--text-secondary); margin-bottom: 0.3em;">Notes (Optional)</label>
+          <input type="text" name="notes" placeholder="e.g., After paycheck contribution" style="width: 100%; padding: 0.7em; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-input); color: var(--text-primary);">
+        </div>
+        <div class="modal-btns">
+          <button type="button" class="btn-cancel" onclick="closeAddBalanceModal()">Cancel</button>
+          <button type="submit" class="btn-confirm">Add Balance</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  
+  <!-- Account Details Modal -->
+  <div class="modal-overlay" id="accountDetailsModal">
+    <div class="modal" style="max-width: 550px; max-height: 80vh; overflow-y: auto;">
+      <h3 id="accountDetailsTitle">📋 Account Details</h3>
+      <div id="accountDetailsContent">
+        <!-- Content loaded via JavaScript -->
+      </div>
+      <div class="modal-btns" style="margin-top: 1em;">
+        <button type="button" class="btn-cancel" onclick="closeAccountDetailsModal()">Close</button>
+        <form id="deleteAccountForm" action="" method="post" style="display: inline;">
+          <button type="submit" class="btn-cancel" style="background: #fee; color: #c44;">Delete Account</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Contribution Settings Modal -->
+  <div class="modal-overlay" id="contributionModal">
+    <div class="modal" style="max-width: 450px;">
+      <h3 id="contributionModalTitle">⚙️ Contribution Settings</h3>
+      <form id="contributionForm" onsubmit="submitContribution(event)">
+        <input type="hidden" name="account_id" id="contribAccountId">
+        <div style="margin-bottom: 1em;">
+          <label style="display: block; font-size: 0.9em; color: var(--text-secondary); margin-bottom: 0.3em;">
+            <span id="contribAmountLabel">Contribution Amount</span> *
+          </label>
+          <input type="number" name="amount" id="contribAmount" step="0.01" value="0" placeholder="0.00" style="width: 100%; padding: 0.7em; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-input); color: var(--text-primary);">
+        </div>
+        <div style="margin-bottom: 1em;">
+          <label style="display: block; font-size: 0.9em; color: var(--text-secondary); margin-bottom: 0.3em;">Frequency</label>
+          <select name="frequency" id="contribFrequency" style="width: 100%; padding: 0.7em; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-input); color: var(--text-primary);">
+            <option value="weekly">Weekly</option>
+            <option value="bi-weekly">Bi-Weekly</option>
+            <option value="semi-monthly">Semi-Monthly</option>
+            <option value="monthly" selected>Monthly</option>
+            <option value="quarterly">Quarterly</option>
+            <option value="annually">Annually</option>
+          </select>
+        </div>
+        <div style="margin-bottom: 1em;" id="expectedReturnGroup">
+          <label style="display: block; font-size: 0.9em; color: var(--text-secondary); margin-bottom: 0.3em;">Expected Annual Return (%)</label>
+          <input type="number" name="expected_return" id="contribExpectedReturn" step="0.1" value="7.0" placeholder="7.0" style="width: 100%; padding: 0.7em; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-input); color: var(--text-primary);">
+          <span style="font-size: 0.75em; color: var(--text-secondary);">Historical S&P 500 average: ~10%</span>
+        </div>
+        <!-- Portfolio Allocation (only shown for assets) -->
+        <div style="margin-bottom: 1em; padding: 1em; background: var(--bg-primary); border-radius: 8px; border: 1px solid var(--border-light);" id="portfolioAllocationGroup">
+          <label style="display: block; font-size: 0.9em; color: var(--text-secondary); margin-bottom: 0.5em; font-weight: 600;">Portfolio Allocation <span style="font-weight: normal;">(must sum to 100%)</span></label>
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5em;">
+            <div>
+              <label style="font-size: 0.8em; color: var(--text-secondary);">Stocks %</label>
+              <input type="number" name="stocks_pct" id="contribStocksPct" step="1" min="0" max="100" value="80" style="width: 100%; padding: 0.5em; border: 1px solid var(--border-color); border-radius: 4px; background: var(--bg-input); color: var(--text-primary);" onchange="validateAllocation()">
+            </div>
+            <div>
+              <label style="font-size: 0.8em; color: var(--text-secondary);">Bonds %</label>
+              <input type="number" name="bonds_pct" id="contribBondsPct" step="1" min="0" max="100" value="15" style="width: 100%; padding: 0.5em; border: 1px solid var(--border-color); border-radius: 4px; background: var(--bg-input); color: var(--text-primary);" onchange="validateAllocation()">
+            </div>
+            <div>
+              <label style="font-size: 0.8em; color: var(--text-secondary);">Cash %</label>
+              <input type="number" name="cash_pct" id="contribCashPct" step="1" min="0" max="100" value="5" style="width: 100%; padding: 0.5em; border: 1px solid var(--border-color); border-radius: 4px; background: var(--bg-input); color: var(--text-primary);" onchange="validateAllocation()">
+            </div>
+          </div>
+          <div id="allocationWarning" style="font-size: 0.8em; color: #ffc107; margin-top: 0.3em; display: none;">⚠️ Allocation must sum to 100%</div>
+          <span style="font-size: 0.7em; color: var(--text-secondary); margin-top: 0.3em; display: block;">Used for Monte Carlo simulations based on historical returns</span>
+        </div>
+        <div style="margin-bottom: 1em; display: none;" id="interestRateGroup">
+          <label style="display: block; font-size: 0.9em; color: var(--text-secondary); margin-bottom: 0.3em;">Interest Rate (APR %)</label>
+          <input type="number" name="interest_rate" id="contribInterestRate" step="0.1" value="0" placeholder="6.5" style="width: 100%; padding: 0.7em; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-input); color: var(--text-primary);">
+        </div>
+        <div class="modal-btns">
+          <button type="button" class="btn-cancel" onclick="closeContributionModal()">Cancel</button>
+          <button type="submit" class="btn-confirm">Save Settings</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  
+  <!-- Save Modal -->
+  <div class="modal-overlay" id="saveModal">
+    <div class="modal">
+      <h3>💾 Save Scenario</h3>
+      <input type="text" id="scenarioName" placeholder="Enter a name for this scenario...">
+      <div class="modal-btns">
+        <button class="btn-cancel" onclick="closeSaveModal()">Cancel</button>
+        <button class="btn-confirm" onclick="saveScenario()">Save</button>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    // Track down payment mode for each scenario (true = $, false = %)
+    const dpMode = { A: true, B: true };
+    let mortgageChart = null;
+    
+    function toggleProfileDropdown() {
+      document.getElementById('profileDropdown').classList.toggle('active');
+    }
+    document.addEventListener('click', function(e) {
+      const dropdown = document.querySelector('.profile-dropdown');
+      if (dropdown && !dropdown.contains(e.target)) {
+        document.getElementById('profileDropdown').classList.remove('active');
+      }
+    });
+    
+    function toggleDownPaymentMode(scenario) {
+      dpMode[scenario] = !dpMode[scenario];
+      const btn = document.getElementById('dpToggle' + scenario);
+      const input = document.getElementById('downPayment' + scenario);
+      const homePrice = parseFloat(document.getElementById('homePrice' + scenario).value) || 0;
+      
+      if (dpMode[scenario]) {
+        // Switching to $ mode
+        btn.textContent = '$';
+        btn.classList.add('active');
+        // Convert % to $
+        const pct = parseFloat(input.value) || 0;
+        input.value = Math.round(homePrice * pct / 100);
+        input.step = '1000';
+      } else {
+        // Switching to % mode
+        btn.textContent = '%';
+        btn.classList.remove('active');
+        // Convert $ to %
+        const dollarValue = parseFloat(input.value) || 0;
+        input.value = homePrice > 0 ? (dollarValue / homePrice * 100).toFixed(1) : 0;
+        input.step = '0.5';
+      }
+      updateDownPaymentDisplay(scenario);
+    }
+    
+    function updateDownPaymentDisplay(scenario) {
+      const homePrice = parseFloat(document.getElementById('homePrice' + scenario).value) || 0;
+      const dpInput = parseFloat(document.getElementById('downPayment' + scenario).value) || 0;
+      const hint = document.getElementById('downPaymentHint' + scenario);
+      
+      let dpDollar, dpPct;
+      if (dpMode[scenario]) {
+        // Input is in $
+        dpDollar = dpInput;
+        dpPct = homePrice > 0 ? (dpInput / homePrice * 100) : 0;
+        hint.textContent = dpPct.toFixed(1) + '% of home price';
+      } else {
+        // Input is in %
+        dpPct = dpInput;
+        dpDollar = homePrice * dpInput / 100;
+        hint.textContent = '$' + dpDollar.toLocaleString('en-US', {maximumFractionDigits: 0});
+      }
+      
+      document.getElementById('loanAmount' + scenario).value = Math.max(0, homePrice - dpDollar);
+    }
+    
+    function toggleCompareMode() {
+      const compareMode = document.getElementById('compareMode').checked;
+      const grid = document.getElementById('calculatorGrid');
+      const scenarioB = document.getElementById('scenarioB');
+      const amortCardB = document.getElementById('amortCardB');
+      
+      if (compareMode) {
+        grid.classList.remove('single');
+        scenarioB.style.display = 'block';
+        amortCardB.style.display = 'block';
+      } else {
+        grid.classList.add('single');
+        scenarioB.style.display = 'none';
+        amortCardB.style.display = 'none';
+      }
+    }
+    
+    function formatCurrency(value) {
+      return '$' + value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    
+    function formatCurrencyWhole(value) {
+      return '$' + value.toLocaleString('en-US', { maximumFractionDigits: 0 });
+    }
+    
+    function getDownPaymentDollar(scenario) {
+      const homePrice = parseFloat(document.getElementById('homePrice' + scenario).value) || 0;
+      const dpInput = parseFloat(document.getElementById('downPayment' + scenario).value) || 0;
+      return dpMode[scenario] ? dpInput : (homePrice * dpInput / 100);
+    }
+    
+    function calculateMortgage() {
+      const compareMode = document.getElementById('compareMode').checked;
+      const scenarios = compareMode ? ['A', 'B'] : ['A'];
+      const results = {};
+      
+      scenarios.forEach(s => {
+        const homePrice = parseFloat(document.getElementById('homePrice' + s).value) || 0;
+        const downPayment = getDownPaymentDollar(s);
+        const loanAmount = homePrice - downPayment;
+        const annualRate = parseFloat(document.getElementById('interestRate' + s).value) || 0;
+        const termYears = parseInt(document.getElementById('loanTerm' + s).value) || 30;
+        const propertyTax = parseFloat(document.getElementById('propertyTax' + s).value) || 0;
+        const homeInsurance = parseFloat(document.getElementById('homeInsurance' + s).value) || 0;
+        const pmi = parseFloat(document.getElementById('pmi' + s).value) || 0;
+        const hoa = parseFloat(document.getElementById('hoa' + s).value) || 0;
+        const extraMonthly = parseFloat(document.getElementById('extraMonthly' + s).value) || 0;
+        const extraYearly = parseFloat(document.getElementById('extraYearly' + s).value) || 0;
+        const startDate = new Date(document.getElementById('startDate' + s).value);
+        const extraStartDate = new Date(document.getElementById('extraStartDate' + s).value);
+        
+        const monthlyRate = annualRate / 100 / 12;
+        const numPayments = termYears * 12;
+        
+        // Monthly P&I payment
+        let monthlyPI = 0;
+        if (monthlyRate > 0) {
+          monthlyPI = loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / (Math.pow(1 + monthlyRate, numPayments) - 1);
+        } else {
+          monthlyPI = loanAmount / numPayments;
+        }
+        
+        const monthlyTax = propertyTax / 12;
+        const monthlyInsurance = homeInsurance / 12;
+        const totalMonthly = monthlyPI + monthlyTax + monthlyInsurance + pmi + hoa;
+        
+        // Calculate months until extra payments start
+        const extraStartMonths = Math.max(0, Math.ceil((extraStartDate - startDate) / (1000 * 60 * 60 * 24 * 30)));
+        
+        // Calculate amortization with extra payments
+        let balance = loanAmount;
+        let totalInterest = 0;
+        let totalPaid = 0;
+        let totalExtraPaid = 0;
+        let actualPayments = 0;
+        const amortization = [];
+        const balanceHistory = [];
+        const principalHistory = [];
+        const interestHistory = [];
+        
+        let cumulativePrincipal = 0;
+        let cumulativeInterest = 0;
+        
+        let month = 0;
+        while (balance > 0.01 && month < numPayments * 2) {
+          month++;
+          const currentDate = new Date(startDate);
+          currentDate.setMonth(currentDate.getMonth() + month - 1);
+          
+          const interestPayment = balance * monthlyRate;
+          let extraThisMonth = 0;
+          
+          // Check if we should apply extra payments this month
+          if (month > extraStartMonths) {
+            extraThisMonth += extraMonthly;
+            // Add yearly extra payment in the month matching the extra start date
+            const extraStartMonth = extraStartDate.getMonth();
+            if (currentDate.getMonth() === extraStartMonth && month > extraStartMonths) {
+              extraThisMonth += extraYearly;
+            }
+          }
+          
+          let principalPayment = monthlyPI - interestPayment + extraThisMonth;
+          
+          if (principalPayment > balance) {
+            principalPayment = balance;
+          }
+          
+          const payment = interestPayment + principalPayment;
+          totalInterest += interestPayment;
+          totalPaid += payment;
+          totalExtraPaid += extraThisMonth;
+          balance -= principalPayment;
+          actualPayments = month;
+          
+          cumulativePrincipal += (principalPayment - extraThisMonth + Math.min(extraThisMonth, principalPayment));
+          cumulativeInterest += interestPayment;
+          
+          amortization.push({
+            month,
+            date: currentDate.toLocaleDateString('en-US', { year: 'numeric', month: 'short' }),
+            payment: payment,
+            principal: principalPayment,
+            interest: interestPayment,
+            extra: extraThisMonth,
+            balance: Math.max(0, balance)
+          });
+          
+          // Store for chart (every 12 months or key points)
+          if (month % 12 === 0 || month === 1 || balance <= 0.01) {
+            balanceHistory.push({ month, value: Math.max(0, balance) });
+            principalHistory.push({ month, value: cumulativePrincipal });
+            interestHistory.push({ month, value: cumulativeInterest });
+          }
+        }
+        
+        const payoffYears = Math.floor(actualPayments / 12);
+        const payoffMonths = actualPayments % 12;
+        const originalPayoffMonths = termYears * 12;
+        const monthsSaved = originalPayoffMonths - actualPayments;
+        
+        results[s] = {
+          homePrice,
+          downPayment,
+          loanAmount,
+          annualRate,
+          termYears,
+          monthlyPI,
+          monthlyTax,
+          monthlyInsurance,
+          pmi,
+          hoa,
+          totalMonthly,
+          totalInterest,
+          totalPaid,
+          totalExtraPaid,
+          actualPayments,
+          payoffYears,
+          payoffMonths,
+          monthsSaved,
+          extraMonthly,
+          extraYearly,
+          amortization,
+          balanceHistory,
+          principalHistory,
+          interestHistory
+        };
+      });
+      
+      window.mortgageResults = results;
+      displayResults(results, compareMode);
+      drawChart(results, compareMode);
+    }
+    
+    function displayResults(results, compareMode) {
+      const resultsSection = document.getElementById('resultsSection');
+      const resultsGrid = document.getElementById('resultsGrid');
+      const comparisonSummary = document.getElementById('comparisonSummary');
+      
+      resultsSection.style.display = 'block';
+      resultsGrid.innerHTML = '';
+      
+      const scenarios = compareMode ? ['A', 'B'] : ['A'];
+      
+      scenarios.forEach(s => {
+        const r = results[s];
+        const color = s === 'A' ? 'var(--accent)' : '#28a745';
+        
+        const extraSavingsHtml = (r.extraMonthly > 0 || r.extraYearly > 0) ? `
+          <div class="result-row" style="border-top: 2px solid var(--border-light); margin-top: 0.5em; padding-top: 0.5em;">
+            <span class="label">Extra Monthly Payment</span>
+            <span class="value">${formatCurrency(r.extraMonthly)}</span>
+          </div>
+          <div class="result-row">
+            <span class="label">Extra Yearly Payment</span>
+            <span class="value">${formatCurrency(r.extraYearly)}</span>
+          </div>
+          <div class="result-row">
+            <span class="label">Total Extra Paid</span>
+            <span class="value positive">${formatCurrencyWhole(r.totalExtraPaid)}</span>
+          </div>
+          <div class="result-row">
+            <span class="label">Time Saved</span>
+            <span class="value positive">${Math.floor(r.monthsSaved/12)}y ${r.monthsSaved%12}m</span>
+          </div>
+        ` : '';
+        
+        const html = `
+          <div class="result-card" style="border-top: 4px solid ${color};">
+            <h4>${compareMode ? 'Scenario ' + s + ' - ' : ''}Monthly Payment</h4>
+            <div class="result-row">
+              <span class="label">Principal & Interest</span>
+              <span class="value highlight">${formatCurrency(r.monthlyPI)}</span>
+            </div>
+            <div class="result-row">
+              <span class="label">Property Tax</span>
+              <span class="value">${formatCurrency(r.monthlyTax)}</span>
+            </div>
+            <div class="result-row">
+              <span class="label">Home Insurance</span>
+              <span class="value">${formatCurrency(r.monthlyInsurance)}</span>
+            </div>
+            ${r.pmi > 0 ? `<div class="result-row"><span class="label">PMI</span><span class="value">${formatCurrency(r.pmi)}</span></div>` : ''}
+            ${r.hoa > 0 ? `<div class="result-row"><span class="label">HOA</span><span class="value">${formatCurrency(r.hoa)}</span></div>` : ''}
+            <div class="result-row" style="border-top: 2px solid var(--border-light); margin-top: 0.5em; padding-top: 0.8em;">
+              <span class="label"><strong>Total Monthly</strong></span>
+              <span class="value highlight">${formatCurrency(r.totalMonthly)}</span>
+            </div>
+          </div>
+          
+          <div class="result-card" style="border-top: 4px solid ${color};">
+            <h4>${compareMode ? 'Scenario ' + s + ' - ' : ''}Loan Summary</h4>
+            <div class="result-row">
+              <span class="label">Home Price</span>
+              <span class="value">${formatCurrencyWhole(r.homePrice)}</span>
+            </div>
+            <div class="result-row">
+              <span class="label">Down Payment</span>
+              <span class="value">${formatCurrencyWhole(r.downPayment)} (${((r.downPayment/r.homePrice)*100).toFixed(1)}%)</span>
+            </div>
+            <div class="result-row">
+              <span class="label">Loan Amount</span>
+              <span class="value">${formatCurrencyWhole(r.loanAmount)}</span>
+            </div>
+            <div class="result-row">
+              <span class="label">Interest Rate</span>
+              <span class="value">${r.annualRate}%</span>
+            </div>
+            <div class="result-row">
+              <span class="label">Payoff Time</span>
+              <span class="value">${r.payoffYears}y ${r.payoffMonths}m</span>
+            </div>
+            <div class="result-row">
+              <span class="label">Total Interest</span>
+              <span class="value negative">${formatCurrencyWhole(r.totalInterest)}</span>
+            </div>
+            <div class="result-row">
+              <span class="label">Total Cost</span>
+              <span class="value">${formatCurrencyWhole(r.totalPaid + r.downPayment)}</span>
+            </div>
+            ${extraSavingsHtml}
+          </div>
+        `;
+        
+        resultsGrid.innerHTML += html;
+      });
+      
+      // Comparison summary
+      if (compareMode) {
+        const a = results['A'];
+        const b = results['B'];
+        const monthlyDiff = a.totalMonthly - b.totalMonthly;
+        const interestDiff = a.totalInterest - b.totalInterest;
+        const totalDiff = (a.totalPaid + a.downPayment) - (b.totalPaid + b.downPayment);
+        
+        comparisonSummary.style.display = 'block';
+        comparisonSummary.innerHTML = `
+          <h4>📊 Comparison Summary</h4>
+          <div class="comparison-row">
+            <span class="label">Monthly Payment Difference</span>
+            <span class="value">${monthlyDiff > 0 ? 'A pays ' + formatCurrency(monthlyDiff) + ' more' : 'B pays ' + formatCurrency(-monthlyDiff) + ' more'}</span>
+          </div>
+          <div class="comparison-row">
+            <span class="label">Total Interest Difference</span>
+            <span class="value">${interestDiff > 0 ? 'A pays ' + formatCurrencyWhole(interestDiff) + ' more' : 'B pays ' + formatCurrencyWhole(-interestDiff) + ' more'}</span>
+          </div>
+          <div class="comparison-row">
+            <span class="label">Total Cost Difference</span>
+            <span class="value">${totalDiff > 0 ? 'A costs ' + formatCurrencyWhole(totalDiff) + ' more' : 'B costs ' + formatCurrencyWhole(-totalDiff) + ' more'}</span>
+          </div>
+          <div class="comparison-row">
+            <span class="label">Payoff Time</span>
+            <span class="value">A: ${a.payoffYears}y ${a.payoffMonths}m | B: ${b.payoffYears}y ${b.payoffMonths}m</span>
+          </div>
+        `;
+      } else {
+        comparisonSummary.style.display = 'none';
+      }
+      
+      // Generate amortization tables
+      generateAmortizationTable('A', results['A'].amortization);
+      if (compareMode) {
+        generateAmortizationTable('B', results['B'].amortization);
+      }
+    }
+    
+    function drawChart(results, compareMode) {
+      const ctx = document.getElementById('mortgageChart').getContext('2d');
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      
+      if (mortgageChart) {
+        mortgageChart.destroy();
+      }
+      
+      const datasets = [];
+      const scenarios = compareMode ? ['A', 'B'] : ['A'];
+      
+      scenarios.forEach(s => {
+        const r = results[s];
+        const isA = s === 'A';
+        const dashStyle = isA ? [] : [5, 5];
+        
+        // Balance
+        datasets.push({
+          label: `Balance${compareMode ? ' (' + s + ')' : ''}`,
+          data: r.balanceHistory.map(p => ({ x: p.month, y: p.value })),
+          borderColor: isA ? '#dc3545' : '#e57373',
+          backgroundColor: 'transparent',
+          borderDash: dashStyle,
+          borderWidth: 2,
+          tension: 0.1,
+          pointRadius: 0
+        });
+        
+        // Principal Paid
+        datasets.push({
+          label: `Principal Paid${compareMode ? ' (' + s + ')' : ''}`,
+          data: r.principalHistory.map(p => ({ x: p.month, y: p.value })),
+          borderColor: isA ? '#28a745' : '#81c784',
+          backgroundColor: 'transparent',
+          borderDash: dashStyle,
+          borderWidth: 2,
+          tension: 0.1,
+          pointRadius: 0
+        });
+        
+        // Interest Paid
+        datasets.push({
+          label: `Interest Paid${compareMode ? ' (' + s + ')' : ''}`,
+          data: r.interestHistory.map(p => ({ x: p.month, y: p.value })),
+          borderColor: isA ? '#ffc107' : '#ffeb3b',
+          backgroundColor: 'transparent',
+          borderDash: dashStyle,
+          borderWidth: 2,
+          tension: 0.1,
+          pointRadius: 0
+        });
+      });
+      
+      mortgageChart = new Chart(ctx, {
+        type: 'line',
+        data: { datasets },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: {
+              labels: { color: isDark ? '#e4e6eb' : '#333' }
+            },
+            tooltip: {
+              callbacks: {
+                title: function(items) {
+                  const month = items[0].parsed.x;
+                  return `Month ${month} (Year ${Math.floor(month/12)})`;
+                },
+                label: function(context) {
+                  return context.dataset.label + ': ' + formatCurrencyWhole(context.parsed.y);
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              type: 'linear',
+              title: { display: true, text: 'Month', color: isDark ? '#98a3b8' : '#667a9a' },
+              ticks: { color: isDark ? '#98a3b8' : '#667a9a' },
+              grid: { color: isDark ? '#353a47' : '#e8eef8' }
+            },
+            y: {
+              title: { display: true, text: 'Amount ($)', color: isDark ? '#98a3b8' : '#667a9a' },
+              ticks: {
+                callback: function(value) { return formatCurrencyWhole(value); },
+                color: isDark ? '#98a3b8' : '#667a9a'
+              },
+              grid: { color: isDark ? '#353a47' : '#e8eef8' }
+            }
+          }
+        }
+      });
+    }
+    
+    function toggleAmortization() {
+      const grid = document.getElementById('amortizationGrid');
+      const btn = document.getElementById('amortToggle');
+      
+      if (grid.style.display === 'none') {
+        grid.style.display = 'grid';
+        btn.classList.add('active');
+        btn.textContent = '📊 Hide Amortization Schedule';
+      } else {
+        grid.style.display = 'none';
+        btn.classList.remove('active');
+        btn.textContent = '📊 Show Amortization Schedule';
+      }
+    }
+    
+    function generateAmortizationTable(scenario, amortization) {
+      const container = document.getElementById('amortizationTable' + scenario);
+      let html = `
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Date</th>
+              <th>Payment</th>
+              <th>Principal</th>
+              <th>Interest</th>
+              <th>Extra</th>
+              <th>Balance</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+      
+      amortization.forEach(row => {
+        html += `
+          <tr>
+            <td>${row.month}</td>
+            <td>${row.date}</td>
+            <td>${formatCurrency(row.payment)}</td>
+            <td>${formatCurrency(row.principal)}</td>
+            <td>${formatCurrency(row.interest)}</td>
+            <td>${row.extra > 0 ? formatCurrency(row.extra) : '-'}</td>
+            <td>${formatCurrency(row.balance)}</td>
+          </tr>
+        `;
+      });
+      
+      html += '</tbody></table>';
+      container.innerHTML = html;
+    }
+    
+    // Save/Load functionality
+    function showSaveModal() {
+      document.getElementById('saveModal').classList.add('active');
+      document.getElementById('scenarioName').focus();
+    }
+    
+    function closeSaveModal() {
+      document.getElementById('saveModal').classList.remove('active');
+      document.getElementById('scenarioName').value = '';
+    }
+    
+    async function saveScenario() {
+      const name = document.getElementById('scenarioName').value.trim();
+      if (!name) {
+        alert('Please enter a name for the scenario');
+        return;
+      }
+      
+      const compareMode = document.getElementById('compareMode').checked;
+      const scenarios = compareMode ? ['A', 'B'] : ['A'];
+      const data = {};
+      
+      scenarios.forEach(s => {
+        data[s] = {
+          homePrice: parseFloat(document.getElementById('homePrice' + s).value) || 0,
+          downPayment: parseFloat(document.getElementById('downPayment' + s).value) || 0,
+          downPaymentMode: dpMode[s] ? '$' : '%',
+          interestRate: parseFloat(document.getElementById('interestRate' + s).value) || 0,
+          loanTerm: parseInt(document.getElementById('loanTerm' + s).value) || 30,
+          startDate: document.getElementById('startDate' + s).value,
+          propertyTax: parseFloat(document.getElementById('propertyTax' + s).value) || 0,
+          homeInsurance: parseFloat(document.getElementById('homeInsurance' + s).value) || 0,
+          pmi: parseFloat(document.getElementById('pmi' + s).value) || 0,
+          hoa: parseFloat(document.getElementById('hoa' + s).value) || 0,
+          extraMonthly: parseFloat(document.getElementById('extraMonthly' + s).value) || 0,
+          extraYearly: parseFloat(document.getElementById('extraYearly' + s).value) || 0,
+          extraStartDate: document.getElementById('extraStartDate' + s).value
+        };
+      });
+      
+      try {
+        const response = await fetch('/tools/mortgage/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, compareMode, scenarios: data })
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          closeSaveModal();
+          
+          // Add to dropdown
+          const select = document.getElementById('savedScenarios');
+          const option = document.createElement('option');
+          option.value = result.id;
+          option.textContent = name + ' (' + new Date().toLocaleDateString() + ')';
+          select.appendChild(option);
+          
+          alert('Scenario saved successfully!');
+        } else {
+          alert('Failed to save scenario');
+        }
+      } catch (e) {
+        console.error(e);
+        alert('Error saving scenario');
+      }
+    }
+    
+    async function loadScenario() {
+      const select = document.getElementById('savedScenarios');
+      const id = select.value;
+      if (!id) return;
+      
+      try {
+        const response = await fetch('/tools/mortgage/load/' + id);
+        if (response.ok) {
+          const data = await response.json();
+          
+          // Set compare mode
+          document.getElementById('compareMode').checked = data.compareMode;
+          toggleCompareMode();
+          
+          // Load scenario data
+          Object.keys(data.scenarios).forEach(s => {
+            const sc = data.scenarios[s];
+            document.getElementById('homePrice' + s).value = sc.homePrice;
+            
+            // Handle down payment mode
+            dpMode[s] = sc.downPaymentMode === '$';
+            const btn = document.getElementById('dpToggle' + s);
+            btn.textContent = sc.downPaymentMode;
+            if (dpMode[s]) {
+              btn.classList.add('active');
+              document.getElementById('downPayment' + s).step = '1000';
+            } else {
+              btn.classList.remove('active');
+              document.getElementById('downPayment' + s).step = '0.5';
+            }
+            document.getElementById('downPayment' + s).value = sc.downPayment;
+            
+            document.getElementById('interestRate' + s).value = sc.interestRate;
+            document.getElementById('loanTerm' + s).value = sc.loanTerm;
+            document.getElementById('startDate' + s).value = sc.startDate;
+            document.getElementById('propertyTax' + s).value = sc.propertyTax;
+            document.getElementById('homeInsurance' + s).value = sc.homeInsurance;
+            document.getElementById('pmi' + s).value = sc.pmi;
+            document.getElementById('hoa' + s).value = sc.hoa;
+            document.getElementById('extraMonthly' + s).value = sc.extraMonthly;
+            document.getElementById('extraYearly' + s).value = sc.extraYearly;
+            document.getElementById('extraStartDate' + s).value = sc.extraStartDate;
+            
+            updateDownPaymentDisplay(s);
+          });
+          
+          // Auto-calculate
+          calculateMortgage();
+        } else {
+          alert('Failed to load scenario');
+        }
+      } catch (e) {
+        console.error(e);
+        alert('Error loading scenario');
+      }
+    }
+    
+    async function deleteMortgageScenario() {
+      const select = document.getElementById('savedScenarios');
+      const id = select.value;
+      if (!id) {
+        alert('Please select a scenario to delete');
+        return;
+      }
+      
+      const scenarioName = select.options[select.selectedIndex].text;
+      if (!confirm(`Are you sure you want to delete "${scenarioName}"?\n\nThis action cannot be undone.`)) {
+        return;
+      }
+      
+      try {
+        const response = await fetch('/tools/mortgage/delete/' + id, {method: 'DELETE'});
+        if (response.ok) {
+          // Remove from dropdown
+          select.remove(select.selectedIndex);
+          select.value = '';
+          alert('Scenario deleted successfully');
+        } else {
+          const data = await response.json();
+          alert('Failed to delete: ' + (data.error || 'Unknown error'));
+        }
+      } catch (e) {
+        console.error(e);
+        alert('Error deleting scenario');
+      }
+    }
+    
+    // Initialize
+    updateDownPaymentDisplay('A');
+    updateDownPaymentDisplay('B');
+    
+    // Check URL param for tab
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('tab') === 'networth') {
+      showTool('networth');
+    }
+    
+    // ==========================================================================
+    // Tool Switching
+    // ==========================================================================
+    
+    function showTool(tool) {
+      const mortgageSection = document.getElementById('mortgage-calculator');
+      const networthSection = document.getElementById('networth-manager');
+      const projectionsSection = document.getElementById('investment-projections');
+      const montecarloSection = document.getElementById('montecarlo-section');
+      const mortgageTab = document.getElementById('mortgageTab');
+      const networthTab = document.getElementById('networthTab');
+      const projectionsTab = document.getElementById('projectionsTab');
+      const montecarloTab = document.getElementById('montecarloTab');
+      const mortgageSaved = document.getElementById('mortgageSavedSection');
+      
+      // Hide all sections
+      mortgageSection.style.display = 'none';
+      networthSection.style.display = 'none';
+      projectionsSection.style.display = 'none';
+      montecarloSection.style.display = 'none';
+      mortgageTab.classList.remove('active');
+      networthTab.classList.remove('active');
+      projectionsTab.classList.remove('active');
+      montecarloTab.classList.remove('active');
+      mortgageSaved.style.display = 'none';
+      
+      if (tool === 'mortgage') {
+        mortgageSection.style.display = 'block';
+        mortgageTab.classList.add('active');
+        mortgageSaved.style.display = 'flex';
+      } else if (tool === 'networth') {
+        networthSection.style.display = 'block';
+        networthTab.classList.add('active');
+        drawNetworthChart();
+      } else if (tool === 'projections') {
+        projectionsSection.style.display = 'block';
+        projectionsTab.classList.add('active');
+        updateProjections();
+      } else if (tool === 'montecarlo') {
+        montecarloSection.style.display = 'block';
+        montecarloTab.classList.add('active');
+        loadMCSavedScenarios();
+      }
+    }
+    
+    // ==========================================================================
+    // Net Worth Manager Functions
+    // ==========================================================================
+    
+    let networthChart = null;
+    
+    function showAddAccountModal(isAsset) {
+      document.getElementById('addAccountIsAsset').value = isAsset ? 'true' : 'false';
+      document.getElementById('addAccountTitle').textContent = isAsset ? '➕ Add Asset Account' : '➕ Add Liability Account';
+      
+      // Show relevant options
+      const assetOptions = document.getElementById('assetTypeOptions');
+      const liabilityOptions = document.getElementById('liabilityTypeOptions');
+      if (isAsset) {
+        assetOptions.style.display = 'block';
+        liabilityOptions.style.display = 'none';
+        document.getElementById('addAccountType').value = '';
+      } else {
+        assetOptions.style.display = 'none';
+        liabilityOptions.style.display = 'block';
+        document.getElementById('addAccountType').value = '';
+      }
+      
+      document.getElementById('addAccountModal').classList.add('active');
+    }
+    
+    function closeAddAccountModal() {
+      document.getElementById('addAccountModal').classList.remove('active');
+    }
+    
+    function showAddBalanceModal(accountId, accountName) {
+      document.getElementById('balanceAccountId').value = accountId;
+      document.getElementById('balanceAccountName').textContent = 'Account: ' + accountName;
+      document.getElementById('addBalanceModal').classList.add('active');
+    }
+    
+    function closeAddBalanceModal() {
+      document.getElementById('addBalanceModal').classList.remove('active');
+    }
+    
+    async function showAccountDetails(accountId) {
+      try {
+        const response = await fetch('/tools/networth/account/' + accountId);
+        if (response.ok) {
+          const data = await response.json();
+          
+          document.getElementById('accountDetailsTitle').textContent = '📋 ' + data.name;
+          document.getElementById('deleteAccountForm').action = '/tools/networth/account/' + accountId + '/delete';
+          
+          let html = `
+            <div style="margin-bottom: 1em;">
+              <strong>Type:</strong> ${data.account_type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}<br>
+              <strong>Category:</strong> ${data.is_asset ? 'Asset' : 'Liability'}<br>
+              ${data.institution ? '<strong>Institution:</strong> ' + data.institution + '<br>' : ''}
+              ${data.notes ? '<strong>Notes:</strong> ' + data.notes + '<br>' : ''}
+            </div>
+          `;
+          
+          // Contribution settings (for assets)
+          if (data.is_asset && data.contribution) {
+            html += `
+              <div style="background: var(--border-light); padding: 0.8em; border-radius: 6px; margin-bottom: 1em;">
+                <strong>Contribution Settings:</strong><br>
+                <span style="color: var(--text-secondary);">
+                  $${data.contribution.amount.toLocaleString()} ${data.contribution.frequency}
+                  ${data.contribution.employer_match > 0 ? ' (+ ' + data.contribution.employer_match + '% employer match)' : ''}
+                </span>
+              </div>
+            `;
+          }
+          
+          // Balance history
+          if (data.balances && data.balances.length > 0) {
+            html += '<h4 style="margin: 1em 0 0.5em 0;">Balance History</h4>';
+            html += '<div style="max-height: 200px; overflow-y: auto;">';
+            html += '<table style="width: 100%; font-size: 0.9em; border-collapse: collapse;">';
+            html += '<tr style="background: var(--border-light);"><th style="padding: 0.5em; text-align: left;">Date</th><th style="padding: 0.5em; text-align: right;">Balance</th><th style="padding: 0.5em;"></th></tr>';
+            
+            data.balances.forEach(b => {
+              html += `
+                <tr style="border-bottom: 1px solid var(--border-light);">
+                  <td style="padding: 0.5em;">${new Date(b.date).toLocaleDateString()}</td>
+                  <td style="padding: 0.5em; text-align: right; font-weight: 500;">$${b.balance.toLocaleString()}</td>
+                  <td style="padding: 0.5em; text-align: right;">
+                    <form action="/tools/networth/balance/${b.id}/delete" method="post" style="display:inline;">
+                      <button type="submit" style="background: none; border: none; color: #c44; cursor: pointer; font-size: 0.85em;">×</button>
+                    </form>
+                  </td>
+                </tr>
+              `;
+            });
+            
+            html += '</table></div>';
+          } else {
+            html += '<p style="color: var(--text-secondary);">No balance history recorded yet.</p>';
+          }
+          
+          document.getElementById('accountDetailsContent').innerHTML = html;
+          document.getElementById('accountDetailsModal').classList.add('active');
+        }
+      } catch (e) {
+        console.error('Error loading account details:', e);
+      }
+    }
+    
+    function closeAccountDetailsModal() {
+      document.getElementById('accountDetailsModal').classList.remove('active');
+    }
+    
+    function drawNetworthChart() {
+      const ctx = document.getElementById('networthChart');
+      if (!ctx) return;
+      
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      
+      if (networthChart) {
+        networthChart.destroy();
+      }
+      
+      // Parse balance history from template
+      const balanceHistory = {{ balance_history | tojson }};
+      
+      // Group by date and calculate net worth over time
+      const dateMap = {};
+      balanceHistory.forEach(b => {
+        if (!dateMap[b.date]) {
+          dateMap[b.date] = { assets: 0, liabilities: 0 };
+        }
+        if (b.is_asset) {
+          dateMap[b.date].assets += b.balance;
+        } else {
+          dateMap[b.date].liabilities += b.balance;
+        }
+      });
+      
+      // Sort dates and build chart data
+      const sortedDates = Object.keys(dateMap).sort();
+      const labels = sortedDates.map(d => new Date(d).toLocaleDateString('en-US', { month: 'short', year: '2-digit' }));
+      
+      // Calculate running totals
+      let runningAssets = 0;
+      let runningLiabilities = 0;
+      const assetsData = [];
+      const liabilitiesData = [];
+      const netWorthData = [];
+      
+      sortedDates.forEach(d => {
+        runningAssets = dateMap[d].assets || runningAssets;
+        runningLiabilities = dateMap[d].liabilities || runningLiabilities;
+        assetsData.push(runningAssets);
+        liabilitiesData.push(runningLiabilities);
+        netWorthData.push(runningAssets - runningLiabilities);
+      });
+      
+      if (sortedDates.length === 0) {
+        ctx.parentElement.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 2em;">Add balance entries to see your net worth trend over time.</p>';
+        return;
+      }
+      
+      networthChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'Assets',
+              data: assetsData,
+              borderColor: '#28a745',
+              backgroundColor: 'rgba(40, 167, 69, 0.1)',
+              fill: true,
+              tension: 0.3
+            },
+            {
+              label: 'Liabilities',
+              data: liabilitiesData,
+              borderColor: '#dc3545',
+              backgroundColor: 'rgba(220, 53, 69, 0.1)',
+              fill: true,
+              tension: 0.3
+            },
+            {
+              label: 'Net Worth',
+              data: netWorthData,
+              borderColor: '#3875e8',
+              backgroundColor: 'transparent',
+              borderWidth: 3,
+              tension: 0.3
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              labels: { color: isDark ? '#e4e6eb' : '#333' }
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return context.dataset.label + ': $' + context.parsed.y.toLocaleString();
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              ticks: {
+                callback: function(value) { return '$' + value.toLocaleString(); },
+                color: isDark ? '#98a3b8' : '#667a9a'
+              },
+              grid: { color: isDark ? '#353a47' : '#e8eef8' }
+            },
+            x: {
+              ticks: { color: isDark ? '#98a3b8' : '#667a9a' },
+              grid: { display: false }
+            }
+          }
+        }
+      });
+    }
+    
+    // ==========================================================================
+    // Net Worth Table Toggle
+    // ==========================================================================
+    
+    function toggleNetworthTable() {
+      const table = document.getElementById('networthTable');
+      const btn = document.getElementById('networthTableToggle');
+      
+      if (table.style.display === 'none') {
+        table.style.display = 'block';
+        btn.classList.add('active');
+        btn.textContent = '📋 Hide Account Performance Table';
+      } else {
+        table.style.display = 'none';
+        btn.classList.remove('active');
+        btn.textContent = '📋 Show Account Performance Table';
+      }
+    }
+    
+    // ==========================================================================
+    // Contribution Modal Functions
+    // ==========================================================================
+    
+    function showContributionModal(accountId, accountName, isAsset, amount, frequency, expectedReturn, interestRate, stocksPct, bondsPct, cashPct) {
+      document.getElementById('contributionModalTitle').textContent = '⚙️ ' + accountName + ' Settings';
+      document.getElementById('contribAccountId').value = accountId;
+      document.getElementById('contribAmount').value = amount || 0;
+      document.getElementById('contribFrequency').value = frequency || 'monthly';
+      document.getElementById('contribExpectedReturn').value = expectedReturn ?? 7.0;
+      document.getElementById('contribInterestRate').value = interestRate ?? 0;
+      document.getElementById('contribStocksPct').value = stocksPct ?? 80;
+      document.getElementById('contribBondsPct').value = bondsPct ?? 15;
+      document.getElementById('contribCashPct').value = cashPct ?? 5;
+      
+      // Show/hide appropriate fields based on asset/liability
+      if (isAsset) {
+        document.getElementById('contribAmountLabel').textContent = 'Contribution Amount';
+        document.getElementById('expectedReturnGroup').style.display = 'block';
+        document.getElementById('portfolioAllocationGroup').style.display = 'block';
+        document.getElementById('interestRateGroup').style.display = 'none';
+      } else {
+        document.getElementById('contribAmountLabel').textContent = 'Payment Amount';
+        document.getElementById('expectedReturnGroup').style.display = 'none';
+        document.getElementById('portfolioAllocationGroup').style.display = 'none';
+        document.getElementById('interestRateGroup').style.display = 'block';
+      }
+      
+      validateAllocation();
+      document.getElementById('contributionModal').classList.add('active');
+    }
+    
+    function closeContributionModal() {
+      document.getElementById('contributionModal').classList.remove('active');
+    }
+    
+    async function submitContribution(event) {
+      event.preventDefault();
+      const btn = document.querySelector('#contributionForm .btn-confirm');
+      btn.disabled = true;
+      btn.textContent = 'Saving...';
+      
+      const data = {
+        account_id: parseInt(document.getElementById('contribAccountId').value),
+        amount: parseFloat(document.getElementById('contribAmount').value) || 0,
+        frequency: document.getElementById('contribFrequency').value,
+        expected_return: parseFloat(document.getElementById('contribExpectedReturn').value) ?? 7.0,
+        interest_rate: parseFloat(document.getElementById('contribInterestRate').value) ?? 0,
+        stocks_pct: parseFloat(document.getElementById('contribStocksPct').value) ?? 80,
+        bonds_pct: parseFloat(document.getElementById('contribBondsPct').value) ?? 15,
+        cash_pct: parseFloat(document.getElementById('contribCashPct').value) ?? 5,
+        notes: null
+      };
+      
+      try {
+        const response = await fetch('/tools/networth/contribution/update-json', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          closeContributionModal();
+          // Refresh the page to show updated data, maintaining current tab
+          const currentTab = document.querySelector('.tool-tab.active')?.id?.replace('Tab', '') || 'projections';
+          window.location.href = '/tools?tab=' + currentTab;
+        } else {
+          alert('Error: ' + (result.error || 'Failed to save'));
+          btn.disabled = false;
+          btn.textContent = 'Save Settings';
+        }
+      } catch (error) {
+        alert('Error saving settings: ' + error.message);
+        btn.disabled = false;
+        btn.textContent = 'Save Settings';
+      }
+    }
+    
+    // ==========================================================================
+    // Investment Projections
+    // ==========================================================================
+    
+    let projectionChart = null;
+    
+    // Account data for projections
+    const accountData = {{ networth_summary.accounts | tojson }};
+    
+    const FREQUENCY_MULTIPLIERS = {
+      'weekly': 52,
+      'bi-weekly': 26,
+      'semi-monthly': 24,
+      'monthly': 12,
+      'quarterly': 4,
+      'annually': 1
+    };
+    
+    function updateProjections() {
+      const years = parseInt(document.getElementById('projectionYears').value) || 10;
+      const filter = document.getElementById('projectionFilter').value;
+      
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      const ctx = document.getElementById('projectionChart');
+      if (!ctx) return;
+      
+      if (projectionChart) {
+        projectionChart.destroy();
+      }
+      
+      // Filter accounts based on selection
+      let filteredAccounts = accountData;
+      if (filter === 'assets') {
+        filteredAccounts = accountData.filter(a => a.is_asset);
+      } else if (filter === 'liabilities') {
+        filteredAccounts = accountData.filter(a => !a.is_asset);
+      } else if (filter !== 'all') {
+        filteredAccounts = accountData.filter(a => a.id === parseInt(filter));
+      }
+      
+      // Generate projection data
+      const months = years * 12;
+      const labels = [];
+      for (let m = 0; m <= months; m += 3) { // Every quarter
+        const y = Math.floor(m / 12);
+        const mo = m % 12;
+        labels.push(y === 0 && mo === 0 ? 'Now' : `Y${y}${mo > 0 ? ' M' + mo : ''}`);
+      }
+      
+      const datasets = [];
+      const colors = ['#3875e8', '#28a745', '#ffc107', '#dc3545', '#6f42c1', '#17a2b8', '#fd7e14', '#20c997'];
+      
+      // Historical net worth line (solid)
+      const historicalData = [];
+      const balanceHistory = {{ balance_history | tojson }};
+      if (balanceHistory.length > 0) {
+        // Just show current as starting point
+        historicalData.push(filteredAccounts.reduce((sum, a) => sum + (a.is_asset ? a.current_balance : -a.current_balance), 0));
+      }
+      
+      // Project each account
+      let totalProjection = [];
+      for (let i = 0; i <= months / 3; i++) {
+        totalProjection.push(0);
+      }
+      
+      filteredAccounts.forEach((account, idx) => {
+        const projection = [];
+        let balance = account.current_balance;
+        const contrib = account.contribution || {};
+        const monthlyContrib = (contrib.amount || 0) * (FREQUENCY_MULTIPLIERS[contrib.frequency || 'monthly'] / 12);
+        const monthlyReturn = account.is_asset 
+          ? ((contrib.expected_return || 7.0) / 100 / 12)
+          : ((contrib.interest_rate || 0) / 100 / 12);
+        
+        for (let m = 0; m <= months; m++) {
+          if (m % 3 === 0) { // Every quarter
+            projection.push(account.is_asset ? balance : -balance);
+          }
+          
+          if (account.is_asset) {
+            // Assets grow with returns and contributions
+            balance = balance * (1 + monthlyReturn) + monthlyContrib;
+          } else {
+            // Liabilities: balance decreases with payments, increases with interest
+            const interest = balance * monthlyReturn;
+            balance = Math.max(0, balance + interest - monthlyContrib);
+          }
+        }
+        
+        // Add to total
+        projection.forEach((val, i) => {
+          totalProjection[i] += val;
+        });
+        
+        if (filter !== 'all' || filteredAccounts.length <= 5) {
+          datasets.push({
+            label: account.name,
+            data: projection,
+            borderColor: colors[idx % colors.length],
+            backgroundColor: 'transparent',
+            borderWidth: 2,
+            tension: 0.3,
+            pointRadius: 0
+          });
+        }
+      });
+      
+      // Add total line
+      datasets.unshift({
+        label: filter === 'all' ? 'Total Net Worth' : 'Total',
+        data: totalProjection,
+        borderColor: '#3875e8',
+        backgroundColor: 'rgba(56, 117, 232, 0.1)',
+        borderWidth: 3,
+        fill: true,
+        tension: 0.3
+      });
+      
+      projectionChart = new Chart(ctx, {
+        type: 'line',
+        data: { labels, datasets },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              labels: { color: isDark ? '#e4e6eb' : '#333' }
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return context.dataset.label + ': $' + context.parsed.y.toLocaleString('en-US', {maximumFractionDigits: 0});
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              ticks: {
+                callback: function(value) { return '$' + value.toLocaleString(); },
+                color: isDark ? '#98a3b8' : '#667a9a'
+              },
+              grid: { color: isDark ? '#353a47' : '#e8eef8' }
+            },
+            x: {
+              ticks: { color: isDark ? '#98a3b8' : '#667a9a' },
+              grid: { display: false }
+            }
+          }
+        }
+      });
+      
+      // Update summary
+      const summaryDiv = document.getElementById('projectionSummary');
+      const startTotal = totalProjection[0];
+      const endTotal = totalProjection[totalProjection.length - 1];
+      const totalGrowth = endTotal - startTotal;
+      const growthPct = startTotal > 0 ? ((endTotal / startTotal - 1) * 100) : 0;
+      
+      summaryDiv.innerHTML = `
+        <div style="background: var(--bg-card); border-radius: 10px; padding: 1em; text-align: center; border-left: 4px solid var(--accent);">
+          <div style="font-size: 0.85em; color: var(--text-secondary);">Starting Value</div>
+          <div style="font-size: 1.5em; font-weight: 700; color: var(--text-heading);">$${startTotal.toLocaleString('en-US', {maximumFractionDigits: 0})}</div>
+        </div>
+        <div style="background: var(--bg-card); border-radius: 10px; padding: 1em; text-align: center; border-left: 4px solid #28a745;">
+          <div style="font-size: 0.85em; color: var(--text-secondary);">Projected Value (${years}yr)</div>
+          <div style="font-size: 1.5em; font-weight: 700; color: #28a745;">$${endTotal.toLocaleString('en-US', {maximumFractionDigits: 0})}</div>
+        </div>
+        <div style="background: var(--bg-card); border-radius: 10px; padding: 1em; text-align: center; border-left: 4px solid ${totalGrowth >= 0 ? '#28a745' : '#dc3545'};">
+          <div style="font-size: 0.85em; color: var(--text-secondary);">Total Growth</div>
+          <div style="font-size: 1.5em; font-weight: 700; color: ${totalGrowth >= 0 ? '#28a745' : '#dc3545'};">
+            ${totalGrowth >= 0 ? '+' : ''}$${totalGrowth.toLocaleString('en-US', {maximumFractionDigits: 0})}
+          </div>
+        </div>
+        <div style="background: var(--bg-card); border-radius: 10px; padding: 1em; text-align: center; border-left: 4px solid ${growthPct >= 0 ? '#28a745' : '#dc3545'};">
+          <div style="font-size: 0.85em; color: var(--text-secondary);">Growth %</div>
+          <div style="font-size: 1.5em; font-weight: 700; color: ${growthPct >= 0 ? '#28a745' : '#dc3545'};">
+            ${growthPct >= 0 ? '+' : ''}${growthPct.toFixed(1)}%
+          </div>
+        </div>
+      `;
+    }
+    
+    // Close modals when clicking outside
+    document.querySelectorAll('.modal-overlay').forEach(modal => {
+      modal.addEventListener('click', function(e) {
+        if (e.target === this) {
+          this.classList.remove('active');
+        }
+      });
+    });
+    
+    // ==========================================================================
+    // Portfolio Allocation Validation
+    // ==========================================================================
+    
+    function validateAllocation() {
+      const stocks = parseFloat(document.getElementById('contribStocksPct').value) || 0;
+      const bonds = parseFloat(document.getElementById('contribBondsPct').value) || 0;
+      const cash = parseFloat(document.getElementById('contribCashPct').value) || 0;
+      const total = stocks + bonds + cash;
+      const warning = document.getElementById('allocationWarning');
+      
+      if (Math.abs(total - 100) > 0.01) {
+        warning.style.display = 'block';
+        warning.textContent = `⚠️ Total is ${total.toFixed(0)}% - must sum to 100%`;
+      } else {
+        warning.style.display = 'none';
+      }
+    }
+    
+    // ==========================================================================
+    // Net Worth CSV Upload
+    // ==========================================================================
+    
+    document.getElementById('networthCsvInput')?.addEventListener('change', function(e) {
+      const fileName = e.target.files[0]?.name || '';
+      document.getElementById('networthCsvFileName').textContent = fileName ? `Selected: ${fileName}` : '';
+    });
+    
+    async function uploadNetworthCSV() {
+      const fileInput = document.getElementById('networthCsvInput');
+      const statusDiv = document.getElementById('networthCsvStatus');
+      
+      if (!fileInput.files.length) {
+        statusDiv.innerHTML = '<span style="color:#dc3545;">Please select a CSV file first</span>';
+        return;
+      }
+      
+      const formData = new FormData();
+      formData.append('csv_file', fileInput.files[0]);
+      
+      statusDiv.innerHTML = '<span style="color:var(--accent);">Uploading...</span>';
+      
+      try {
+        const response = await fetch('/tools/networth/csv-upload', {
+          method: 'POST',
+          body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          let msg = `<span style="color:#28a745;">✓ ${data.balances_added} balance(s) imported</span>`;
+          if (data.accounts_created.length > 0) {
+            msg += `<br><small>New accounts: ${data.accounts_created.join(', ')}</small>`;
+          }
+          if (data.errors.length > 0) {
+            msg += `<br><small style="color:#ffc107;">⚠ ${data.errors.length} row(s) had issues</small>`;
+          }
+          statusDiv.innerHTML = msg;
+          setTimeout(() => window.location.reload(), 1500);
+        } else {
+          statusDiv.innerHTML = `<span style="color:#dc3545;">✗ ${data.error}</span>`;
+        }
+      } catch (err) {
+        statusDiv.innerHTML = `<span style="color:#dc3545;">✗ Upload failed: ${err.message}</span>`;
+      }
+    }
+    
+    // ==========================================================================
+    // Monte Carlo Simulation
+    // ==========================================================================
+    
+    let mcChart = null;
+    let lastMCResults = null;
+    
+    async function runMonteCarlo() {
+      const years = parseInt(document.getElementById('mcYears').value) || 30;
+      const numSims = parseInt(document.getElementById('mcSimulations').value) || 1000;
+      const showTodaysDollars = document.getElementById('mcInflationMode').value === 'true';
+      const runBtn = document.getElementById('mcRunBtn');
+      const resultsDiv = document.getElementById('mcResults');
+      
+      // Update label
+      document.getElementById('mcInflationLabel').textContent = 
+        showTodaysDollars ? 'Results shown in today\'s dollars (inflation-adjusted)' : 'Results shown in future dollars (nominal)';
+      
+      runBtn.disabled = true;
+      runBtn.textContent = '⏳ Running...';
+      
+      try {
+        const response = await fetch('/tools/montecarlo/run', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({years: years, num_simulations: numSims, show_todays_dollars: showTodaysDollars})
+        });
+        
+        const data = await response.json();
+        
+        if (data.error) {
+          alert('Error: ' + data.error);
+          return;
+        }
+        
+        lastMCResults = data;
+        document.getElementById('mcSaveBtn').disabled = false;
+        
+        // Update stats
+        document.getElementById('mcP90').textContent = '$' + data.percentiles.p90.toLocaleString('en-US', {maximumFractionDigits: 0});
+        document.getElementById('mcP75').textContent = '$' + data.percentiles.p75.toLocaleString('en-US', {maximumFractionDigits: 0});
+        document.getElementById('mcP50').textContent = '$' + data.percentiles.p50.toLocaleString('en-US', {maximumFractionDigits: 0});
+        document.getElementById('mcP25').textContent = '$' + data.percentiles.p25.toLocaleString('en-US', {maximumFractionDigits: 0});
+        document.getElementById('mcP10').textContent = '$' + data.percentiles.p10.toLocaleString('en-US', {maximumFractionDigits: 0});
+        document.getElementById('mcMean').textContent = '$' + data.percentiles.mean.toLocaleString('en-US', {maximumFractionDigits: 0});
+        document.getElementById('mcStd').textContent = '$' + data.percentiles.std.toLocaleString('en-US', {maximumFractionDigits: 0});
+        document.getElementById('mcMax').textContent = '$' + data.percentiles.max.toLocaleString('en-US', {maximumFractionDigits: 0});
+        document.getElementById('mcMin').textContent = '$' + data.percentiles.min.toLocaleString('en-US', {maximumFractionDigits: 0});
+        
+        // Update tax analysis if available
+        if (data.tax_analysis) {
+          updateMCTaxAnalysis(data.tax_analysis);
+        }
+        
+        // Draw chart
+        drawMCChart(data.path_percentiles);
+        
+        resultsDiv.style.display = 'block';
+      } catch (err) {
+        alert('Error running simulation: ' + err.message);
+      } finally {
+        runBtn.disabled = false;
+        runBtn.textContent = '🚀 Run Simulation';
+      }
+    }
+    
+    function updateMCTaxAnalysis(taxData) {
+      // Format as currency with percentage
+      const fmt = (amount, pct) => `$${amount.toLocaleString('en-US', {maximumFractionDigits: 0})} (${pct.toFixed(1)}%)`;
+      
+      // Current portfolio
+      if (taxData.current) {
+        document.getElementById('mcTaxCurrentFree').textContent = fmt(taxData.current.tax_free.amount, taxData.current.tax_free.percentage);
+        document.getElementById('mcTaxCurrentDeferred').textContent = fmt(taxData.current.tax_deferred.amount, taxData.current.tax_deferred.percentage);
+        document.getElementById('mcTaxCurrentTaxable').textContent = fmt(taxData.current.taxable.amount, taxData.current.taxable.percentage);
+      }
+      
+      // Projected portfolio
+      if (taxData.projected) {
+        document.getElementById('mcTaxProjectedFree').textContent = fmt(taxData.projected.tax_free.amount, taxData.projected.tax_free.percentage);
+        document.getElementById('mcTaxProjectedDeferred').textContent = fmt(taxData.projected.tax_deferred.amount, taxData.projected.tax_deferred.percentage);
+        document.getElementById('mcTaxProjectedTaxable').textContent = fmt(taxData.projected.taxable.amount, taxData.projected.taxable.percentage);
+      }
+    }
+    
+    function drawMCChart(pathData) {
+      const ctx = document.getElementById('mcChart');
+      if (mcChart) mcChart.destroy();
+      
+      const datasets = [
+        {
+          label: '90th Percentile (Best)',
+          data: pathData.p90,
+          borderColor: 'rgba(40, 167, 69, 0.8)',
+          backgroundColor: 'rgba(40, 167, 69, 0.1)',
+          fill: '+1',
+          tension: 0.2,
+          borderWidth: 2
+        },
+        {
+          label: '75th Percentile',
+          data: pathData.p75,
+          borderColor: 'rgba(56, 117, 232, 0.8)',
+          backgroundColor: 'rgba(56, 117, 232, 0.1)',
+          fill: '+1',
+          tension: 0.2,
+          borderWidth: 2
+        },
+        {
+          label: '50th Percentile (Median)',
+          data: pathData.p50,
+          borderColor: '#6c757d',
+          backgroundColor: 'rgba(108, 117, 125, 0.1)',
+          fill: '+1',
+          tension: 0.2,
+          borderWidth: 3
+        },
+        {
+          label: '25th Percentile',
+          data: pathData.p25,
+          borderColor: 'rgba(255, 193, 7, 0.8)',
+          backgroundColor: 'rgba(255, 193, 7, 0.1)',
+          fill: '+1',
+          tension: 0.2,
+          borderWidth: 2
+        },
+        {
+          label: '10th Percentile (Worst)',
+          data: pathData.p10,
+          borderColor: 'rgba(220, 53, 69, 0.8)',
+          backgroundColor: 'transparent',
+          tension: 0.2,
+          borderWidth: 2
+        }
+      ];
+      
+      mcChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: pathData.years.map(y => `Year ${y}`),
+          datasets: datasets
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'top' },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return context.dataset.label + ': $' + context.raw.toLocaleString('en-US', {maximumFractionDigits: 0});
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              ticks: {
+                callback: value => '$' + (value / 1000000).toFixed(1) + 'M'
+              },
+              title: { display: true, text: 'Portfolio Value' }
+            },
+            x: {
+              title: { display: true, text: 'Years' }
+            }
+          }
+        }
+      });
+    }
+    
+    async function saveMCScenario() {
+      if (!lastMCResults) {
+        alert('Run a simulation first');
+        return;
+      }
+      
+      const name = prompt('Enter a name for this scenario:');
+      if (!name) return;
+      
+      try {
+        const response = await fetch('/tools/montecarlo/save', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            name: name,
+            years: lastMCResults.years,
+            num_simulations: lastMCResults.num_simulations,
+            results: lastMCResults
+          })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+          alert('Scenario saved successfully!');
+          loadMCSavedScenarios();
+        } else {
+          alert('Error saving: ' + data.error);
+        }
+      } catch (err) {
+        alert('Error saving: ' + err.message);
+      }
+    }
+    
+    async function loadMCSavedScenarios() {
+      try {
+        const response = await fetch('/tools/montecarlo/scenarios');
+        const scenarios = await response.json();
+        
+        const container = document.getElementById('mcSavedScenarios');
+        
+        if (!scenarios.length) {
+          container.innerHTML = '<p style="color: var(--text-secondary); font-size: 0.9em;">No saved scenarios yet. Run a simulation to save it.</p>';
+          return;
+        }
+        
+        container.innerHTML = scenarios.map(s => `
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.6em 1em; background: var(--bg-card); border-radius: 6px; margin-bottom: 0.5em; border: 1px solid var(--border-light);">
+            <div>
+              <strong>${s.name}</strong>
+              <span style="color: var(--text-secondary); font-size: 0.85em; margin-left: 0.5em;">
+                ${s.years}yr / ${s.simulations} sims
+              </span>
+            </div>
+            <div style="display: flex; gap: 0.5em;">
+              <button onclick="loadMCScenario(${s.id})" style="background: var(--border-light); border: none; padding: 0.3em 0.8em; border-radius: 4px; cursor: pointer; font-size: 0.85em;">Load</button>
+              <button onclick="deleteMCScenario(${s.id}, '${s.name.replace(/'/g, "\\'")}')" style="background: #fee; border: 1px solid #fcc; padding: 0.3em 0.8em; border-radius: 4px; cursor: pointer; font-size: 0.85em; color: #c44;">🗑</button>
+            </div>
+          </div>
+        `).join('');
+      } catch (err) {
+        console.error('Error loading scenarios:', err);
+      }
+    }
+    
+    async function loadMCScenario(id) {
+      try {
+        const response = await fetch(`/tools/montecarlo/load/${id}`);
+        const data = await response.json();
+        
+        if (data.results) {
+          lastMCResults = data.results;
+          document.getElementById('mcSaveBtn').disabled = false;
+          
+          // Update UI
+          document.getElementById('mcYears').value = data.years;
+          document.getElementById('mcSimulations').value = data.simulations;
+          
+          // Update stats
+          document.getElementById('mcP90').textContent = '$' + data.results.percentiles.p90.toLocaleString('en-US', {maximumFractionDigits: 0});
+          document.getElementById('mcP75').textContent = '$' + data.results.percentiles.p75.toLocaleString('en-US', {maximumFractionDigits: 0});
+          document.getElementById('mcP50').textContent = '$' + data.results.percentiles.p50.toLocaleString('en-US', {maximumFractionDigits: 0});
+          document.getElementById('mcP25').textContent = '$' + data.results.percentiles.p25.toLocaleString('en-US', {maximumFractionDigits: 0});
+          document.getElementById('mcP10').textContent = '$' + data.results.percentiles.p10.toLocaleString('en-US', {maximumFractionDigits: 0});
+          document.getElementById('mcMean').textContent = '$' + data.results.percentiles.mean.toLocaleString('en-US', {maximumFractionDigits: 0});
+          document.getElementById('mcStd').textContent = '$' + data.results.percentiles.std.toLocaleString('en-US', {maximumFractionDigits: 0});
+          document.getElementById('mcMax').textContent = '$' + data.results.percentiles.max.toLocaleString('en-US', {maximumFractionDigits: 0});
+          document.getElementById('mcMin').textContent = '$' + data.results.percentiles.min.toLocaleString('en-US', {maximumFractionDigits: 0});
+          
+          drawMCChart(data.results.path_percentiles);
+          document.getElementById('mcResults').style.display = 'block';
+        }
+      } catch (err) {
+        alert('Error loading scenario: ' + err.message);
+      }
+    }
+    
+    async function deleteMCScenario(id, name) {
+      const confirmMsg = name 
+        ? `Are you sure you want to delete "${name}"?\n\nThis action cannot be undone.`
+        : 'Are you sure you want to delete this scenario?\n\nThis action cannot be undone.';
+      if (!confirm(confirmMsg)) return;
+      
+      try {
+        const response = await fetch(`/tools/montecarlo/delete/${id}`, {method: 'DELETE'});
+        if (response.ok) {
+          loadMCSavedScenarios();
+        } else {
+          const data = await response.json();
+          alert('Failed to delete: ' + (data.error || 'Unknown error'));
+        }
+      } catch (err) {
+        alert('Error deleting: ' + err.message);
+      }
+    }
+  </script>
+</body>
+</html>

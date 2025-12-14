@@ -1,0 +1,670 @@
+"""
+Budget management routes for MoneyFlow application.
+
+This module handles all budget-related functionality including:
+- Fixed costs (recurring expenses like rent, utilities, subscriptions)
+- Variable budget items (flexible spending categories)
+- Budget summary calculations and projections
+- Category and subcategory management for budget items
+
+The budget system supports:
+- Multiple payment frequencies (weekly, monthly, annually, etc.)
+- Integration with expense tracking for "tracked average" budgeting
+- 50/30/20 budgeting rule compliance tracking
+- Net worth and cash flow projections
+
+Routes:
+    GET  /budget              - Main budget page
+    POST /budget/fixed-cost/add    - Add new fixed cost
+    POST /budget/fixed-cost/update/<id> - Update fixed cost
+    DELETE /budget/fixed-cost/<id>  - Delete fixed cost
+    POST /budget/item/add          - Add budget item
+    POST /budget/item/update/<id>  - Update budget item
+    DELETE /budget/item/<id>       - Delete budget item
+    GET  /api/fixed-cost/<id>      - Get fixed cost JSON
+    GET  /api/budget-item/<id>     - Get budget item JSON
+    GET  /api/budget/summary       - Get full budget summary JSON
+"""
+
+from fastapi import APIRouter, Request, Form, Depends, Query
+from fastapi.responses import RedirectResponse, JSONResponse
+from fastapi.templating import Jinja2Templates
+from sqlalchemy.orm import Session
+from sqlalchemy import func
+from datetime import date, timedelta
+from typing import Optional
+from app.db import get_db
+from app.models.user import User
+from app.models.income_taxes import IncomeTaxes
+from app.models.expense import Category as ExpenseCategory, SubCategory, Expense
+from app.models.budget import BudgetCategory, FixedCost, BudgetItem
+from app.routes.income_taxes import calculate_taxes, PAY_PERIODS_PER_YEAR
+from app.logging_config import get_logger
+import base64
+
+# Module logger for budget operations
+logger = get_logger(__name__)
+
+# Router and template configuration
+router = APIRouter()
+templates = Jinja2Templates(directory="app/templates")
+
+# ============================================================================
+# CONSTANTS
+# ============================================================================
+
+# Multipliers to convert payment frequencies to monthly amounts
+# Example: $100/week * 4.333 = ~$433.30/month
+FREQUENCY_TO_MONTHLY = {
+    "weekly": 4.333,       # 52 weeks / 12 months
+    "bi-weekly": 2.167,    # 26 payments / 12 months
+    "semi-monthly": 2,     # 24 payments / 12 months
+    "monthly": 1,          # Direct monthly amount
+    "quarterly": 0.333,    # 4 payments / 12 months
+    "annually": 0.0833     # 1 payment / 12 months
+}
+
+# Available payment frequency options
+FREQUENCIES = ["weekly", "bi-weekly", "semi-monthly", "monthly", "quarterly", "annually"]
+
+# Budget category types following the 50/30/20 rule
+# Needs: Essential expenses (50%)
+# Wants: Discretionary spending (30%)
+# Savings/Debt: Financial goals (20%)
+CATEGORY_TYPES = [
+    ("need", "Need"),
+    ("want", "Want"),
+    ("savings", "Savings"),
+    ("debt", "Debt Payment")
+]
+
+# ============================================================================
+# HELPER FUNCTIONS
+# ============================================================================
+
+
+def get_current_user(request: Request, db: Session):
+    """Get the logged-in user from cookies."""
+    username = request.cookies.get("username")
+    if not username:
+        logger.debug("No username cookie found in request")
+        return None
+    user = db.query(User).filter(User.username == username).first()
+    if user:
+        logger.debug(f"Authenticated user: {username}")
+    else:
+        logger.warning(f"Username cookie exists but user not found: {username}")
+    return user
+
+
+def get_profile_picture_data(user):
+    """Get base64 encoded profile picture data for templates."""
+    if user and user.profile_picture and user.profile_picture_type:
+        return base64.b64encode(user.profile_picture).decode('utf-8'), user.profile_picture_type
+    return None, None
+
+
+def get_expense_averages_multi(db: Session, user_id: int):
+    """Get average monthly expenses by category over 3, 6, and 12 months."""
+    today = date.today()
+    
+    result = {
+        3: {"category": {}, "subcategory": {}},
+        6: {"category": {}, "subcategory": {}},
+        12: {"category": {}, "subcategory": {}}
+    }
+    
+    for months in [3, 6, 12]:
+        start_date = today - timedelta(days=months * 30)
+        
+        expenses = db.query(Expense).filter(
+            Expense.user_id == user_id,
+            Expense.expense_date >= start_date
+        ).all()
+        
+        category_totals = {}
+        subcategory_totals = {}
+        
+        for expense in expenses:
+            cat_id = expense.category_id
+            subcat_id = expense.subcategory_id
+            
+            if cat_id:
+                category_totals[cat_id] = category_totals.get(cat_id, 0) + expense.amount
+                
+            if subcat_id:
+                key = (cat_id, subcat_id)
+                subcategory_totals[key] = subcategory_totals.get(key, 0) + expense.amount
+        
+        # Convert to monthly averages
+        result[months]["category"] = {k: v / months for k, v in category_totals.items()}
+        result[months]["subcategory"] = {k: v / months for k, v in subcategory_totals.items()}
+    
+    return result
+
+
+def get_expense_averages(db: Session, user_id: int, months: int = 3):
+    """Get average monthly expenses by category over the last N months."""
+    start_date = date.today() - timedelta(days=months * 30)
+    
+    expenses = db.query(Expense).filter(
+        Expense.user_id == user_id,
+        Expense.expense_date >= start_date
+    ).all()
+    
+    category_totals = {}
+    subcategory_totals = {}
+    
+    for expense in expenses:
+        cat_id = expense.category_id
+        subcat_id = expense.subcategory_id
+        
+        if cat_id:
+            category_totals[cat_id] = category_totals.get(cat_id, 0) + expense.amount
+            
+        if subcat_id:
+            key = (cat_id, subcat_id)
+            subcategory_totals[key] = subcategory_totals.get(key, 0) + expense.amount
+    
+    # Convert to monthly averages
+    category_averages = {k: v / months for k, v in category_totals.items()}
+    subcategory_averages = {k: v / months for k, v in subcategory_totals.items()}
+    
+    return category_averages, subcategory_averages
+
+
+def calculate_budget_summary(db: Session, user_id: int, income_data):
+    """Calculate complete budget summary."""
+    # Get income data
+    if income_data:
+        calculated = calculate_taxes(income_data)
+        gross_monthly = calculated["salary"] / 12 if calculated else 0
+        net_monthly = calculated["net_per_pay"] * calculated["pay_periods"] / 12 if calculated else 0
+        total_retirement_monthly = calculated["employee_contributions"] / 12 if calculated else 0
+    else:
+        gross_monthly = 0
+        net_monthly = 0
+        total_retirement_monthly = 0
+        calculated = None
+    
+    # Get expense averages for all periods (for tracked amounts)
+    expense_avgs = get_expense_averages_multi(db, user_id)
+    
+    # Get fixed costs
+    fixed_costs = db.query(FixedCost).filter(
+        FixedCost.user_id == user_id,
+        FixedCost.is_active == True
+    ).all()
+    
+    fixed_costs_monthly = {}
+    fixed_costs_by_type = {"need": 0, "want": 0, "savings": 0, "debt": 0}
+    fixed_costs_details = []  # For detailed display
+    
+    for cost in fixed_costs:
+        multiplier = FREQUENCY_TO_MONTHLY.get(cost.frequency, 1)
+        
+        # Determine amount based on mode
+        amount_mode = cost.amount_mode or "fixed"
+        tracking_months = cost.tracking_period_months or 3
+        
+        if amount_mode == "tracked" and cost.expense_category_id:
+            # Use tracked average from expense data
+            if cost.expense_subcategory_id:
+                tracked_amount = expense_avgs[tracking_months]["subcategory"].get(
+                    (cost.expense_category_id, cost.expense_subcategory_id), 0
+                )
+            else:
+                tracked_amount = expense_avgs[tracking_months]["category"].get(
+                    cost.expense_category_id, 0
+                )
+            monthly_amount = tracked_amount
+            display_amount = tracked_amount
+            using_tracked = True
+        else:
+            # Use fixed amount
+            monthly_amount = cost.amount * multiplier
+            display_amount = cost.amount
+            using_tracked = False
+        
+        fixed_costs_monthly[cost.id] = monthly_amount
+        fixed_costs_by_type[cost.category_type] = fixed_costs_by_type.get(cost.category_type, 0) + monthly_amount
+        
+        # Get linked category name
+        linked_cat_name = None
+        if cost.expense_category_id:
+            cat = db.query(ExpenseCategory).filter(ExpenseCategory.id == cost.expense_category_id).first()
+            linked_cat_name = cat.name if cat else None
+        
+        fixed_costs_details.append({
+            "id": cost.id,
+            "name": cost.name,
+            "amount": cost.amount,
+            "frequency": cost.frequency,
+            "category_type": cost.category_type,
+            "amount_mode": amount_mode,
+            "tracking_period_months": tracking_months,
+            "monthly_amount": monthly_amount,
+            "using_tracked": using_tracked,
+            "expense_category_id": cost.expense_category_id,
+            "linked_category_name": linked_cat_name,
+            "tracked_3mo": expense_avgs[3]["category"].get(cost.expense_category_id, 0) if cost.expense_category_id else 0,
+            "tracked_6mo": expense_avgs[6]["category"].get(cost.expense_category_id, 0) if cost.expense_category_id else 0,
+            "tracked_12mo": expense_avgs[12]["category"].get(cost.expense_category_id, 0) if cost.expense_category_id else 0
+        })
+    
+    total_fixed_monthly = sum(fixed_costs_monthly.values())
+    
+    # Get budget items (expense categories with budgets)
+    budget_items = db.query(BudgetItem).filter(BudgetItem.user_id == user_id).all()
+    
+    # Get expense averages (deprecated - we use expense_avgs now with specific periods)
+    category_averages, subcategory_averages = get_expense_averages(db, user_id, months=3)
+    
+    variable_costs_by_type = {"need": 0, "want": 0}
+    budget_item_details = []
+    
+    for item in budget_items:
+        tracking_months = item.tracking_period_months or 3
+        
+        if item.use_tracked_average:
+            if item.expense_subcategory_id:
+                amount = expense_avgs[tracking_months]["subcategory"].get(
+                    (item.expense_category_id, item.expense_subcategory_id), 0
+                )
+            elif item.expense_category_id:
+                amount = expense_avgs[tracking_months]["category"].get(item.expense_category_id, 0)
+            else:
+                amount = 0
+        else:
+            amount = item.specified_amount or 0
+        
+        # Get category/subcategory names
+        cat_name = ""
+        subcat_name = ""
+        if item.expense_category_id:
+            cat = db.query(ExpenseCategory).filter(ExpenseCategory.id == item.expense_category_id).first()
+            cat_name = cat.name if cat else "Unknown"
+        if item.expense_subcategory_id:
+            subcat = db.query(SubCategory).filter(SubCategory.id == item.expense_subcategory_id).first()
+            subcat_name = subcat.name if subcat else ""
+        
+        variable_costs_by_type[item.category_type] = variable_costs_by_type.get(item.category_type, 0) + amount
+        
+        budget_item_details.append({
+            "id": item.id,
+            "expense_category_id": item.expense_category_id,
+            "expense_subcategory_id": item.expense_subcategory_id,
+            "category_name": cat_name,
+            "subcategory_name": subcat_name,
+            "use_tracked_average": item.use_tracked_average,
+            "tracking_period_months": tracking_months,
+            "tracked_3mo": expense_avgs[3]["category"].get(item.expense_category_id, 0) if item.expense_category_id else 0,
+            "tracked_6mo": expense_avgs[6]["category"].get(item.expense_category_id, 0) if item.expense_category_id else 0,
+            "tracked_12mo": expense_avgs[12]["category"].get(item.expense_category_id, 0) if item.expense_category_id else 0,
+            "specified_amount": item.specified_amount,
+            "monthly_amount": amount,
+            "category_type": item.category_type
+        })
+    
+    total_variable_monthly = sum(variable_costs_by_type.values())
+    
+    # Calculate totals
+    total_needs = fixed_costs_by_type["need"] + variable_costs_by_type.get("need", 0)
+    total_wants = fixed_costs_by_type["want"] + variable_costs_by_type.get("want", 0)
+    total_savings = fixed_costs_by_type["savings"] + total_retirement_monthly
+    total_debt = fixed_costs_by_type["debt"]
+    
+    total_expenses = total_fixed_monthly + total_variable_monthly
+    leftover = net_monthly - total_expenses
+    
+    # Percentages
+    needs_pct = (total_needs / net_monthly * 100) if net_monthly > 0 else 0
+    wants_pct = (total_wants / net_monthly * 100) if net_monthly > 0 else 0
+    savings_pct = (total_savings / net_monthly * 100) if net_monthly > 0 else 0
+    debt_pct = (total_debt / net_monthly * 100) if net_monthly > 0 else 0
+    
+    return {
+        "income": calculated,
+        "gross_monthly": gross_monthly,
+        "net_monthly": net_monthly,
+        "total_retirement_monthly": total_retirement_monthly,
+        "fixed_costs": fixed_costs,
+        "fixed_costs_monthly": fixed_costs_monthly,
+        "fixed_costs_by_type": fixed_costs_by_type,
+        "fixed_costs_details": fixed_costs_details,
+        "total_fixed_monthly": total_fixed_monthly,
+        "budget_items": budget_item_details,
+        "variable_costs_by_type": variable_costs_by_type,
+        "total_variable_monthly": total_variable_monthly,
+        "total_needs": total_needs,
+        "total_wants": total_wants,
+        "total_savings": total_savings,
+        "total_debt": total_debt,
+        "total_expenses": total_expenses,
+        "leftover": leftover,
+        "needs_pct": needs_pct,
+        "wants_pct": wants_pct,
+        "savings_pct": savings_pct,
+        "debt_pct": debt_pct,
+        "category_averages": category_averages,
+        "subcategory_averages": subcategory_averages,
+        "expense_avgs": expense_avgs
+    }
+
+
+@router.get("/budget")
+def budget_page(request: Request, db: Session = Depends(get_db)):
+    user = get_current_user(request, db)
+    if not user:
+        return RedirectResponse("/login")
+    
+    # Get income data
+    income_data = db.query(IncomeTaxes).filter(IncomeTaxes.user_id == user.id).first()
+    
+    # Get budget categories
+    budget_categories = db.query(BudgetCategory).filter(BudgetCategory.user_id == user.id).all()
+    
+    # Get expense categories (for linking)
+    expense_categories = db.query(ExpenseCategory).filter(ExpenseCategory.user_id == user.id).all()
+    
+    # Calculate budget summary
+    summary = calculate_budget_summary(db, user.id, income_data)
+    
+    # Get fixed costs
+    fixed_costs = db.query(FixedCost).filter(FixedCost.user_id == user.id).order_by(FixedCost.category_type, FixedCost.name).all()
+    
+    # Get budget items
+    budget_items = db.query(BudgetItem).filter(BudgetItem.user_id == user.id).all()
+    
+    profile_picture_b64, profile_picture_type = get_profile_picture_data(user)
+    
+    return templates.TemplateResponse("budget.html", {
+        "request": request,
+        "title": "Budget",
+        "user": user,
+        "budget_categories": budget_categories,
+        "expense_categories": expense_categories,
+        "fixed_costs": fixed_costs,
+        "budget_items": budget_items,
+        "summary": summary,
+        "frequencies": FREQUENCIES,
+        "category_types": CATEGORY_TYPES,
+        "frequency_to_monthly": FREQUENCY_TO_MONTHLY,
+        "profile_picture_b64": profile_picture_b64,
+        "profile_picture_type": profile_picture_type,
+        "dark_mode": user.dark_mode
+    })
+
+
+@router.post("/budget/fixed-cost/add")
+def add_fixed_cost(
+    request: Request,
+    db: Session = Depends(get_db),
+    name: str = Form(...),
+    amount: float = Form(0),
+    frequency: str = Form("monthly"),
+    category_type: str = Form("need"),
+    expense_category_id: Optional[int] = Form(None),
+    expense_subcategory_id: Optional[int] = Form(None),
+    amount_mode: str = Form("fixed"),
+    tracking_period_months: int = Form(3)
+):
+    user = get_current_user(request, db)
+    if not user:
+        return RedirectResponse("/login")
+    
+    fixed_cost = FixedCost(
+        user_id=user.id,
+        name=name.strip(),
+        amount=amount,
+        frequency=frequency,
+        category_type=category_type,
+        expense_category_id=expense_category_id if expense_category_id and expense_category_id > 0 else None,
+        expense_subcategory_id=expense_subcategory_id if expense_subcategory_id and expense_subcategory_id > 0 else None,
+        amount_mode=amount_mode,
+        tracking_period_months=tracking_period_months,
+        is_active=True
+    )
+    db.add(fixed_cost)
+    db.commit()
+    
+    return RedirectResponse("/budget", status_code=303)
+
+
+@router.get("/api/fixed-cost/{cost_id}")
+def get_fixed_cost(cost_id: int, request: Request, db: Session = Depends(get_db)):
+    """Get a single fixed cost for editing."""
+    user = get_current_user(request, db)
+    if not user:
+        return JSONResponse({"error": "Not authenticated"}, status_code=401)
+    
+    cost = db.query(FixedCost).filter(
+        FixedCost.id == cost_id,
+        FixedCost.user_id == user.id
+    ).first()
+    
+    if not cost:
+        return JSONResponse({"error": "Not found"}, status_code=404)
+    
+    return JSONResponse({
+        "id": cost.id,
+        "name": cost.name,
+        "amount": cost.amount,
+        "frequency": cost.frequency,
+        "category_type": cost.category_type,
+        "expense_category_id": cost.expense_category_id,
+        "expense_subcategory_id": cost.expense_subcategory_id,
+        "amount_mode": cost.amount_mode or "fixed",
+        "tracking_period_months": cost.tracking_period_months or 3
+    })
+
+
+@router.post("/budget/fixed-cost/update/{cost_id}")
+def update_fixed_cost(
+    cost_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    name: str = Form(...),
+    amount: float = Form(0),
+    frequency: str = Form("monthly"),
+    category_type: str = Form("need"),
+    expense_category_id: Optional[int] = Form(None),
+    expense_subcategory_id: Optional[int] = Form(None),
+    amount_mode: str = Form("fixed"),
+    tracking_period_months: int = Form(3)
+):
+    user = get_current_user(request, db)
+    if not user:
+        return RedirectResponse("/login")
+    
+    cost = db.query(FixedCost).filter(
+        FixedCost.id == cost_id,
+        FixedCost.user_id == user.id
+    ).first()
+    
+    if cost:
+        cost.name = name.strip()
+        cost.amount = amount
+        cost.frequency = frequency
+        cost.category_type = category_type
+        cost.expense_category_id = expense_category_id if expense_category_id and expense_category_id > 0 else None
+        cost.expense_subcategory_id = expense_subcategory_id if expense_subcategory_id and expense_subcategory_id > 0 else None
+        cost.amount_mode = amount_mode
+        cost.tracking_period_months = tracking_period_months
+        db.commit()
+    
+    return RedirectResponse("/budget", status_code=303)
+
+
+@router.delete("/budget/fixed-cost/{cost_id}")
+def delete_fixed_cost(cost_id: int, request: Request, db: Session = Depends(get_db)):
+    user = get_current_user(request, db)
+    if not user:
+        return JSONResponse({"error": "Not authenticated"}, status_code=401)
+    
+    cost = db.query(FixedCost).filter(
+        FixedCost.id == cost_id,
+        FixedCost.user_id == user.id
+    ).first()
+    
+    if cost:
+        db.delete(cost)
+        db.commit()
+        return JSONResponse({"success": True})
+    
+    return JSONResponse({"error": "Not found"}, status_code=404)
+
+
+@router.post("/budget/item/add")
+def add_budget_item(
+    request: Request,
+    db: Session = Depends(get_db),
+    expense_category_id: int = Form(...),
+    expense_subcategory_id: Optional[int] = Form(None),
+    use_tracked_average: bool = Form(True),
+    specified_amount: float = Form(0),
+    tracking_period_months: int = Form(3),
+    category_type: str = Form("need")
+):
+    user = get_current_user(request, db)
+    if not user:
+        return RedirectResponse("/login")
+    
+    # Check if this category/subcategory already has a budget item
+    existing = db.query(BudgetItem).filter(
+        BudgetItem.user_id == user.id,
+        BudgetItem.expense_category_id == expense_category_id,
+        BudgetItem.expense_subcategory_id == (expense_subcategory_id if expense_subcategory_id else None)
+    ).first()
+    
+    if existing:
+        # Update existing
+        existing.use_tracked_average = use_tracked_average
+        existing.specified_amount = specified_amount
+        existing.tracking_period_months = tracking_period_months
+        existing.category_type = category_type
+    else:
+        # Create new
+        item = BudgetItem(
+            user_id=user.id,
+            expense_category_id=expense_category_id,
+            expense_subcategory_id=expense_subcategory_id if expense_subcategory_id else None,
+            use_tracked_average=use_tracked_average,
+            specified_amount=specified_amount,
+            tracking_period_months=tracking_period_months,
+            category_type=category_type
+        )
+        db.add(item)
+    
+    db.commit()
+    return RedirectResponse("/budget", status_code=303)
+
+
+@router.get("/api/budget-item/{item_id}")
+def get_budget_item(item_id: int, request: Request, db: Session = Depends(get_db)):
+    """Get a single budget item for editing."""
+    user = get_current_user(request, db)
+    if not user:
+        return JSONResponse({"error": "Not authenticated"}, status_code=401)
+    
+    item = db.query(BudgetItem).filter(
+        BudgetItem.id == item_id,
+        BudgetItem.user_id == user.id
+    ).first()
+    
+    if not item:
+        return JSONResponse({"error": "Not found"}, status_code=404)
+    
+    # Get expense averages for this category
+    expense_avgs = get_expense_averages_multi(db, user.id)
+    
+    return JSONResponse({
+        "id": item.id,
+        "expense_category_id": item.expense_category_id,
+        "expense_subcategory_id": item.expense_subcategory_id,
+        "use_tracked_average": item.use_tracked_average,
+        "specified_amount": item.specified_amount,
+        "tracking_period_months": item.tracking_period_months or 3,
+        "category_type": item.category_type,
+        "tracked_3mo": expense_avgs[3]["category"].get(item.expense_category_id, 0) if item.expense_category_id else 0,
+        "tracked_6mo": expense_avgs[6]["category"].get(item.expense_category_id, 0) if item.expense_category_id else 0,
+        "tracked_12mo": expense_avgs[12]["category"].get(item.expense_category_id, 0) if item.expense_category_id else 0
+    })
+
+
+@router.post("/budget/item/update/{item_id}")
+def update_budget_item(
+    item_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    use_tracked_average: bool = Form(True),
+    specified_amount: float = Form(0),
+    tracking_period_months: int = Form(3),
+    category_type: str = Form("need")
+):
+    user = get_current_user(request, db)
+    if not user:
+        return RedirectResponse("/login")
+    
+    item = db.query(BudgetItem).filter(
+        BudgetItem.id == item_id,
+        BudgetItem.user_id == user.id
+    ).first()
+    
+    if item:
+        item.use_tracked_average = use_tracked_average
+        item.specified_amount = specified_amount
+        item.tracking_period_months = tracking_period_months
+        item.category_type = category_type
+        db.commit()
+    
+    return RedirectResponse("/budget", status_code=303)
+
+
+@router.delete("/budget/item/{item_id}")
+def delete_budget_item(item_id: int, request: Request, db: Session = Depends(get_db)):
+    user = get_current_user(request, db)
+    if not user:
+        return JSONResponse({"error": "Not authenticated"}, status_code=401)
+    
+    item = db.query(BudgetItem).filter(
+        BudgetItem.id == item_id,
+        BudgetItem.user_id == user.id
+    ).first()
+    
+    if item:
+        db.delete(item)
+        db.commit()
+        return JSONResponse({"success": True})
+    
+    return JSONResponse({"error": "Not found"}, status_code=404)
+
+
+@router.get("/api/budget/summary")
+def get_budget_summary_api(request: Request, db: Session = Depends(get_db)):
+    """API endpoint to get budget summary data."""
+    user = get_current_user(request, db)
+    if not user:
+        return JSONResponse({"error": "Not authenticated"}, status_code=401)
+    
+    income_data = db.query(IncomeTaxes).filter(IncomeTaxes.user_id == user.id).first()
+    summary = calculate_budget_summary(db, user.id, income_data)
+    
+    # Convert to JSON-serializable format
+    return JSONResponse({
+        "gross_monthly": summary["gross_monthly"],
+        "net_monthly": summary["net_monthly"],
+        "total_retirement_monthly": summary["total_retirement_monthly"],
+        "total_fixed_monthly": summary["total_fixed_monthly"],
+        "total_variable_monthly": summary["total_variable_monthly"],
+        "total_needs": summary["total_needs"],
+        "total_wants": summary["total_wants"],
+        "total_savings": summary["total_savings"],
+        "total_debt": summary["total_debt"],
+        "leftover": summary["leftover"],
+        "needs_pct": summary["needs_pct"],
+        "wants_pct": summary["wants_pct"],
+        "savings_pct": summary["savings_pct"],
+        "debt_pct": summary["debt_pct"]
+    })
+

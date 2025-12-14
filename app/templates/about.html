@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="{% if dark_mode %}dark{% else %}light{% endif %}">
+<head>
+    <meta charset="UTF-8">
+    <title>About | MoneyFlow</title>
+    <link rel="stylesheet" href="/static/app.css">
+    <style>
+        :root {
+            --bg-primary: #f5f6fa;
+            --bg-card: #fff;
+            --bg-header: linear-gradient(135deg, #1a3366 0%, #243869 50%, #2d4a7c 100%);
+            --text-primary: #222;
+            --text-secondary: #667a9a;
+            --text-heading: #243869;
+            --border-light: #e8eef8;
+            --nav-bg: #243869;
+            --accent: #3875e8;
+        }
+        [data-theme="dark"] {
+            --bg-primary: #1a1d24;
+            --bg-card: #242830;
+            --bg-header: linear-gradient(135deg, #0d1117 0%, #161920 50%, #1f242d 100%);
+            --text-primary: #e4e6eb;
+            --text-secondary: #98a3b8;
+            --text-heading: #b8c5db;
+            --border-light: #353a47;
+            --nav-bg: #161920;
+            --accent: #4d8ef0;
+        }
+        
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-primary); color: var(--text-primary); }
+        
+        /* App Header with Profile */
+        .app-header {
+            background: var(--bg-header);
+            padding: 1em 2em;
+            display: flex; align-items: center; justify-content: space-between;
+            border-bottom: 3px solid var(--accent);
+        }
+        .header-left { flex: 1; }
+        .header-center { flex: 2; text-align: center; }
+        .header-right { flex: 1; display: flex; justify-content: flex-end; align-items: center; gap: 1em; }
+        .app-title { margin: 0; font-size: 2.2em; font-weight: 700; color: #fff; letter-spacing: -0.02em; }
+        .app-title .icon { margin-right: 0.3em; }
+        .app-subtitle { margin: 0.3em 0 0 0; font-size: 0.9em; color: rgba(255,255,255,0.75); }
+        .app-version { display: inline-block; background: rgba(255,255,255,0.15); padding: 0.15em 0.6em; border-radius: 12px; font-size: 0.75em; color: rgba(255,255,255,0.9); margin-left: 0.5em; }
+        .about-link { color: rgba(255,255,255,0.8); text-decoration: none; font-size: 0.9em; padding: 0.5em 1em; border-radius: 6px; background: rgba(255,255,255,0.2); }
+        
+        /* Profile dropdown */
+        .profile-dropdown { position: relative; }
+        .profile-btn { display: flex; align-items: center; gap: 0.5em; background: rgba(255,255,255,0.1); border: none; padding: 0.5em 1em; border-radius: 8px; cursor: pointer; color: #fff; font-size: 0.9em; }
+        .profile-btn:hover { background: rgba(255,255,255,0.2); }
+        .profile-avatar { width: 44px; height: 44px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 1.1em; overflow: hidden; border: 2px solid rgba(255,255,255,0.3); }
+        .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .dropdown-menu { display: none; position: absolute; right: 0; top: 100%; background: var(--bg-card); border-radius: 10px; box-shadow: 0 8px 30px rgba(0,0,0,0.25); min-width: 200px; margin-top: 0.5em; z-index: 1000; overflow: hidden; }
+        .dropdown-menu.active { display: block; }
+        .dropdown-header { padding: 1em; background: var(--border-light); }
+        .dropdown-header .name { font-weight: 600; color: var(--text-heading); }
+        .dropdown-header .username { font-size: 0.85em; color: var(--text-secondary); }
+        .dropdown-item { display: block; padding: 0.8em 1em; color: var(--text-primary); text-decoration: none; font-size: 0.9em; }
+        .dropdown-item:hover { background: var(--border-light); }
+        .dropdown-item.danger { color: #dc3545; }
+        .dropdown-divider { height: 1px; background: var(--border-light); }
+        
+        /* Navigation */
+        nav { background: var(--nav-bg); padding: 0; display: flex; justify-content: center; }
+        .tabs { display: flex; gap: 0; }
+        .tab { color: rgba(255,255,255,0.8); text-decoration: none; padding: 1em 1.5em; font-size: 0.95em; font-weight: 500; border-bottom: 3px solid transparent; }
+        .tab:hover { color: #fff; background: rgba(255,255,255,0.05); }
+        .tab.active { color: #fff; background: rgba(255,255,255,0.1); border-bottom-color: var(--accent); font-weight: 600; }
+        
+        /* Page Content */
+        .page-content { max-width: 1200px; margin: 0 auto; padding: 2em; }
+        
+        .page-header { text-align: center; margin-bottom: 2em; }
+        .page-header h1 { color: var(--text-heading); font-size: 2.5em; margin: 0 0 0.3em 0; }
+        .page-header p { color: var(--text-secondary); font-size: 1.1em; max-width: 700px; margin: 0 auto; }
+        
+        .feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 1.5em; }
+        
+        .feature-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(60,90,170,0.08);
+            padding: 1.5em;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .feature-card:hover { transform: translateY(-2px); box-shadow: 0 4px 20px rgba(60,90,170,0.12); }
+        
+        .feature-card h2 {
+            color: var(--text-heading); font-size: 1.3em; margin: 0 0 0.5em 0;
+            display: flex; align-items: center; gap: 0.5em;
+        }
+        .feature-card h2 .icon { font-size: 1.3em; }
+        
+        .feature-card p { color: var(--text-secondary); font-size: 0.95em; margin: 0 0 1em 0; line-height: 1.6; }
+        
+        .feature-list { list-style: none; padding: 0; margin: 0; }
+        .feature-list li {
+            padding: 0.5em 0; border-bottom: 1px solid var(--border-light);
+            font-size: 0.9em; color: var(--text-primary);
+            display: flex; align-items: flex-start; gap: 0.5em;
+        }
+        .feature-list li:last-child { border-bottom: none; }
+        .feature-list li::before { content: '✓'; color: #28a745; font-weight: bold; }
+        
+        .cta-section {
+            background: linear-gradient(135deg, var(--accent) 0%, #2d5cc9 100%);
+            border-radius: 12px; padding: 2em; text-align: center; margin-top: 2em; color: #fff;
+        }
+        .cta-section h2 { margin: 0 0 0.5em 0; font-size: 1.5em; }
+        .cta-section p { margin: 0 0 1em 0; opacity: 0.9; }
+        .cta-btn {
+            display: inline-block; background: #fff; color: var(--accent);
+            padding: 0.8em 2em; border-radius: 8px; text-decoration: none;
+            font-weight: 600; transition: transform 0.2s;
+        }
+        .cta-btn:hover { transform: scale(1.05); }
+        
+        .version-info { text-align: center; margin-top: 2em; padding: 1em; color: var(--text-secondary); font-size: 0.9em; }
+    </style>
+</head>
+<body>
+  <!-- App Header -->
+  <header class="app-header">
+    <div class="header-left"></div>
+    <div class="header-center">
+      <h1 class="app-title"><span class="icon">💸</span>MoneyFlow<span class="app-version">v1.2.0</span></h1>
+      <p class="app-subtitle">Your personal finance command center</p>
+    </div>
+    <div class="header-right">
+      <a href="/about" class="about-link">ℹ️ About</a>
+      {% if user %}
+      <div class="profile-dropdown">
+        <button class="profile-btn" onclick="toggleProfileDropdown()">
+          <div class="profile-avatar">
+            {% if profile_picture_b64 %}<img src="data:{{ profile_picture_type }};base64,{{ profile_picture_b64 }}" alt="">{% else %}{{ user.name[0].upper() }}{% endif %}
+          </div>
+          <span>{{ user.name.split()[0] }}</span>
+          <span style="font-size:0.7em;">▼</span>
+        </button>
+        <div class="dropdown-menu" id="profileDropdown">
+          <div class="dropdown-header">
+            <div class="name">{{ user.name }}</div>
+            <div class="username">@{{ user.username }}</div>
+          </div>
+          <a href="/profile" class="dropdown-item">⚙️ Account Settings</a>
+          <a href="/profile#data" class="dropdown-item">📊 Manage Data</a>
+          <div class="dropdown-divider"></div>
+          <a href="/logout" class="dropdown-item danger">🚪 Sign Out</a>
+        </div>
+      </div>
+      {% else %}
+      <a href="/login" class="about-link">Sign In</a>
+      {% endif %}
+    </div>
+  </header>
+  
+  <!-- Navigation -->
+  <nav>
+    <div class="tabs">
+      <a href="/home" class="tab">Dashboard</a>
+      <a href="/budget" class="tab">Budget</a>
+      <a href="/expenses" class="tab">Expenses</a>
+      <a href="/income-taxes" class="tab">Income & Taxes</a>
+      <a href="/tools" class="tab">Tools</a>
+      <a href="/forum" class="tab">Resources</a>
+    </div>
+  </nav>
+
+  <div class="page-content">
+    <div class="page-header">
+      <h1>📚 About MoneyFlow</h1>
+      <p>A comprehensive personal finance management application to help you track income, expenses, budgets, and taxes all in one place.</p>
+    </div>
+    
+    <div class="feature-grid">
+      <!-- Dashboard -->
+      <div class="feature-card">
+        <h2><span class="icon">🏠</span> Dashboard</h2>
+        <p>Get a complete overview of your financial health with interactive visualizations.</p>
+        <ul class="feature-list">
+          <li>Sankey chart showing money flow from income to expenses</li>
+          <li>Monthly summary with gross/net income and surplus</li>
+          <li>Spending trends by category and subcategory</li>
+          <li>Month-over-month comparison charts</li>
+          <li>Quick action links to common tasks</li>
+        </ul>
+      </div>
+      
+      <!-- Budget -->
+      <div class="feature-card">
+        <h2><span class="icon">📋</span> Budget Management</h2>
+        <p>Plan and track your monthly budget with fixed and variable expenses.</p>
+        <ul class="feature-list">
+          <li>Fixed costs tracking (rent, utilities, subscriptions)</li>
+          <li>Variable expense budgeting with categories</li>
+          <li>Option to use tracked averages or fixed amounts</li>
+          <li>50/30/20 rule compliance tracking</li>
+          <li>Flexible payment frequencies (weekly to annually)</li>
+          <li>Category and subcategory organization</li>
+        </ul>
+      </div>
+      
+      <!-- Expenses -->
+      <div class="feature-card">
+        <h2><span class="icon">💰</span> Expense Tracking</h2>
+        <p>Record and analyze your spending with detailed categorization.</p>
+        <ul class="feature-list">
+          <li>Add individual expenses with date and notes</li>
+          <li>Create custom categories and subcategories</li>
+          <li>Mark expenses as recurring with frequency</li>
+          <li>Bulk upload via CSV file</li>
+          <li>Filter by time period (1 month to all time)</li>
+          <li>Visual charts: bar graphs and pie charts</li>
+        </ul>
+      </div>
+      
+      <!-- Income & Taxes -->
+      <div class="feature-card">
+        <h2><span class="icon">📊</span> Income & Tax Calculator</h2>
+        <p>Comprehensive tax calculations with multi-year bracket support.</p>
+        <ul class="feature-list">
+          <li>Federal income tax with progressive brackets</li>
+          <li>State tax calculations (Missouri)</li>
+          <li>FICA taxes (Social Security & Medicare)</li>
+          <li>Support for tax years 2023-2026</li>
+          <li>Capital gains (short-term and long-term)</li>
+          <li>ISO stock option AMT calculations</li>
+          <li>Pre-tax deductions (401k, HSA, health insurance)</li>
+          <li>Tax credits with detailed breakdown</li>
+          <li>Per-paycheck breakdown</li>
+        </ul>
+      </div>
+      
+      <!-- Tools -->
+      <div class="feature-card">
+        <h2><span class="icon">🔧</span> Financial Tools</h2>
+        <p>Helpful calculators and tools for financial planning.</p>
+        <ul class="feature-list">
+          <li>Mortgage/Home loan calculator</li>
+          <li>Scenario comparison (compare two mortgages)</li>
+          <li>Amortization schedule generation</li>
+          <li>Extra payment impact analysis</li>
+          <li>PMI calculations</li>
+          <li>More tools coming soon!</li>
+        </ul>
+      </div>
+      
+      <!-- Resources -->
+      <div class="feature-card">
+        <h2><span class="icon">📚</span> Financial Resources</h2>
+        <p>Curated links to helpful financial information and tools.</p>
+        <ul class="feature-list">
+          <li>Personal finance blogs and advice</li>
+          <li>Tax resources and IRS links</li>
+          <li>Budgeting guides and tips</li>
+          <li>Investment and retirement resources</li>
+          <li>Financial news sources</li>
+          <li>External calculators and tools</li>
+        </ul>
+      </div>
+      
+      <!-- Profile & Settings -->
+      <div class="feature-card">
+        <h2><span class="icon">⚙️</span> Profile & Settings</h2>
+        <p>Customize your experience and manage your account.</p>
+        <ul class="feature-list">
+          <li>Profile picture upload</li>
+          <li>Dark/light mode toggle</li>
+          <li>Password change</li>
+          <li>Data management and export</li>
+          <li>Account deletion option</li>
+        </ul>
+      </div>
+      
+      <!-- Technical -->
+      <div class="feature-card">
+        <h2><span class="icon">💻</span> Technical Features</h2>
+        <p>Built with modern technologies for reliability and performance.</p>
+        <ul class="feature-list">
+          <li>FastAPI backend with Python</li>
+          <li>SQLite database with SQLAlchemy ORM</li>
+          <li>Responsive design for all devices</li>
+          <li>Dark mode support</li>
+          <li>CSV import/export capabilities</li>
+          <li>Secure authentication</li>
+        </ul>
+      </div>
+    </div>
+    
+    {% if not user %}
+    <div class="cta-section">
+      <h2>Ready to Take Control of Your Finances?</h2>
+      <p>Create a free account and start tracking your money today.</p>
+      <a href="/register" class="cta-btn">Create Account</a>
+    </div>
+    {% endif %}
+    
+    <div class="version-info">
+      <p><strong>MoneyFlow</strong> v1.2.0 | Built with ❤️ for personal finance management</p>
+      <p>Questions or feedback? This is a personal project for tracking finances.</p>
+    </div>
+  </div>
+  
+  <script>
+    function toggleProfileDropdown() {
+      document.getElementById('profileDropdown').classList.toggle('active');
+    }
+    document.addEventListener('click', function(e) {
+      const dropdown = document.querySelector('.profile-dropdown');
+      if (dropdown && !dropdown.contains(e.target)) {
+        document.getElementById('profileDropdown')?.classList.remove('active');
+      }
+    });
+  </script>
+</body>
+</html>
+

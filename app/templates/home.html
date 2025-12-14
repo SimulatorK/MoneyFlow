@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="{% if dark_mode %}dark{% else %}light{% endif %}">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ title }} | MoneyFlow</title>
+    <link rel="stylesheet" href="/static/app.css">
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-primary: #f5f6fa;
+            --bg-card: #fff;
+            --bg-header: linear-gradient(135deg, #1a3366 0%, #243869 50%, #2d4a7c 100%);
+            --text-primary: #222;
+            --text-secondary: #667a9a;
+            --text-heading: #243869;
+            --border-light: #e8eef8;
+            --nav-bg: #243869;
+            --accent: #3875e8;
+            --accent-glow: rgba(56, 117, 232, 0.15);
+        }
+        [data-theme="dark"] {
+            --bg-primary: #1a1d24;
+            --bg-card: #242830;
+            --bg-header: linear-gradient(135deg, #0d1117 0%, #161920 50%, #1f242d 100%);
+            --text-primary: #e4e6eb;
+            --text-secondary: #98a3b8;
+            --text-heading: #b8c5db;
+            --border-light: #353a47;
+            --nav-bg: #161920;
+            --accent: #4d8ef0;
+            --accent-glow: rgba(77, 142, 240, 0.15);
+        }
+        
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-primary); color: var(--text-primary); }
+        
+        /* App Header with Profile */
+        .app-header {
+            background: var(--bg-header);
+            padding: 1em 2em;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 3px solid var(--accent);
+            position: relative;
+        }
+        .header-left { flex: 1; }
+        .header-center {
+            flex: 2;
+            text-align: center;
+        }
+        .header-right {
+            flex: 1;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 1em;
+        }
+        .app-title {
+            margin: 0; font-size: 2.2em; font-weight: 700; color: #fff;
+            letter-spacing: -0.02em; text-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .app-title .icon { margin-right: 0.3em; }
+        .app-subtitle { margin: 0.3em 0 0 0; font-size: 0.9em; color: rgba(255,255,255,0.75); }
+        .app-version {
+            display: inline-block; background: rgba(255,255,255,0.15);
+            padding: 0.15em 0.6em; border-radius: 12px; font-size: 0.75em;
+            color: rgba(255,255,255,0.9); margin-left: 0.5em;
+        }
+        .about-link {
+            color: rgba(255,255,255,0.8); text-decoration: none;
+            font-size: 0.9em; padding: 0.5em 1em; border-radius: 6px;
+            background: rgba(255,255,255,0.1); transition: all 0.2s;
+        }
+        .about-link:hover { background: rgba(255,255,255,0.2); color: #fff; }
+        
+        /* Profile dropdown in header */
+        .profile-dropdown { position: relative; }
+        .profile-btn {
+            display: flex; align-items: center; gap: 0.5em;
+            background: rgba(255,255,255,0.1); border: none;
+            padding: 0.5em 1em; border-radius: 8px; cursor: pointer; color: #fff; font-size: 0.9em;
+            transition: all 0.2s;
+        }
+        .profile-btn:hover { background: rgba(255,255,255,0.2); }
+        .profile-avatar {
+            width: 44px; height: 44px; border-radius: 50%;
+            background: var(--accent); display: flex; align-items: center;
+            justify-content: center; font-weight: 600; font-size: 0.9em; overflow: hidden;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+        .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .dropdown-menu {
+            display: none; position: absolute; right: 0; top: 100%;
+            background: var(--bg-card); border-radius: 10px; box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+            min-width: 200px; margin-top: 0.5em; z-index: 1000; overflow: hidden;
+        }
+        .dropdown-menu.active { display: block; }
+        .dropdown-header { padding: 1em; background: var(--border-light); }
+        .dropdown-header .name { font-weight: 600; color: var(--text-heading); font-size: 1em; }
+        .dropdown-header .username { font-size: 0.85em; color: var(--text-secondary); }
+        .dropdown-item { display: block; padding: 0.8em 1em; color: var(--text-primary); text-decoration: none; font-size: 0.9em; }
+        .dropdown-item:hover { background: var(--border-light); }
+        .dropdown-item.danger { color: #dc3545; }
+        .dropdown-divider { height: 1px; background: var(--border-light); }
+        
+        /* Navigation */
+        nav {
+            background: var(--nav-bg); padding: 0;
+            display: flex; justify-content: center;
+        }
+        .tabs { display: flex; gap: 0; }
+        .tab {
+            color: rgba(255,255,255,0.8); text-decoration: none; padding: 1em 1.5em;
+            font-size: 0.95em; font-weight: 500; border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+        }
+        .tab:hover { color: #fff; background: rgba(255,255,255,0.05); }
+        .tab.active { color: #fff; background: rgba(255,255,255,0.1); border-bottom-color: var(--accent); font-weight: 600; }
+        
+        /* Page Content - Full Width */
+        .page-content {
+            max-width: 1600px; margin: 0 auto; padding: 1.5em 2em;
+        }
+        
+        .welcome-section {
+            text-align: center; margin-bottom: 1.5em;
+        }
+        .welcome-section h2 { margin: 0; color: var(--text-heading); font-size: 1.5em; }
+        .welcome-section p { color: var(--text-secondary); margin: 0.5em 0 0 0; }
+        
+        /* Dashboard Grid - Wider Sankey */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 1.5em;
+        }
+        
+        .card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(60,90,170,0.08);
+            padding: 1.5em;
+        }
+        .card h3 {
+            margin: 0 0 1em 0; color: var(--text-heading); font-size: 1.1em;
+            border-bottom: 2px solid var(--border-light); padding-bottom: 0.5em;
+        }
+        
+        /* Sankey Chart - Full Width */
+        .sankey-card {
+            grid-column: 1 / 2;
+        }
+        .sankey-container {
+            min-height: 550px;
+            padding: 1em 0;
+        }
+        #sankeyChart {
+            width: 100%;
+            height: 550px;
+        }
+        .no-data-message {
+            text-align: center; padding: 3em; color: var(--text-secondary);
+        }
+        .no-data-message .icon { font-size: 3em; margin-bottom: 0.3em; }
+        
+        /* Quick Stats Sidebar - Compact */
+        .sidebar { grid-column: 2 / 3; }
+        .quick-stats { display: flex; flex-direction: column; gap: 0.8em; }
+        .stat-card {
+            background: var(--accent-glow); border-radius: 10px;
+            padding: 0.8em 1em; border-left: 4px solid var(--accent);
+        }
+        .stat-card .label { font-size: 0.8em; color: var(--text-secondary); margin-bottom: 0.2em; }
+        .stat-card .value { font-size: 1.3em; font-weight: 700; color: var(--text-heading); }
+        .stat-card .value.positive { color: #1a8754; }
+        .stat-card .value.negative { color: #dc3545; }
+        .stat-card .detail { font-size: 0.75em; color: var(--text-secondary); margin-top: 0.2em; }
+        
+        /* Trends Section */
+        .trends-section {
+            margin-top: 1.5em;
+        }
+        .trends-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5em;
+        }
+        .trend-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 1.2em;
+            box-shadow: 0 2px 12px rgba(60,90,170,0.08);
+        }
+        .trend-card h4 {
+            margin: 0 0 1em 0; color: var(--text-heading); font-size: 1em;
+            display: flex; align-items: center; gap: 0.5em;
+        }
+        .trend-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0.6em 0; border-bottom: 1px solid var(--border-light);
+        }
+        .trend-item:last-child { border-bottom: none; }
+        .trend-item .name { font-size: 0.9em; color: var(--text-primary); }
+        .trend-item .amount { font-weight: 600; color: var(--text-heading); }
+        .trend-item .change {
+            font-size: 0.8em; padding: 0.2em 0.5em; border-radius: 4px;
+        }
+        .trend-item .change.up { background: #fee2e2; color: #dc3545; }
+        .trend-item .change.down { background: #d1fae5; color: #059669; }
+        .trend-item .change.neutral { background: var(--border-light); color: var(--text-secondary); }
+        
+        /* Quick Links */
+        .quick-links { margin-top: 1em; }
+        .quick-links h4 { margin: 0 0 0.6em 0; color: var(--text-heading); font-size: 0.9em; }
+        .quick-link {
+            display: flex; align-items: center; gap: 0.5em;
+            padding: 0.6em 0.7em; margin-bottom: 0.4em;
+            background: var(--border-light); border-radius: 6px;
+            text-decoration: none; color: var(--text-primary);
+            font-size: 0.85em;
+        }
+        .quick-link:hover { background: var(--accent-glow); }
+        
+        /* Charts Row */
+        .charts-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 1.5em;
+            margin-top: 1.5em;
+        }
+        .chart-container {
+            height: 280px;
+        }
+        
+        @media (max-width: 1000px) {
+            .dashboard-grid { grid-template-columns: 1fr; }
+            .sidebar { grid-column: 1; }
+            .sankey-card { grid-column: 1; }
+        }
+    </style>
+</head>
+<body>
+  <!-- App Header with Profile Dropdown -->
+  <header class="app-header">
+    <div class="header-left"></div>
+    <div class="header-center">
+      <h1 class="app-title">
+        <span class="icon">💸</span>MoneyFlow
+        <span class="app-version">v1.2.0</span>
+      </h1>
+      <p class="app-subtitle">Your personal finance command center — Track income, expenses, budgets, and taxes in one place</p>
+    </div>
+    <div class="header-right">
+      <a href="/about" class="about-link">ℹ️ About</a>
+      <div class="profile-dropdown">
+        <button class="profile-btn" onclick="toggleProfileDropdown()">
+          <div class="profile-avatar">
+            {% if profile_picture_b64 %}
+            <img src="data:{{ profile_picture_type }};base64,{{ profile_picture_b64 }}" alt="">
+            {% else %}
+            {{ user.name[0].upper() }}
+            {% endif %}
+          </div>
+          <span>{{ user.name.split()[0] }}</span>
+          <span style="font-size:0.7em;">▼</span>
+        </button>
+        <div class="dropdown-menu" id="profileDropdown">
+          <div class="dropdown-header">
+            <div class="name">{{ user.name }}</div>
+            <div class="username">@{{ user.username }}</div>
+          </div>
+          <a href="/profile" class="dropdown-item">⚙️ Account Settings</a>
+          <a href="/profile#data" class="dropdown-item">📊 Manage Data</a>
+          <div class="dropdown-divider"></div>
+          <a href="/logout" class="dropdown-item danger">🚪 Sign Out</a>
+        </div>
+      </div>
+    </div>
+  </header>
+  
+  <!-- Navigation -->
+  <nav>
+    <div class="tabs">
+      <a href="/home" class="tab active">Dashboard</a>
+      <a href="/budget" class="tab">Budget</a>
+      <a href="/expenses" class="tab">Expenses</a>
+      <a href="/income-taxes" class="tab">Income & Taxes</a>
+      <a href="/tools" class="tab">Tools</a>
+      <a href="/forum" class="tab">Resources</a>
+    </div>
+  </nav>
+
+  <div class="page-content">
+    <div class="welcome-section">
+      <h2>Welcome back, {{ user.name.split()[0] }}!</h2>
+      <p>Here's your financial overview at a glance</p>
+    </div>
+    
+    <div class="dashboard-grid">
+      <!-- Main Sankey Chart - Full Width -->
+      <div class="card sankey-card">
+        <h3 style="display:flex; justify-content:space-between; align-items:center;">
+          <span>💰 Money Flow Overview</span>
+          {% if sankey_data and sankey_data|length > 0 %}
+          <label style="font-size:0.75em; font-weight:normal; display:flex; align-items:center; gap:0.4em; cursor:pointer;">
+            <input type="checkbox" id="showSubcategories" onchange="toggleSankeyDetail()">
+            Show Details
+          </label>
+          {% endif %}
+        </h3>
+        <div class="sankey-container">
+          {% if sankey_data and sankey_data|length > 0 %}
+          <div id="sankeyChart"></div>
+          {% else %}
+          <div class="no-data-message">
+            <div class="icon">📊</div>
+            <h4>No Budget Data Yet</h4>
+            <p>Set up your income and budget to see your money flow visualization.</p>
+            <a href="/income-taxes" style="color:var(--accent); margin-top:1em; display:inline-block;">Start with Income & Taxes →</a>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      
+      <!-- Quick Stats Sidebar -->
+      <div class="sidebar">
+        <div class="card">
+          <h3>📈 Monthly Summary</h3>
+          <div class="quick-stats">
+            <div class="stat-card">
+              <div class="label">Gross Monthly Income</div>
+              <div class="value">${{ "{:,.0f}".format(summary.get('gross_monthly', 0)) if summary else "0" }}</div>
+            </div>
+            <div class="stat-card">
+              <div class="label">Net Monthly Income</div>
+              <div class="value">${{ "{:,.0f}".format(summary.get('net_monthly', 0)) if summary else "0" }}</div>
+              <div class="detail">After taxes & deductions</div>
+            </div>
+            <div class="stat-card">
+              <div class="label">Total Monthly Expenses</div>
+              <div class="value">${{ "{:,.0f}".format(summary.get('total_expenses', 0)) if summary else "0" }}</div>
+            </div>
+            <div class="stat-card">
+              <div class="label">Monthly Surplus/Deficit</div>
+              <div class="value {% if summary and summary.get('leftover', 0) >= 0 %}positive{% else %}negative{% endif %}">
+                {% if summary %}
+                {{ "+" if summary.get('leftover', 0) >= 0 else "" }}${{ "{:,.0f}".format(summary.get('leftover', 0)) }}
+                {% else %}
+                $0
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          
+          <div class="quick-links">
+            <h4>Quick Actions</h4>
+            <a href="/expenses" class="quick-link">
+              <span class="icon">➕</span> Add New Expense
+            </a>
+            <a href="/budget" class="quick-link">
+              <span class="icon">📋</span> Review Budget
+            </a>
+            <a href="/income-taxes" class="quick-link">
+              <span class="icon">💼</span> Update Income
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Spending Trends Section -->
+    {% if spending_trends %}
+    <div class="trends-section">
+      <div class="trends-grid">
+        <!-- Top Categories -->
+        <div class="trend-card">
+          <h4>📊 Top Spending Categories (This Month)</h4>
+          {% for item in spending_trends.top_categories[:6] %}
+          <div class="trend-item">
+            <span class="name">{{ item.name }}</span>
+            <span class="amount">${{ "{:,.0f}".format(item.amount) }}</span>
+            {% if item.change is defined %}
+            <span class="change {% if item.change > 5 %}up{% elif item.change < -5 %}down{% else %}neutral{% endif %}">
+              {{ "+" if item.change > 0 else "" }}{{ "{:.0f}".format(item.change) }}%
+            </span>
+            {% endif %}
+          </div>
+          {% else %}
+          <p style="color:var(--text-secondary); font-size:0.9em;">No spending data this month</p>
+          {% endfor %}
+        </div>
+        
+        <!-- Top Subcategories -->
+        <div class="trend-card">
+          <h4>🏷️ Top Subcategories (This Month)</h4>
+          {% for item in spending_trends.top_subcategories[:6] %}
+          <div class="trend-item">
+            <span class="name">{{ item.name }}</span>
+            <span class="amount">${{ "{:,.0f}".format(item.amount) }}</span>
+            {% if item.change is defined %}
+            <span class="change {% if item.change > 5 %}up{% elif item.change < -5 %}down{% else %}neutral{% endif %}">
+              {{ "+" if item.change > 0 else "" }}{{ "{:.0f}".format(item.change) }}%
+            </span>
+            {% endif %}
+          </div>
+          {% else %}
+          <p style="color:var(--text-secondary); font-size:0.9em;">No subcategory data this month</p>
+          {% endfor %}
+        </div>
+        
+        <!-- Monthly Comparison Chart -->
+        <div class="trend-card">
+          <h4>📈 Monthly Spending Trend</h4>
+          <div class="chart-container">
+            <canvas id="monthlyTrendChart"></canvas>
+          </div>
+        </div>
+        
+        <!-- Category Breakdown Pie -->
+        <div class="trend-card">
+          <h4>🥧 Category Breakdown</h4>
+          <div class="chart-container">
+            <canvas id="categoryPieChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+  
+  <script>
+    // Format currency helper
+    function formatCurrency(value) {
+      return '$' + value.toLocaleString('en-US', { maximumFractionDigits: 0 });
+    }
+    
+    function toggleProfileDropdown() {
+      document.getElementById('profileDropdown').classList.toggle('active');
+    }
+    
+    document.addEventListener('click', function(e) {
+      const dropdown = document.querySelector('.profile-dropdown');
+      if (dropdown && !dropdown.contains(e.target)) {
+        document.getElementById('profileDropdown').classList.remove('active');
+      }
+    });
+    
+    {% if sankey_data and sankey_data|length > 0 %}
+    // Load Google Charts
+    google.charts.load('current', {'packages':['sankey']});
+    google.charts.setOnLoadCallback(drawSankey);
+    
+    // Gross monthly income for percentage calculations
+    const grossMonthly = {{ summary.get('gross_monthly', 0) if summary else 0 }};
+    
+    // Sankey data - basic and detailed
+    const sankeyDataBasic = {{ sankey_data | tojson }};
+    const sankeyDataDetailed = {{ sankey_data_detailed | tojson }};
+    
+    function toggleSankeyDetail() {
+      drawSankey();
+    }
+    
+    function drawSankey() {
+      const showDetails = document.getElementById('showSubcategories')?.checked || false;
+      const sankeyData = showDetails ? sankeyDataDetailed : sankeyDataBasic;
+      
+      const data = new google.visualization.DataTable();
+      data.addColumn('string', 'From');
+      data.addColumn('string', 'To');
+      data.addColumn('number', 'Amount');
+      data.addColumn({type: 'string', role: 'tooltip', p: {html: true}});
+      
+      // Add custom tooltips with percentages
+      const dataWithTooltips = sankeyData.map(row => {
+        const from = row[0];
+        const to = row[1];
+        const amount = row[2];
+        const pct = grossMonthly > 0 ? ((amount / grossMonthly) * 100).toFixed(1) : 0;
+        const formattedAmount = '$' + amount.toLocaleString('en-US', {maximumFractionDigits: 0});
+        const tooltip = `<div style="padding:10px; font-family: Segoe UI, sans-serif;">
+          <strong>${from}</strong> → <strong>${to}</strong><br>
+          <span style="font-size:1.2em; color:#3875e8; font-weight:600;">${formattedAmount}</span><br>
+          <span style="color:#666;">${pct}% of gross income</span>
+        </div>`;
+        return [from, to, amount, tooltip];
+      });
+      
+      data.addRows(dataWithTooltips);
+      
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      const container = document.getElementById('sankeyChart');
+      const width = container.offsetWidth;
+      
+      const options = {
+        width: width,
+        height: 550,
+        sankey: {
+          node: {
+            colors: ['#3875e8', '#28a745', '#ffc107', '#dc3545', '#6f42c1', '#17a2b8', '#fd7e14', '#20c997', '#e83e8c', '#6c757d'],
+            label: {
+              fontName: 'Segoe UI',
+              fontSize: 13,
+              color: isDark ? '#e4e6eb' : '#333',
+              bold: true
+            },
+            nodePadding: showDetails ? 25 : 35,
+            width: 20,
+            interactivity: true
+          },
+          link: {
+            colorMode: 'gradient',
+            colors: ['#3875e8', '#28a745', '#ffc107', '#dc3545', '#6f42c1', '#17a2b8', '#fd7e14', '#20c997'],
+          }
+        },
+        tooltip: {
+          isHtml: true,
+          textStyle: { fontName: 'Segoe UI', fontSize: 14 }
+        }
+      };
+      
+      const chart = new google.visualization.Sankey(container);
+      chart.draw(data, options);
+    }
+    
+    // Redraw on resize with debounce
+    let resizeTimeout;
+    window.addEventListener('resize', function() {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(drawSankey, 200);
+    });
+    {% endif %}
+    
+    {% if spending_trends %}
+    // Monthly Trend Chart
+    const monthlyCtx = document.getElementById('monthlyTrendChart');
+    if (monthlyCtx) {
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      new Chart(monthlyCtx, {
+        type: 'bar',
+        data: {
+          labels: {{ spending_trends.months | tojson }},
+          datasets: [{
+            label: 'Monthly Spending',
+            data: {{ spending_trends.monthly_totals | tojson }},
+            backgroundColor: 'rgba(56, 117, 232, 0.7)',
+            borderColor: '#3875e8',
+            borderWidth: 1,
+            borderRadius: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return formatCurrency(context.raw);
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback: function(value) { return formatCurrency(value); },
+                color: isDark ? '#98a3b8' : '#667a9a'
+              },
+              grid: { color: isDark ? '#353a47' : '#e8eef8' }
+            },
+            x: {
+              ticks: { color: isDark ? '#98a3b8' : '#667a9a' },
+              grid: { display: false }
+            }
+          }
+        }
+      });
+    }
+    
+    // Category Pie Chart
+    const pieCtx = document.getElementById('categoryPieChart');
+    if (pieCtx) {
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      new Chart(pieCtx, {
+        type: 'doughnut',
+        data: {
+          labels: {{ spending_trends.category_names | tojson }},
+          datasets: [{
+            data: {{ spending_trends.category_amounts | tojson }},
+            backgroundColor: [
+              '#3875e8', '#28a745', '#ffc107', '#dc3545', '#6f42c1',
+              '#17a2b8', '#fd7e14', '#20c997', '#e83e8c', '#6c757d'
+            ],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'right',
+              labels: {
+                color: isDark ? '#e4e6eb' : '#333',
+                padding: 10,
+                font: { size: 11 }
+              }
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                  const pct = ((context.raw / total) * 100).toFixed(1);
+                  return context.label + ': ' + formatCurrency(context.raw) + ' (' + pct + '%)';
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+    {% endif %}
+  </script>
+</body>
+</html>

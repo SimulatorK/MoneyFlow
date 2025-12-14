@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="{% if dark_mode %}dark{% else %}light{% endif %}">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ title }} | MoneyFlow</title>
+    <link rel="stylesheet" href="/static/app.css">
+    <style>
+        :root {
+            --bg-primary: #f5f6fa;
+            --bg-card: #fff;
+            --bg-input: #fff;
+            --bg-hover: #f0f4fa;
+            --bg-header: linear-gradient(135deg, #1a3366 0%, #243869 50%, #2d4a7c 100%);
+            --text-primary: #222;
+            --text-secondary: #667a9a;
+            --text-heading: #1a3366;
+            --border-color: #ccd;
+            --border-light: #e8eef8;
+            --nav-bg: #243869;
+            --accent: #3875e8;
+        }
+        [data-theme="dark"] {
+            --bg-primary: #1a1d24;
+            --bg-card: #242830;
+            --bg-input: #2d323c;
+            --bg-hover: #353a47;
+            --bg-header: linear-gradient(135deg, #0d1117 0%, #161920 50%, #1f242d 100%);
+            --text-primary: #e4e6eb;
+            --text-secondary: #98a3b8;
+            --text-heading: #b8c5db;
+            --border-color: #3d4450;
+            --border-light: #353a47;
+            --nav-bg: #161920;
+            --accent: #4d8ef0;
+        }
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-primary); color: var(--text-primary); }
+        
+        /* App Header with Profile */
+        .app-header {
+            background: var(--bg-header);
+            padding: 1em 2em;
+            display: flex; align-items: center; justify-content: space-between;
+            border-bottom: 3px solid var(--accent);
+        }
+        .header-left { flex: 1; }
+        .header-center { flex: 2; text-align: center; }
+        .header-right { flex: 1; display: flex; justify-content: flex-end; align-items: center; gap: 1em; }
+        .app-title { margin: 0; font-size: 2.2em; font-weight: 700; color: #fff; }
+        .app-title .icon { margin-right: 0.3em; }
+        .app-subtitle { margin: 0.3em 0 0 0; font-size: 0.9em; color: rgba(255,255,255,0.75); }
+        .app-version { display: inline-block; background: rgba(255,255,255,0.15); padding: 0.15em 0.6em; border-radius: 12px; font-size: 0.75em; color: rgba(255,255,255,0.9); margin-left: 0.5em; }
+        .about-link { color: rgba(255,255,255,0.8); text-decoration: none; font-size: 0.9em; padding: 0.5em 1em; border-radius: 6px; background: rgba(255,255,255,0.1); }
+        .about-link:hover { background: rgba(255,255,255,0.2); color: #fff; }
+        
+        /* Profile dropdown */
+        .profile-dropdown { position: relative; }
+        .profile-btn { display: flex; align-items: center; gap: 0.5em; background: rgba(255,255,255,0.1); border: none; padding: 0.5em 1em; border-radius: 8px; cursor: pointer; color: #fff; font-size: 0.9em; }
+        .profile-btn:hover { background: rgba(255,255,255,0.2); }
+        .profile-avatar { width: 44px; height: 44px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 1.1em; overflow: hidden; border: 2px solid rgba(255,255,255,0.3); }
+        .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .dropdown-menu { display: none; position: absolute; right: 0; top: 100%; background: var(--bg-card); border-radius: 10px; box-shadow: 0 8px 30px rgba(0,0,0,0.25); min-width: 200px; margin-top: 0.5em; z-index: 1000; overflow: hidden; }
+        .dropdown-menu.active { display: block; }
+        .dropdown-header { padding: 1em; background: var(--border-light); }
+        .dropdown-header .name { font-weight: 600; color: var(--text-heading); }
+        .dropdown-header .username { font-size: 0.85em; color: var(--text-secondary); }
+        .dropdown-item { display: block; padding: 0.8em 1em; color: var(--text-primary); text-decoration: none; font-size: 0.9em; }
+        .dropdown-item:hover { background: var(--border-light); }
+        .dropdown-item.danger { color: #dc3545; }
+        .dropdown-divider { height: 1px; background: var(--border-light); }
+        
+        /* Navigation */
+        nav { background: var(--nav-bg); padding: 0; display: flex; justify-content: center; }
+        .tabs { display: flex; gap: 0; }
+        .tab { color: rgba(255,255,255,0.8); text-decoration: none; padding: 1em 1.5em; font-size: 0.95em; font-weight: 500; border-bottom: 3px solid transparent; }
+        .tab:hover { color: #fff; background: rgba(255,255,255,0.05); }
+        .tab.active { color: #fff; background: rgba(255,255,255,0.1); border-bottom-color: var(--accent); font-weight: 600; }
+        
+        /* Layout */
+        .columns-flex { display: flex; gap: 2em; align-items: flex-start; justify-content: center; margin: 1.5em 1em; flex-wrap: wrap; }
+        
+        /* Form Styling */
+        .income-form {
+            background: var(--bg-card);
+            box-shadow: 0 2px 18px rgba(60,90,170,0.08);
+            max-width: 600px; min-width: 320px; padding: 1.8em 2em; border-radius: 12px;
+            display: flex; flex-direction: column; gap: 1.2em; flex: 1 1 380px;
+        }
+        .income-form fieldset { 
+            border: 1px solid var(--border-light); border-radius: 8px; 
+            padding: 1em 1.2em 1.2em 1.2em; margin: 0;
+        }
+        .income-form legend { 
+            font-weight: 600; font-size: 1.05em; color: var(--text-heading); 
+            padding: 0 0.5em; 
+        }
+        .income-form label { 
+            display: flex; flex-direction: column; gap: 0.3em;
+            font-size: 0.95em; color: var(--text-heading); font-weight: 500;
+        }
+        .form-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); 
+            gap: 1em; 
+        }
+        .form-grid-3 { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); 
+            gap: 0.8em; 
+        }
+        select, input[type="number"] { 
+            font-size: 1em; padding: 0.5em 0.6em; border-radius: 6px; 
+            border: 1px solid var(--border-color); width: 100%;
+            background: var(--bg-input); color: var(--text-primary);
+        }
+        
+        /* Tax Year Selector */
+        .tax-year-selector {
+            display: flex; align-items: center; gap: 1em;
+            background: linear-gradient(135deg, #e8f0ff 0%, #f0f4fa 100%);
+            border-radius: 10px; padding: 1em 1.2em;
+            border: 2px solid var(--accent);
+        }
+        [data-theme="dark"] .tax-year-selector {
+            background: linear-gradient(135deg, #1e2633 0%, #242830 100%);
+        }
+        .tax-year-selector label {
+            flex-direction: row; align-items: center; gap: 0.8em;
+            font-size: 1.1em; font-weight: 600;
+        }
+        .tax-year-selector select {
+            font-size: 1.1em; font-weight: 600; padding: 0.4em 1em;
+            background: var(--accent); color: #fff; border: none;
+            border-radius: 6px; cursor: pointer;
+        }
+        .tax-year-selector .note {
+            font-size: 0.85em; color: var(--text-secondary);
+        }
+        
+        /* Contribution rows */
+        .contrib-grid {
+            display: grid;
+            grid-template-columns: 1fr auto auto;
+            gap: 0.5em 0.8em;
+            align-items: center;
+        }
+        .contrib-grid .contrib-label { font-size: 0.92em; color: var(--text-secondary); }
+        .contrib-grid select { width: 3.5em; padding: 0.4em; }
+        .contrib-grid input[type="number"] { width: 7em; }
+        
+        .save-btn { 
+            margin-top: 0.8em; font-size: 1.1em; padding: 0.6em 2em; 
+            border-radius: 6px; background: var(--accent); color: #fff; 
+            font-weight: 600; border: none; cursor: pointer; 
+            transition: background 0.16s; align-self: center;
+        }
+        .save-btn:hover { background: #243869; }
+        
+        /* Summary Card */
+        .summary-card {
+            background: var(--bg-card);
+            border-radius: 11px; box-shadow: 0 2px 10px rgba(40,50,170,0.05);
+            min-width: 400px; max-width: 580px; padding: 1.5em 1.8em; color: var(--text-primary);
+            font-size: 0.95em; flex: 1 1 400px;
+        }
+        .summary-card h3 { 
+            margin: 0 0 0.8em 0; color: var(--text-heading); 
+            border-bottom: 2px solid var(--border-light); padding-bottom: 0.5em; 
+            font-size: 1.15em;
+        }
+        .summary-card h4 { 
+            margin: 1.2em 0 0.4em 0; color: var(--accent); 
+            font-size: 0.95em; font-weight: 600;
+        }
+        .summary-card table { width: 100%; border-collapse: collapse; }
+        .summary-card td { padding: 0.35em 0.2em; vertical-align: top; }
+        .summary-card td:first-child { padding-right: 1em; }
+        .summary-card td:last-child { text-align: right; font-weight: 500; white-space: nowrap; }
+        .summary-card .section { margin-bottom: 0.8em; }
+        .summary-card .highlight { 
+            background: var(--border-light); border-radius: 6px; 
+            padding: 0.8em 1em; margin: 0.8em 0; 
+        }
+        .summary-card .highlight td { font-weight: 600; }
+        
+        /* Brackets Info */
+        .brackets-info { 
+            font-size: 0.88em; background: var(--border-light); 
+            border-radius: 6px; padding: 0.8em 1em; margin-top: 0.6em; 
+        }
+        .brackets-info table { font-size: 0.95em; }
+        .brackets-info th { 
+            text-align: left; font-weight: 600; color: var(--text-heading); 
+            padding: 0.3em 0.5em; border-bottom: 1px solid var(--border-color);
+        }
+        .brackets-info th:last-child, .brackets-info td:last-child { text-align: right; }
+        .brackets-info td { padding: 0.25em 0.5em; }
+        .brackets-info tr.has-tax td { background: rgba(40, 167, 69, 0.15); }
+        details { margin-top: 0.5em; }
+        summary { cursor: pointer; color: var(--accent); font-weight: 500; font-size: 0.9em; }
+        
+        /* Colors */
+        .money { color: #1a8754; }
+        .tax { color: #dc3545; }
+        
+        @media (max-width: 900px) {
+            .columns-flex { flex-direction: column; align-items: stretch; }
+            .summary-card { margin-top: 1.5em; max-width: 100%; min-width: auto; }
+            .income-form { max-width: 100%; min-width: auto; }
+        }
+    </style>
+</head>
+<body>
+  <!-- App Header with Profile Dropdown -->
+  <header class="app-header">
+    <div class="header-left"></div>
+    <div class="header-center">
+      <h1 class="app-title"><span class="icon">💸</span>MoneyFlow<span class="app-version">v1.2.0</span></h1>
+      <p class="app-subtitle">Your personal finance command center</p>
+    </div>
+    <div class="header-right">
+      <a href="/about" class="about-link">ℹ️ About</a>
+      <div class="profile-dropdown">
+        <button class="profile-btn" onclick="toggleProfileDropdown()">
+          <div class="profile-avatar">
+            {% if profile_picture_b64 %}<img src="data:{{ profile_picture_type }};base64,{{ profile_picture_b64 }}" alt="">{% else %}{{ user.name[0].upper() }}{% endif %}
+          </div>
+          <span>{{ user.name.split()[0] }}</span>
+          <span style="font-size:0.7em;">▼</span>
+        </button>
+        <div class="dropdown-menu" id="profileDropdown">
+          <div class="dropdown-header">
+            <div class="name">{{ user.name }}</div>
+            <div class="username">@{{ user.username }}</div>
+          </div>
+          <a href="/profile" class="dropdown-item">⚙️ Account Settings</a>
+          <a href="/profile#data" class="dropdown-item">📊 Manage Data</a>
+          <div class="dropdown-divider"></div>
+          <a href="/logout" class="dropdown-item danger">🚪 Sign Out</a>
+        </div>
+      </div>
+    </div>
+  </header>
+  
+  <nav>
+    <div class="tabs">
+      <a href="/home" class="tab">Dashboard</a>
+      <a href="/budget" class="tab">Budget</a>
+      <a href="/expenses" class="tab">Expenses</a>
+      <a href="/income-taxes" class="tab active">Income & Taxes</a>
+      <a href="/tools" class="tab">Tools</a>
+      <a href="/forum" class="tab">Resources</a>
+    </div>
+  </nav>
+  
+  <script>
+    function toggleProfileDropdown() {
+      document.getElementById('profileDropdown').classList.toggle('active');
+    }
+    document.addEventListener('click', function(e) {
+      const dropdown = document.querySelector('.profile-dropdown');
+      if (dropdown && !dropdown.contains(e.target)) {
+        document.getElementById('profileDropdown').classList.remove('active');
+      }
+    });
+  </script>
+  
+  <div class="columns-flex">
+    <!-- LEFT COLUMN: Input Form -->
+    <form class="income-form" method="post" action="/income-taxes">
+      
+      <!-- Tax Year Selector -->
+      <div class="tax-year-selector">
+        <label>
+          📅 Tax Year
+          <select name="tax_year" onchange="this.form.submit()">
+            {% for year in tax_years %}
+              <option value="{{ year }}"{% if selected_tax_year == year %} selected{% endif %}>{{ year }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <span class="note">Tax brackets & limits update per year</span>
+      </div>
+      
+      <fieldset>
+        <legend>Filing Information</legend>
+        <div class="form-grid">
+          <label>Filing Status
+            <select name="filing_status" required>
+              {% for key, label in filing_statuses %}
+                <option value="{{ key }}"{% if data and data.filing_status == key %} selected{% elif not data and key == 'married_filing_jointly' %} selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label>Filing State
+            <select name="filing_state" required>
+              {% for key, label in filing_states %}
+                <option value="{{ key }}"{% if data and data.filing_state == key %} selected{% elif not data and key == 'MO' %} selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Employment Income</legend>
+        <div class="form-grid">
+          <label>Base Salary (annual $)
+            <input type="number" step="0.01" name="base_salary" min="0" required value="{{ data.base_salary if data else '' }}">
+          </label>
+          <label>Pay Frequency
+            <select name="pay_frequency" required>
+              {% for freq in pay_frequencies %}
+                <option value="{{ freq }}"{% if data and data.pay_frequency==freq %} selected{% endif %}>{{ freq.title() }}</option>
+              {% endfor %}
+            </select>
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Investment Income (Annual)</legend>
+        <div class="form-grid">
+          <label>Short-Term Cap Gains
+            <input type="number" step="0.01" name="short_term_cap_gains" min="0" value="{{ data.short_term_cap_gains if data and data.short_term_cap_gains else 0 }}">
+          </label>
+          <label>Dividends &amp; Interest
+            <input type="number" step="0.01" name="dividends_interest" min="0" value="{{ data.dividends_interest if data and data.dividends_interest else 0 }}">
+          </label>
+          <label>Long-Term Cap Gains
+            <input type="number" step="0.01" name="long_term_cap_gains" min="0" value="{{ data.long_term_cap_gains if data and data.long_term_cap_gains else 0 }}">
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>ISO Stock Options (for AMT)</legend>
+        <p style="font-size:0.85em; color:var(--text-secondary); margin:0 0 0.8em 0;">Exercised ISOs create a "bargain element" that may trigger Alternative Minimum Tax.</p>
+        <div class="form-grid-3">
+          <label>Shares Exercised
+            <input type="number" step="1" name="iso_shares_exercised" min="0" value="{{ data.iso_shares_exercised if data and data.iso_shares_exercised else 0 }}">
+          </label>
+          <label>Strike Price ($)
+            <input type="number" step="0.01" name="iso_strike_price" min="0" value="{{ data.iso_strike_price if data and data.iso_strike_price else 0 }}">
+          </label>
+          <label>FMV at Exercise ($)
+            <input type="number" step="0.01" name="iso_fmv_at_exercise" min="0" value="{{ data.iso_fmv_at_exercise if data and data.iso_fmv_at_exercise else 0 }}">
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Pretax Deductions (Per Pay Period)</legend>
+        <div class="form-grid-3">
+          <label>Health Insurance
+            <input type="number" step="0.01" name="health_insurance_per_pay" min="0" value="{{ data.health_insurance_per_pay if data and data.health_insurance_per_pay else 0 }}">
+          </label>
+          <label>Dental
+            <input type="number" step="0.01" name="dental_per_pay" min="0" value="{{ data.dental_per_pay if data and data.dental_per_pay else 0 }}">
+          </label>
+          <label>Vision
+            <input type="number" step="0.01" name="vision_per_pay" min="0" value="{{ data.vision_per_pay if data and data.vision_per_pay else 0 }}">
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Retirement Contributions (Annual)</legend>
+        <div class="contrib-grid">
+          {% for key, label in contribs %}
+            <span class="contrib-label">{{ label }}</span>
+            <select name="{{ key }}_type">
+              <option value="$"{% if data and getattr(data, key + '_type', '$') == '$' %} selected{% endif %}>$</option>
+              <option value="%"{% if data and getattr(data, key + '_type', '$') == '%' %} selected{% endif %}>%</option>
+            </select>
+            <input type="number" step="0.01" min="0" name="{{ key }}" value="{{ data[key] if data and data[key] is not none else 0 }}">
+          {% endfor %}
+        </div>
+      </fieldset>
+
+      <button class="save-btn" type="submit">Save &amp; Calculate</button>
+    </form>
+
+    <!-- RIGHT COLUMN: Calculated Summary -->
+    <div class="summary-card">
+      <h3>📊 Tax Calculation Summary ({{ selected_tax_year }})</h3>
+      
+      {% if calculated %}
+      <div class="section">
+        <h4>Income</h4>
+        <table>
+          <tr><td>Gross Salary</td><td class="money">${{ "{:,.2f}".format(calculated.salary) }}</td></tr>
+          {% if calculated.stcg %}<tr><td>Short-Term Cap Gains</td><td class="money">${{ "{:,.2f}".format(calculated.stcg) }}</td></tr>{% endif %}
+          {% if calculated.dividends %}<tr><td>Dividends &amp; Interest</td><td class="money">${{ "{:,.2f}".format(calculated.dividends) }}</td></tr>{% endif %}
+          {% if calculated.ltcg %}<tr><td>Long-Term Cap Gains</td><td class="money">${{ "{:,.2f}".format(calculated.ltcg) }}</td></tr>{% endif %}
+          <tr style="border-top:1px solid var(--border-color);"><td><b>Total Gross Income</b></td><td class="money"><b>${{ "{:,.2f}".format(calculated.gross_income) }}</b></td></tr>
+        </table>
+      </div>
+
+      <div class="section">
+        <h4>Deductions &amp; AGI</h4>
+        <table>
+          <tr><td>Pretax Deductions (Health/Dental/Vision)</td><td>${{ "{:,.2f}".format(calculated.pretax_deductions_annual) }}</td></tr>
+          <tr><td>Traditional 401k/IRA Contributions</td><td>${{ "{:,.2f}".format(calculated.pretax_retirement) }}</td></tr>
+          <tr><td><b>AGI (Adjusted Gross Income)</b></td><td><b>${{ "{:,.2f}".format(calculated.agi) }}</b></td></tr>
+          <tr><td>MAGI</td><td>${{ "{:,.2f}".format(calculated.magi) }}</td></tr>
+          <tr><td>Federal Standard Deduction ({{ selected_tax_year }})</td><td>${{ "{:,.2f}".format(calculated.standard_deduction) }}</td></tr>
+          <tr><td><b>Federal Taxable Income</b></td><td><b>${{ "{:,.2f}".format(calculated.taxable_ordinary) }}</b></td></tr>
+        </table>
+      </div>
+
+      <div class="section">
+        <h4>Federal Income Tax</h4>
+        <table>
+          <tr><td>Tax on Ordinary Income</td><td class="tax">${{ "{:,.2f}".format(calculated.federal_tax_ordinary) }}</td></tr>
+          {% if calculated.ltcg_tax %}<tr><td>Long-Term Cap Gains Tax</td><td class="tax">${{ "{:,.2f}".format(calculated.ltcg_tax) }}</td></tr>{% endif %}
+          <tr style="border-top:1px solid var(--border-color);"><td><b>Regular Tax</b></td><td class="tax"><b>${{ "{:,.2f}".format(calculated.regular_tax) }}</b></td></tr>
+        </table>
+        
+        <details>
+          <summary>View {{ selected_tax_year }} Federal Tax Brackets</summary>
+          <div class="brackets-info">
+            <table>
+              <tr><th>Bracket</th><th>Rate</th><th>Income in Bracket</th><th>Tax</th></tr>
+              {% for limit, rate, income_in_bracket, tax_in_bracket in calculated.federal_breakdown %}
+                <tr{% if tax_in_bracket > 0 %} class="has-tax"{% endif %}>
+                  {% if limit == float('inf') %}
+                  <td>Over</td>
+                  {% else %}
+                  <td>Up to ${{ "{:,.0f}".format(limit) }}</td>
+                  {% endif %}
+                  <td>{{ "%.0f"|format(rate * 100) }}%</td>
+                  <td>${{ "{:,.2f}".format(income_in_bracket) }}</td>
+                  <td class="tax">${{ "{:,.2f}".format(tax_in_bracket) }}</td>
+                </tr>
+              {% endfor %}
+            </table>
+          </div>
+        </details>
+      </div>
+
+      <div class="section">
+        <h4>Alternative Minimum Tax (AMT)</h4>
+        
+        <!-- AMTI Calculation -->
+        <table>
+          <tr><td>AGI (Adjusted Gross Income)</td><td>${{ "{:,.2f}".format(calculated.agi) }}</td></tr>
+          {% if calculated.iso_bargain_element > 0 %}
+          <tr style="background:rgba(255,193,7,0.1);">
+            <td>+ ISO Bargain Element ({{ "{:,}".format(calculated.iso_shares) }} shares × (${{ "{:,.2f}".format(calculated.iso_fmv) }} - ${{ "{:,.2f}".format(calculated.iso_strike) }}))</td>
+            <td class="tax">+${{ "{:,.2f}".format(calculated.iso_bargain_element) }}</td>
+          </tr>
+          {% endif %}
+          <tr style="border-top:2px solid var(--border-color);"><td><b>AMTI (Alt Min Taxable Income)</b></td><td><b>${{ "{:,.2f}".format(calculated.amti) }}</b></td></tr>
+        </table>
+        
+        <!-- AMT Calculation -->
+        <table style="margin-top:0.8em;">
+          <tr><td>AMT Exemption ({{ selected_tax_year }})</td><td>−${{ "{:,.2f}".format(calculated.amt_exemption) }}</td></tr>
+          <tr><td>AMT Taxable Base</td><td>${{ "{:,.2f}".format(calculated.amt_taxable) }}</td></tr>
+          {% if calculated.amt_rate_26_amount > 0 %}<tr><td>&nbsp;&nbsp;• 26% on ${{ "{:,.2f}".format(calculated.amt_rate_26_amount) }}</td><td>${{ "{:,.2f}".format(calculated.amt_rate_26_amount * 0.26) }}</td></tr>{% endif %}
+          {% if calculated.amt_rate_28_amount > 0 %}<tr><td>&nbsp;&nbsp;• 28% on ${{ "{:,.2f}".format(calculated.amt_rate_28_amount) }}</td><td>${{ "{:,.2f}".format(calculated.amt_rate_28_amount * 0.28) }}</td></tr>{% endif %}
+          <tr><td>AMT on Ordinary Income</td><td>${{ "{:,.2f}".format(calculated.amt) }}</td></tr>
+          {% if calculated.ltcg_tax > 0 %}
+          <tr><td>+ LTCG Tax (at preferential rates)</td><td>+${{ "{:,.2f}".format(calculated.ltcg_tax) }}</td></tr>
+          {% endif %}
+          <tr style="border-top:2px solid var(--border-color);"><td><b>Tentative Minimum Tax</b></td><td class="tax"><b>${{ "{:,.2f}".format(calculated.tentative_minimum_tax) }}</b></td></tr>
+        </table>
+        
+        <!-- Comparison -->
+        <table style="margin-top:0.8em;">
+          <tr><td>Regular Tax</td><td>${{ "{:,.2f}".format(calculated.regular_tax) }}</td></tr>
+          <tr><td>Tentative Minimum Tax</td><td>${{ "{:,.2f}".format(calculated.tentative_minimum_tax) }}</td></tr>
+        </table>
+        
+        {% if calculated.amt_applies %}
+        <div style="background:#fff3cd; border:1px solid #ffc107; border-radius:6px; padding:0.7em 1em; margin-top:0.8em;">
+          <b style="color:#856404;">⚠️ AMT Applies!</b>
+          <p style="margin:0.3em 0 0 0; font-size:0.9em; color:#664d03;">
+            Your Tentative Minimum Tax (${{ "{:,.2f}".format(calculated.tentative_minimum_tax) }}) exceeds your Regular Tax (${{ "{:,.2f}".format(calculated.regular_tax) }}).
+            <br>Additional AMT owed: <b class="tax">${{ "{:,.2f}".format(calculated.amt_owed) }}</b>
+            {% if calculated.iso_bargain_element > 0 %}
+            <br><small>The ISO bargain element of ${{ "{:,.2f}".format(calculated.iso_bargain_element) }} triggered this AMT liability.</small>
+            {% endif %}
+          </p>
+        </div>
+        {% else %}
+        <div style="background:#d4edda; border:1px solid #28a745; border-radius:6px; padding:0.7em 1em; margin-top:0.8em;">
+          <b style="color:#155724;">✓ AMT Does Not Apply</b>
+          <p style="margin:0.3em 0 0 0; font-size:0.9em; color:#155724;">
+            Your Regular Tax (${{ "{:,.2f}".format(calculated.regular_tax) }}) exceeds your Tentative Minimum Tax (${{ "{:,.2f}".format(calculated.tentative_minimum_tax) }}).
+            {% if calculated.iso_bargain_element > 0 %}
+            <br><small>Even with the ISO bargain element of ${{ "{:,.2f}".format(calculated.iso_bargain_element) }}, AMT doesn't apply.</small>
+            {% endif %}
+          </p>
+        </div>
+        {% endif %}
+        
+        <table style="margin-top:0.8em;">
+          <tr style="border-top:2px solid var(--border-color);"><td><b>Total Federal Tax (Higher of Regular/AMT)</b></td><td class="tax" style="font-size:1.05em;"><b>${{ "{:,.2f}".format(calculated.total_federal_tax) }}</b> ({{ "%.1f"|format(calculated.federal_rate) }}%)</td></tr>
+        </table>
+      </div>
+
+      <div class="section">
+        <h4>Missouri State Tax</h4>
+        <table>
+          <tr><td>MO Standard Deduction ({{ selected_tax_year }})</td><td>${{ "{:,.2f}".format(calculated.mo_standard_deduction) }}</td></tr>
+          <tr><td>MO Taxable Income</td><td>${{ "{:,.2f}".format(calculated.mo_taxable_income) }}</td></tr>
+          <tr style="border-top:1px solid var(--border-color);"><td><b>Missouri State Tax</b></td><td class="tax"><b>${{ "{:,.2f}".format(calculated.mo_state_tax) }}</b> ({{ "%.1f"|format(calculated.state_rate) }}%)</td></tr>
+        </table>
+        
+        <details>
+          <summary>View {{ selected_tax_year }} MO Tax Brackets</summary>
+          <div class="brackets-info">
+            <table>
+              <tr><th>Bracket</th><th>Rate</th><th>Income in Bracket</th><th>Tax</th></tr>
+              {% for limit, rate, income_in_bracket, tax_in_bracket in calculated.mo_breakdown %}
+                <tr{% if tax_in_bracket > 0 %} class="has-tax"{% endif %}>
+                  {% if limit == float('inf') %}
+                  <td>Over</td>
+                  {% else %}
+                  <td>Up to ${{ "{:,.0f}".format(limit) }}</td>
+                  {% endif %}
+                  <td>{{ "%.1f"|format(rate * 100) }}%</td>
+                  <td>${{ "{:,.2f}".format(income_in_bracket) }}</td>
+                  <td class="tax">${{ "{:,.2f}".format(tax_in_bracket) }}</td>
+                </tr>
+              {% endfor %}
+            </table>
+          </div>
+        </details>
+      </div>
+
+      <div class="section">
+        <h4>FICA Taxes</h4>
+        <table>
+          <tr><td>Social Security (6.2%, max ${{ "{:,.0f}".format(calculated.ss_wage_base) }})</td><td class="tax">${{ "{:,.2f}".format(calculated.social_security) }}</td></tr>
+          <tr><td>Medicare (1.45%)</td><td class="tax">${{ "{:,.2f}".format(calculated.medicare) }}</td></tr>
+          {% if calculated.additional_medicare %}<tr><td>Additional Medicare (0.9%)</td><td class="tax">${{ "{:,.2f}".format(calculated.additional_medicare) }}</td></tr>{% endif %}
+          <tr style="border-top:1px solid var(--border-color);"><td><b>Total FICA</b></td><td class="tax"><b>${{ "{:,.2f}".format(calculated.total_fica) }}</b> ({{ "%.1f"|format(calculated.fica_rate) }}%)</td></tr>
+        </table>
+      </div>
+
+      <div class="highlight">
+        <table>
+          <tr><td><b>Total Annual Taxes</b></td><td class="tax"><b>${{ "{:,.2f}".format(calculated.total_taxes) }}</b></td></tr>
+          <tr><td>Effective Tax Rate</td><td>{{ "%.1f"|format(calculated.tax_rate) }}%</td></tr>
+        </table>
+      </div>
+
+      <div class="section">
+        <h4>Retirement Contributions (Annual)</h4>
+        <table>
+          {% if calculated.trad_401k %}<tr><td>Traditional 401k</td><td>${{ "{:,.2f}".format(calculated.trad_401k) }}</td></tr>{% endif %}
+          {% if calculated.roth_401k %}<tr><td>Roth 401k</td><td>${{ "{:,.2f}".format(calculated.roth_401k) }}</td></tr>{% endif %}
+          {% if calculated.after_tax_401k %}<tr><td>After-Tax 401k</td><td>${{ "{:,.2f}".format(calculated.after_tax_401k) }}</td></tr>{% endif %}
+          {% if calculated.trad_ira %}<tr><td>Traditional IRA</td><td>${{ "{:,.2f}".format(calculated.trad_ira) }}</td></tr>{% endif %}
+          {% if calculated.roth_ira %}<tr><td>Roth IRA</td><td>${{ "{:,.2f}".format(calculated.roth_ira) }}</td></tr>{% endif %}
+          {% if calculated.spousal_trad_ira %}<tr><td>Spousal Traditional IRA</td><td>${{ "{:,.2f}".format(calculated.spousal_trad_ira) }}</td></tr>{% endif %}
+          {% if calculated.spousal_roth_ira %}<tr><td>Spousal Roth IRA</td><td>${{ "{:,.2f}".format(calculated.spousal_roth_ira) }}</td></tr>{% endif %}
+          <tr style="border-top:1px solid var(--border-color);"><td><b>Your Total Contributions</b></td><td><b>${{ "{:,.2f}".format(calculated.employee_contributions) }}</b></td></tr>
+          {% if calculated.employer_401k %}<tr><td>Employer 401k Match</td><td class="money">${{ "{:,.2f}".format(calculated.employer_401k) }}</td></tr>{% endif %}
+          <tr style="border-top:1px solid var(--border-color);"><td><b>Grand Total (incl. Employer)</b></td><td><b>${{ "{:,.2f}".format(calculated.total_retirement_with_employer) }}</b></td></tr>
+        </table>
+      </div>
+
+      <div class="highlight" style="background:rgba(40,167,69,0.15);">
+        <h4 style="margin-top:0;">💵 Per Paycheck ({{ calculated.pay_periods }}/yr)</h4>
+        <table>
+          <tr><td>Gross Pay</td><td class="money">${{ "{:,.2f}".format(calculated.gross_per_pay) }}</td></tr>
+          <tr><td>Federal Tax</td><td class="tax">−${{ "{:,.2f}".format(calculated.federal_tax_per_pay) }}</td></tr>
+          <tr><td>State Tax (MO)</td><td class="tax">−${{ "{:,.2f}".format(calculated.state_tax_per_pay) }}</td></tr>
+          <tr><td>FICA</td><td class="tax">−${{ "{:,.2f}".format(calculated.fica_per_pay) }}</td></tr>
+          <tr><td>Pretax Deductions</td><td>−${{ "{:,.2f}".format(calculated.pretax_deductions_per_pay) }}</td></tr>
+          <tr><td>Pre-Tax Retirement</td><td>−${{ "{:,.2f}".format(calculated.pretax_retirement_per_pay) }}</td></tr>
+          <tr><td>After-Tax Retirement</td><td>−${{ "{:,.2f}".format(calculated.aftertax_retirement_per_pay) }}</td></tr>
+          <tr style="border-top:2px solid #197a3a;"><td><b>Net Pay</b></td><td class="money" style="font-size:1.1em;"><b>${{ "{:,.2f}".format(calculated.net_per_pay) }}</b></td></tr>
+        </table>
+      </div>
+
+      {% else %}
+      <p style="color:var(--text-secondary); text-align:center; padding: 2em 0;">Enter your income details and click <b>Save &amp; Calculate</b> to see your tax breakdown.</p>
+      {% endif %}
+    </div>
+  </div>
+</body>
+</html>
