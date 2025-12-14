@@ -481,9 +481,24 @@
       <!-- Variable Expenses (from Expense Tracking) -->
       <div class="card">
         <h3>Variable Expenses (Budget Categories)</h3>
-        <p style="font-size:0.85em; color:#667a9a; margin-bottom:1em;">
+        <p style="font-size:0.85em; color:var(--text-secondary); margin-bottom:1em;">
           Link expense categories from your tracking to your budget. Use tracked averages or set specific amounts.
         </p>
+        
+        <!-- Category Management Help -->
+        <div style="background: linear-gradient(135deg, rgba(56,117,232,0.1), rgba(56,117,232,0.15)); border-radius: 8px; padding: 1em; margin-bottom: 1.5em; border-left: 4px solid var(--accent);">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.8em;">
+            <div>
+              <strong style="color: var(--text-heading);">💡 Need to add or edit categories?</strong>
+              <p style="margin: 0.3em 0 0 0; font-size: 0.85em; color: var(--text-secondary);">
+                Categories and subcategories are managed on the Expenses page. Add new ones there, then return here to add them to your budget.
+              </p>
+            </div>
+            <a href="/expenses#categories" class="btn-secondary" style="text-decoration: none; white-space: nowrap;">
+              ➕ Manage Categories
+            </a>
+          </div>
+        </div>
         
         <form method="post" action="/budget/item/add" style="margin-bottom:1.5em; padding:1em; background:#f8fafd; border-radius:8px;" id="addBudgetItemForm">
           <!-- Row 1: Category, Subcategory, Type -->

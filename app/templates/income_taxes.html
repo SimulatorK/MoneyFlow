@@ -377,6 +377,52 @@
           {% endfor %}
         </div>
       </fieldset>
+      
+      <fieldset>
+        <legend>Tax Credits & Additional Deductions (Optional)</legend>
+        <p style="font-size:0.85em; color:var(--text-secondary); margin-bottom:1em;">Add any tax credits (reduce taxes owed) or additional itemized deductions (reduce taxable income).</p>
+        <div class="form-grid-3">
+          <label>Child Tax Credit
+            <input type="number" step="1" name="child_tax_credit" min="0" value="{{ data.child_tax_credit if data and data.child_tax_credit else 0 }}" placeholder="0">
+            <small style="color:var(--text-secondary);">$2,000/child for 2024</small>
+          </label>
+          <label>Education Credits
+            <input type="number" step="1" name="education_credits" min="0" value="{{ data.education_credits if data and data.education_credits else 0 }}" placeholder="0">
+            <small style="color:var(--text-secondary);">AOTC, LLC, etc.</small>
+          </label>
+          <label>Other Tax Credits
+            <input type="number" step="1" name="other_credits" min="0" value="{{ data.other_credits if data and data.other_credits else 0 }}" placeholder="0">
+            <small style="color:var(--text-secondary);">EV credit, etc.</small>
+          </label>
+        </div>
+        <div class="form-grid-3" style="margin-top:1em;">
+          <label>Mortgage Interest
+            <input type="number" step="0.01" name="mortgage_interest_deduction" min="0" value="{{ data.mortgage_interest_deduction if data and data.mortgage_interest_deduction else 0 }}" placeholder="0">
+            <small style="color:var(--text-secondary);">Annual mortgage interest</small>
+          </label>
+          <label>Property Taxes
+            <input type="number" step="0.01" name="property_tax_deduction" min="0" value="{{ data.property_tax_deduction if data and data.property_tax_deduction else 0 }}" placeholder="0">
+            <small style="color:var(--text-secondary);">SALT limit applies</small>
+          </label>
+          <label>Charitable Donations
+            <input type="number" step="0.01" name="charitable_deduction" min="0" value="{{ data.charitable_deduction if data and data.charitable_deduction else 0 }}" placeholder="0">
+          </label>
+        </div>
+        <div class="form-grid-3" style="margin-top:1em;">
+          <label>Student Loan Interest
+            <input type="number" step="0.01" name="student_loan_interest" min="0" value="{{ data.student_loan_interest if data and data.student_loan_interest else 0 }}" placeholder="0">
+            <small style="color:var(--text-secondary);">Up to $2,500</small>
+          </label>
+          <label>Other Deductions
+            <input type="number" step="0.01" name="other_deductions" min="0" value="{{ data.other_deductions if data and data.other_deductions else 0 }}" placeholder="0">
+            <small style="color:var(--text-secondary);">Medical, etc.</small>
+          </label>
+          <label style="display:flex; align-items:center; gap:0.5em; padding-top:1.5em;">
+            <input type="checkbox" name="use_itemized" value="true" {% if data and data.use_itemized %}checked{% endif %}>
+            <span>Use itemized deductions<br><small style="color:var(--text-secondary);">(instead of standard)</small></span>
+          </label>
+        </div>
+      </fieldset>
 
       <button class="save-btn" type="submit">Save &amp; Calculate</button>
     </form>
@@ -403,8 +449,20 @@
           <tr><td>Pretax Deductions (Health/Dental/Vision)</td><td>${{ "{:,.2f}".format(calculated.pretax_deductions_annual) }}</td></tr>
           <tr><td>Traditional 401k/IRA Contributions</td><td>${{ "{:,.2f}".format(calculated.pretax_retirement) }}</td></tr>
           <tr><td><b>AGI (Adjusted Gross Income)</b></td><td><b>${{ "{:,.2f}".format(calculated.agi) }}</b></td></tr>
+          {% if calculated.student_loan_interest > 0 %}
+          <tr><td>Student Loan Interest (Above-the-Line)</td><td>−${{ "{:,.2f}".format(calculated.student_loan_interest) }}</td></tr>
+          {% endif %}
           <tr><td>MAGI</td><td>${{ "{:,.2f}".format(calculated.magi) }}</td></tr>
-          <tr><td>Federal Standard Deduction ({{ selected_tax_year }})</td><td>${{ "{:,.2f}".format(calculated.standard_deduction) }}</td></tr>
+          <tr style="background:rgba(56,117,232,0.08);"><td colspan="2" style="font-weight:600;">Deductions</td></tr>
+          <tr><td style="padding-left:1em;">Standard Deduction ({{ selected_tax_year }})</td><td>${{ "{:,.2f}".format(calculated.standard_deduction) }}</td></tr>
+          {% if calculated.itemized_deductions > 0 %}
+          <tr><td style="padding-left:1em;">Itemized Deductions</td><td>${{ "{:,.2f}".format(calculated.itemized_deductions) }}</td></tr>
+          {% if calculated.mortgage_interest > 0 %}<tr><td style="padding-left:2em; font-size:0.9em; color:var(--text-secondary);">Mortgage Interest</td><td style="font-size:0.9em;">${{ "{:,.2f}".format(calculated.mortgage_interest) }}</td></tr>{% endif %}
+          {% if calculated.salt_capped > 0 %}<tr><td style="padding-left:2em; font-size:0.9em; color:var(--text-secondary);">Property Taxes (SALT capped)</td><td style="font-size:0.9em;">${{ "{:,.2f}".format(calculated.salt_capped) }}</td></tr>{% endif %}
+          {% if calculated.charitable > 0 %}<tr><td style="padding-left:2em; font-size:0.9em; color:var(--text-secondary);">Charitable Donations</td><td style="font-size:0.9em;">${{ "{:,.2f}".format(calculated.charitable) }}</td></tr>{% endif %}
+          {% if calculated.other_deductions > 0 %}<tr><td style="padding-left:2em; font-size:0.9em; color:var(--text-secondary);">Other</td><td style="font-size:0.9em;">${{ "{:,.2f}".format(calculated.other_deductions) }}</td></tr>{% endif %}
+          {% endif %}
+          <tr><td style="padding-left:1em;"><b>Deduction Used ({{ calculated.deduction_type | capitalize }})</b></td><td><b>${{ "{:,.2f}".format(calculated.deduction_used) }}</b></td></tr>
           <tr><td><b>Federal Taxable Income</b></td><td><b>${{ "{:,.2f}".format(calculated.taxable_ordinary) }}</b></td></tr>
         </table>
       </div>
@@ -497,7 +555,21 @@
         {% endif %}
         
         <table style="margin-top:0.8em;">
-          <tr style="border-top:2px solid var(--border-color);"><td><b>Total Federal Tax (Higher of Regular/AMT)</b></td><td class="tax" style="font-size:1.05em;"><b>${{ "{:,.2f}".format(calculated.total_federal_tax) }}</b> ({{ "%.1f"|format(calculated.federal_rate) }}%)</td></tr>
+          <tr style="border-top:2px solid var(--border-color);"><td><b>Federal Tax Before Credits</b></td><td class="tax">${{ "{:,.2f}".format(calculated.federal_tax_before_credits) }}</td></tr>
+          {% if calculated.total_credits > 0 %}
+          <tr style="background:rgba(40,167,69,0.1);"><td colspan="2" style="font-weight:600; color:#28a745;">Tax Credits Applied</td></tr>
+          {% if calculated.child_credit > 0 %}
+          <tr><td style="padding-left:1em;">Child Tax Credit</td><td style="color:#28a745;">−${{ "{:,.2f}".format(calculated.child_credit) }}</td></tr>
+          {% endif %}
+          {% if calculated.education_credits > 0 %}
+          <tr><td style="padding-left:1em;">Education Credits</td><td style="color:#28a745;">−${{ "{:,.2f}".format(calculated.education_credits) }}</td></tr>
+          {% endif %}
+          {% if calculated.other_credits > 0 %}
+          <tr><td style="padding-left:1em;">Other Credits</td><td style="color:#28a745;">−${{ "{:,.2f}".format(calculated.other_credits) }}</td></tr>
+          {% endif %}
+          <tr><td><b>Total Credits</b></td><td style="color:#28a745;"><b>−${{ "{:,.2f}".format(calculated.total_credits) }}</b></td></tr>
+          {% endif %}
+          <tr style="border-top:2px solid var(--accent); background:rgba(56,117,232,0.1);"><td><b>Total Federal Tax</b></td><td class="tax" style="font-size:1.1em;"><b>${{ "{:,.2f}".format(calculated.total_federal_tax) }}</b> ({{ "%.1f"|format(calculated.federal_rate) }}%)</td></tr>
         </table>
       </div>
 
@@ -568,13 +640,22 @@
         <h4 style="margin-top:0;">💵 Per Paycheck ({{ calculated.pay_periods }}/yr)</h4>
         <table>
           <tr><td>Gross Pay</td><td class="money">${{ "{:,.2f}".format(calculated.gross_per_pay) }}</td></tr>
-          <tr><td>Federal Tax</td><td class="tax">−${{ "{:,.2f}".format(calculated.federal_tax_per_pay) }}</td></tr>
-          <tr><td>State Tax (MO)</td><td class="tax">−${{ "{:,.2f}".format(calculated.state_tax_per_pay) }}</td></tr>
-          <tr><td>FICA</td><td class="tax">−${{ "{:,.2f}".format(calculated.fica_per_pay) }}</td></tr>
-          <tr><td>Pretax Deductions</td><td>−${{ "{:,.2f}".format(calculated.pretax_deductions_per_pay) }}</td></tr>
-          <tr><td>Pre-Tax Retirement</td><td>−${{ "{:,.2f}".format(calculated.pretax_retirement_per_pay) }}</td></tr>
-          <tr><td>After-Tax Retirement</td><td>−${{ "{:,.2f}".format(calculated.aftertax_retirement_per_pay) }}</td></tr>
-          <tr style="border-top:2px solid #197a3a;"><td><b>Net Pay</b></td><td class="money" style="font-size:1.1em;"><b>${{ "{:,.2f}".format(calculated.net_per_pay) }}</b></td></tr>
+          <tr style="background:rgba(220,53,69,0.08);"><td colspan="2" style="font-weight:600; color:#dc3545; padding-top:0.8em;">Taxes Withheld</td></tr>
+          <tr><td style="padding-left:1em;">Federal Tax</td><td class="tax">−${{ "{:,.2f}".format(calculated.federal_tax_per_pay) }}</td></tr>
+          <tr><td style="padding-left:1em;">State Tax (MO)</td><td class="tax">−${{ "{:,.2f}".format(calculated.state_tax_per_pay) }}</td></tr>
+          <tr><td style="padding-left:1em;">FICA (SS + Medicare)</td><td class="tax">−${{ "{:,.2f}".format(calculated.fica_per_pay) }}</td></tr>
+          <tr style="background:rgba(220,53,69,0.1);"><td><b>Total Taxes per Paycheck</b></td><td class="tax"><b>−${{ "{:,.2f}".format(calculated.federal_tax_per_pay + calculated.state_tax_per_pay + calculated.fica_per_pay) }}</b></td></tr>
+          
+          <tr style="background:rgba(255,193,7,0.08);"><td colspan="2" style="font-weight:600; color:#ffc107; padding-top:0.8em;">Pre-Tax Deductions</td></tr>
+          <tr><td style="padding-left:1em;">Health/Dental/Vision</td><td>−${{ "{:,.2f}".format(calculated.pretax_deductions_per_pay) }}</td></tr>
+          <tr><td style="padding-left:1em;">401k/IRA Contributions</td><td>−${{ "{:,.2f}".format(calculated.pretax_retirement_per_pay) }}</td></tr>
+          <tr style="background:rgba(255,193,7,0.1);"><td><b>Total Pre-Tax Deductions</b></td><td><b>−${{ "{:,.2f}".format(calculated.pretax_deductions_per_pay + calculated.pretax_retirement_per_pay) }}</b></td></tr>
+          
+          <tr style="background:rgba(56,117,232,0.08);"><td colspan="2" style="font-weight:600; color:var(--accent); padding-top:0.8em;">After-Tax Deductions</td></tr>
+          <tr><td style="padding-left:1em;">Roth 401k/IRA</td><td>−${{ "{:,.2f}".format(calculated.aftertax_retirement_per_pay) }}</td></tr>
+          <tr style="background:rgba(56,117,232,0.1);"><td><b>Total After-Tax Deductions</b></td><td><b>−${{ "{:,.2f}".format(calculated.aftertax_retirement_per_pay) }}</b></td></tr>
+          
+          <tr style="border-top:3px solid #197a3a; background:rgba(40,167,69,0.15);"><td><b style="font-size:1.1em;">Net Take-Home Pay</b></td><td class="money" style="font-size:1.2em;"><b>${{ "{:,.2f}".format(calculated.net_per_pay) }}</b></td></tr>
         </table>
       </div>
 

@@ -49,3 +49,16 @@ class IncomeTaxes(Base):
     spousal_roth_ira_type = Column(String)
     employer_401k = Column(Float)
     employer_401k_type = Column(String)
+    
+    # Tax Credits (reduce taxes owed)
+    child_tax_credit = Column(Float, default=0)
+    education_credits = Column(Float, default=0)
+    other_credits = Column(Float, default=0)
+    
+    # Additional Itemized Deductions
+    mortgage_interest_deduction = Column(Float, default=0)
+    property_tax_deduction = Column(Float, default=0)
+    charitable_deduction = Column(Float, default=0)
+    student_loan_interest = Column(Float, default=0)
+    other_deductions = Column(Float, default=0)
+    use_itemized = Column(Boolean, default=False)

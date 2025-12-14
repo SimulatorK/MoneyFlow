@@ -513,9 +513,35 @@ def calculate_taxes(data, tax_year=None):
     # Federal standard deduction
     standard_deduction = year_data["standard_deductions"].get(filing_status, 16100)
     
+    # Itemized deductions (sum of all itemizable deductions)
+    mortgage_interest = getattr(data, 'mortgage_interest_deduction', 0) or 0
+    property_taxes = getattr(data, 'property_tax_deduction', 0) or 0
+    charitable = getattr(data, 'charitable_deduction', 0) or 0
+    student_loan_int = min(getattr(data, 'student_loan_interest', 0) or 0, 2500)  # Cap at $2,500
+    other_deductions = getattr(data, 'other_deductions', 0) or 0
+    
+    # SALT cap ($10,000 for property taxes)
+    salt_capped = min(property_taxes, 10000)
+    
+    # Total itemized deductions
+    itemized_deductions = mortgage_interest + salt_capped + charitable + other_deductions
+    
+    # Use itemized if user chose it AND itemized > standard, otherwise use standard
+    use_itemized = getattr(data, 'use_itemized', False) or False
+    if use_itemized and itemized_deductions > standard_deduction:
+        deduction_used = itemized_deductions
+        deduction_type = "itemized"
+    else:
+        deduction_used = standard_deduction
+        deduction_type = "standard"
+    
+    # Student loan interest is "above the line" (reduces AGI, not itemized)
+    above_the_line_deductions = student_loan_int
+    agi_after_above_line = agi - above_the_line_deductions
+    
     # Taxable ordinary income (excluding LTCG which is taxed separately)
-    ordinary_income = salary + stcg + dividends - pretax_deductions_annual - pretax_retirement
-    taxable_ordinary = max(0, ordinary_income - standard_deduction)
+    ordinary_income = salary + stcg + dividends - pretax_deductions_annual - pretax_retirement - above_the_line_deductions
+    taxable_ordinary = max(0, ordinary_income - deduction_used)
     
     # Regular Federal income tax on ordinary income (with breakdown)
     federal_tax_ordinary, federal_breakdown = calculate_federal_tax_with_breakdown(taxable_ordinary, filing_status, tax_year)
@@ -544,8 +570,17 @@ def calculate_taxes(data, tax_year=None):
     # The AMT is the excess of tentative minimum tax over regular tax
     # You pay regular tax + AMT (if any)
     amt_applies = tentative_minimum_tax > regular_tax
-    total_federal_tax = max(regular_tax, tentative_minimum_tax)
+    federal_tax_before_credits = max(regular_tax, tentative_minimum_tax)
     amt_owed = tentative_minimum_tax - regular_tax if amt_applies else 0
+    
+    # Tax Credits (reduce taxes owed, not taxable income)
+    child_credit = getattr(data, 'child_tax_credit', 0) or 0
+    education_credits = getattr(data, 'education_credits', 0) or 0
+    other_credits = getattr(data, 'other_credits', 0) or 0
+    total_credits = child_credit + education_credits + other_credits
+    
+    # Apply credits (cannot reduce tax below $0)
+    total_federal_tax = max(0, federal_tax_before_credits - total_credits)
     
     # Update amt_result with tentative minimum tax for display
     amt_result["tentative_minimum_tax"] = tentative_minimum_tax
@@ -624,7 +659,23 @@ def calculate_taxes(data, tax_year=None):
         "agi": agi,
         "magi": magi,
         "standard_deduction": standard_deduction,
+        "deduction_used": deduction_used,
+        "deduction_type": deduction_type,
+        "itemized_deductions": itemized_deductions,
+        "mortgage_interest": mortgage_interest,
+        "property_taxes": property_taxes,
+        "salt_capped": salt_capped,
+        "charitable": charitable,
+        "other_deductions": other_deductions,
+        "student_loan_interest": student_loan_int,
+        "above_the_line_deductions": above_the_line_deductions,
         "taxable_ordinary": taxable_ordinary,
+        # Tax Credits
+        "child_credit": child_credit,
+        "education_credits": education_credits,
+        "other_credits": other_credits,
+        "total_credits": total_credits,
+        "federal_tax_before_credits": federal_tax_before_credits,
         # Federal tax (regular)
         "regular_tax": regular_tax,
         "federal_tax_ordinary": federal_tax_ordinary,
@@ -744,6 +795,17 @@ def income_taxes_post(
     spousal_roth_ira_type: str = Form("$"),
     employer_401k: float = Form(0.0),
     employer_401k_type: str = Form("$"),
+    # Tax Credits
+    child_tax_credit: float = Form(0.0),
+    education_credits: float = Form(0.0),
+    other_credits: float = Form(0.0),
+    # Itemized Deductions
+    mortgage_interest_deduction: float = Form(0.0),
+    property_tax_deduction: float = Form(0.0),
+    charitable_deduction: float = Form(0.0),
+    student_loan_interest: float = Form(0.0),
+    other_deductions: float = Form(0.0),
+    use_itemized: bool = Form(False),
 ):
     username = request.cookies.get("username")
     if not username:
@@ -786,5 +848,16 @@ def income_taxes_post(
     row.spousal_roth_ira_type = spousal_roth_ira_type
     row.employer_401k = employer_401k
     row.employer_401k_type = employer_401k_type
+    # Tax Credits
+    row.child_tax_credit = child_tax_credit
+    row.education_credits = education_credits
+    row.other_credits = other_credits
+    # Itemized Deductions
+    row.mortgage_interest_deduction = mortgage_interest_deduction
+    row.property_tax_deduction = property_tax_deduction
+    row.charitable_deduction = charitable_deduction
+    row.student_loan_interest = student_loan_interest
+    row.other_deductions = other_deductions
+    row.use_itemized = use_itemized
     db.commit()
     return RedirectResponse("/income-taxes", status_code=303)

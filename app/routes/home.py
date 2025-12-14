@@ -21,8 +21,10 @@ from app.models.user import User
 from app.models.income_taxes import IncomeTaxes
 from app.models.expense import Expense, Category as ExpenseCategory, SubCategory
 from app.models.budget import FixedCost, BudgetItem
+from app.models.networth import Account
 from app.routes.income_taxes import calculate_taxes
 from app.routes.budget import calculate_budget_summary
+from app.routes.tools import calculate_net_worth_summary
 from app.logging_config import get_logger
 import base64
 
@@ -328,6 +330,17 @@ def home(request: Request, db: Session = Depends(get_db)):
     # Get spending trends
     spending_trends = calculate_spending_trends(db, user.id)
     
+    # Get net worth summary for dashboard
+    networth_accounts = db.query(Account).filter(
+        Account.user_id == user.id,
+        Account.is_active == True
+    ).all()
+    
+    networth_summary = None
+    if networth_accounts:
+        networth_summary = calculate_net_worth_summary(networth_accounts)
+        logger.debug(f"Net worth summary: {networth_summary.get('net_worth', 0)}")
+    
     return templates.TemplateResponse("home.html", {
         "request": request,
         "title": "Dashboard",
@@ -338,5 +351,6 @@ def home(request: Request, db: Session = Depends(get_db)):
         "summary": summary,
         "sankey_data": sankey_data,
         "sankey_data_detailed": sankey_data_detailed,
-        "spending_trends": spending_trends
+        "spending_trends": spending_trends,
+        "networth_summary": networth_summary
     })

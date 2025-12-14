@@ -119,6 +119,39 @@
         .cta-btn:hover { transform: scale(1.05); }
         
         .version-info { text-align: center; margin-top: 2em; padding: 1em; color: var(--text-secondary); font-size: 0.9em; }
+        
+        /* About page tabs */
+        .about-tabs { display: flex; gap: 0.5em; margin-bottom: 1.5em; justify-content: center; }
+        .about-tab-btn { 
+          padding: 0.7em 1.5em; border: 2px solid var(--border-light); background: var(--bg-card);
+          border-radius: 8px; cursor: pointer; font-weight: 600; color: var(--text-secondary);
+          transition: all 0.2s;
+        }
+        .about-tab-btn:hover { border-color: var(--accent); color: var(--text-heading); }
+        .about-tab-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+        .about-tab-content { display: none; }
+        .about-tab-content.active { display: block; }
+        
+        /* API Docs styling */
+        .api-section { background: var(--bg-card); border-radius: 12px; padding: 1.5em; margin-bottom: 1.5em; }
+        .api-section h3 { color: var(--accent); margin: 0 0 1em 0; font-size: 1.2em; border-bottom: 2px solid var(--border-light); padding-bottom: 0.5em; }
+        .api-endpoint { background: var(--bg-primary); border-radius: 8px; padding: 1em; margin-bottom: 1em; }
+        .api-endpoint .method { display: inline-block; padding: 0.2em 0.6em; border-radius: 4px; font-weight: 700; font-size: 0.8em; margin-right: 0.5em; }
+        .api-endpoint .method.get { background: #28a745; color: #fff; }
+        .api-endpoint .method.post { background: #007bff; color: #fff; }
+        .api-endpoint .method.delete { background: #dc3545; color: #fff; }
+        .api-endpoint .path { font-family: monospace; color: var(--text-heading); }
+        .api-endpoint .desc { margin-top: 0.5em; font-size: 0.9em; color: var(--text-secondary); }
+        .api-table { width: 100%; border-collapse: collapse; margin-top: 0.5em; font-size: 0.85em; }
+        .api-table th { text-align: left; background: var(--border-light); padding: 0.5em; }
+        .api-table td { padding: 0.5em; border-bottom: 1px solid var(--border-light); }
+        .api-table code { background: rgba(56,117,232,0.1); padding: 0.1em 0.4em; border-radius: 3px; font-size: 0.9em; }
+        .type-badge { display: inline-block; padding: 0.1em 0.4em; border-radius: 4px; font-size: 0.75em; font-weight: 600; }
+        .type-badge.string { background: #e8f5e9; color: #2e7d32; }
+        .type-badge.number { background: #e3f2fd; color: #1565c0; }
+        .type-badge.boolean { background: #fce4ec; color: #c2185b; }
+        .type-badge.date { background: #fff3e0; color: #ef6c00; }
+        .type-badge.enum { background: #f3e5f5; color: #7b1fa2; }
     </style>
 </head>
 <body>
@@ -175,6 +208,14 @@
       <p>A comprehensive personal finance management application to help you track income, expenses, budgets, and taxes all in one place.</p>
     </div>
     
+    <!-- Tab Navigation -->
+    <div class="about-tabs">
+      <button class="about-tab-btn active" onclick="showAboutTab('overview')">📖 Overview</button>
+      <button class="about-tab-btn" onclick="showAboutTab('api')">🔧 API Reference</button>
+    </div>
+    
+    <!-- Overview Tab -->
+    <div id="tab-overview" class="about-tab-content active">
     <div class="feature-grid">
       <!-- Dashboard -->
       <div class="feature-card">
@@ -302,6 +343,155 @@
       <p><strong>MoneyFlow</strong> v1.2.0 | Built with ❤️ for personal finance management</p>
       <p>Questions or feedback? This is a personal project for tracking finances.</p>
     </div>
+    </div><!-- End Overview Tab -->
+    
+    <!-- API Reference Tab -->
+    <div id="tab-api" class="about-tab-content">
+      <div class="api-section">
+        <h3>📊 Data Types Reference</h3>
+        <p style="color: var(--text-secondary); margin-bottom: 1em;">Understanding the data types and enumerations used throughout the application.</p>
+        
+        <!-- Account Types -->
+        <div class="api-endpoint">
+          <h4 style="margin: 0 0 0.5em 0; color: var(--text-heading);">Account Types (Net Worth Manager)</h4>
+          <table class="api-table">
+            <thead><tr><th>Type Code</th><th>Display Name</th><th>Category</th><th>Tax Treatment</th></tr></thead>
+            <tbody>
+              <tr><td><code>401k</code></td><td>401(k) Traditional</td><td>Asset</td><td><span class="type-badge enum">tax_deferred</span></td></tr>
+              <tr><td><code>roth_401k</code></td><td>401(k) Roth</td><td>Asset</td><td><span class="type-badge enum">tax_free</span></td></tr>
+              <tr><td><code>after_tax_401k</code></td><td>401(k) After-Tax</td><td>Asset</td><td><span class="type-badge enum">partially_taxable</span></td></tr>
+              <tr><td><code>ira</code></td><td>Traditional IRA</td><td>Asset</td><td><span class="type-badge enum">tax_deferred</span></td></tr>
+              <tr><td><code>roth_ira</code></td><td>Roth IRA</td><td>Asset</td><td><span class="type-badge enum">tax_free</span></td></tr>
+              <tr><td><code>hsa</code></td><td>HSA</td><td>Asset</td><td><span class="type-badge enum">tax_free</span></td></tr>
+              <tr><td><code>brokerage</code></td><td>Brokerage Account</td><td>Asset</td><td><span class="type-badge enum">taxable</span></td></tr>
+              <tr><td><code>savings</code></td><td>Savings Account</td><td>Asset</td><td><span class="type-badge enum">taxable</span></td></tr>
+              <tr><td><code>checking</code></td><td>Checking Account</td><td>Asset</td><td><span class="type-badge enum">taxable</span></td></tr>
+              <tr><td><code>mortgage</code></td><td>Mortgage</td><td>Liability</td><td>N/A</td></tr>
+              <tr><td><code>car_loan</code></td><td>Auto Loan</td><td>Liability</td><td>N/A</td></tr>
+              <tr><td><code>student_loan</code></td><td>Student Loan</td><td>Liability</td><td>N/A</td></tr>
+              <tr><td><code>credit_card</code></td><td>Credit Card</td><td>Liability</td><td>N/A</td></tr>
+            </tbody>
+          </table>
+        </div>
+        
+        <!-- Frequency Types -->
+        <div class="api-endpoint">
+          <h4 style="margin: 0 0 0.5em 0; color: var(--text-heading);">Frequency Options</h4>
+          <table class="api-table">
+            <thead><tr><th>Value</th><th>Description</th><th>Per Year</th></tr></thead>
+            <tbody>
+              <tr><td><code>weekly</code></td><td>Every week</td><td>52</td></tr>
+              <tr><td><code>bi-weekly</code></td><td>Every two weeks</td><td>26</td></tr>
+              <tr><td><code>semi-monthly</code></td><td>Twice per month</td><td>24</td></tr>
+              <tr><td><code>monthly</code></td><td>Once per month</td><td>12</td></tr>
+              <tr><td><code>quarterly</code></td><td>Every three months</td><td>4</td></tr>
+              <tr><td><code>annually</code></td><td>Once per year</td><td>1</td></tr>
+            </tbody>
+          </table>
+        </div>
+        
+        <!-- Tax Treatment -->
+        <div class="api-endpoint">
+          <h4 style="margin: 0 0 0.5em 0; color: var(--text-heading);">Tax Treatment Categories</h4>
+          <table class="api-table">
+            <thead><tr><th>Treatment</th><th>Description</th><th>Example Accounts</th></tr></thead>
+            <tbody>
+              <tr><td><span class="type-badge enum">tax_free</span></td><td>Qualified withdrawals are not taxed</td><td>Roth IRA, Roth 401k, HSA</td></tr>
+              <tr><td><span class="type-badge enum">tax_deferred</span></td><td>Withdrawals taxed as ordinary income</td><td>Traditional 401k, Traditional IRA</td></tr>
+              <tr><td><span class="type-badge enum">taxable</span></td><td>Subject to capital gains tax</td><td>Brokerage, Savings, Checking</td></tr>
+              <tr><td><span class="type-badge enum">partially_taxable</span></td><td>Basis tax-free, gains taxed</td><td>After-Tax 401k</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      
+      <div class="api-section">
+        <h3>💾 CSV Import Formats</h3>
+        
+        <!-- Expense CSV -->
+        <div class="api-endpoint">
+          <h4 style="margin: 0 0 0.5em 0; color: var(--text-heading);">Expense CSV Upload</h4>
+          <p class="desc">Upload expenses in bulk via CSV file at <code>/expenses</code></p>
+          <table class="api-table">
+            <thead><tr><th>Column</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>date</code></td><td><span class="type-badge date">date</span></td><td>Yes</td><td>YYYY-MM-DD format</td></tr>
+              <tr><td><code>amount</code></td><td><span class="type-badge number">number</span></td><td>Yes</td><td>Expense amount (positive number)</td></tr>
+              <tr><td><code>category</code></td><td><span class="type-badge string">string</span></td><td>Yes</td><td>Category name (created if new)</td></tr>
+              <tr><td><code>subcategory</code></td><td><span class="type-badge string">string</span></td><td>No</td><td>Subcategory name (created if new)</td></tr>
+              <tr><td><code>notes</code></td><td><span class="type-badge string">string</span></td><td>No</td><td>Optional notes</td></tr>
+            </tbody>
+          </table>
+        </div>
+        
+        <!-- Net Worth CSV -->
+        <div class="api-endpoint">
+          <h4 style="margin: 0 0 0.5em 0; color: var(--text-heading);">Net Worth CSV Upload</h4>
+          <p class="desc">Import account balances at <code>/tools</code> → Net Worth Manager</p>
+          <table class="api-table">
+            <thead><tr><th>Column</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>account_name</code></td><td><span class="type-badge string">string</span></td><td>Yes</td><td>Account display name</td></tr>
+              <tr><td><code>account_type</code></td><td><span class="type-badge enum">enum</span></td><td>Yes</td><td>See Account Types above</td></tr>
+              <tr><td><code>is_asset</code></td><td><span class="type-badge boolean">boolean</span></td><td>Yes</td><td>"true" or "false"</td></tr>
+              <tr><td><code>institution</code></td><td><span class="type-badge string">string</span></td><td>No</td><td>Bank/institution name</td></tr>
+              <tr><td><code>balance_date</code></td><td><span class="type-badge date">date</span></td><td>Yes</td><td>YYYY-MM-DD format</td></tr>
+              <tr><td><code>balance</code></td><td><span class="type-badge number">number</span></td><td>Yes</td><td>Account balance</td></tr>
+              <tr><td><code>notes</code></td><td><span class="type-badge string">string</span></td><td>No</td><td>Optional notes</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      
+      <div class="api-section">
+        <h3>🔗 API Endpoints</h3>
+        
+        <div class="api-endpoint">
+          <span class="method get">GET</span><span class="path">/api/subcategories/{category_id}</span>
+          <p class="desc">Get all subcategories for a category</p>
+        </div>
+        
+        <div class="api-endpoint">
+          <span class="method get">GET</span><span class="path">/api/categories</span>
+          <p class="desc">Get all categories for current user</p>
+        </div>
+        
+        <div class="api-endpoint">
+          <span class="method get">GET</span><span class="path">/expenses/csv-export</span>
+          <p class="desc">Export all expenses as CSV file</p>
+        </div>
+        
+        <div class="api-endpoint">
+          <span class="method get">GET</span><span class="path">/tools/networth/csv-export</span>
+          <p class="desc">Export all net worth data as CSV file</p>
+        </div>
+        
+        <div class="api-endpoint">
+          <span class="method post">POST</span><span class="path">/tools/montecarlo/run</span>
+          <p class="desc">Run Monte Carlo simulation with JSON body: <code>{"years": 30, "num_simulations": 1000, "show_todays_dollars": true}</code></p>
+        </div>
+        
+        <div class="api-endpoint">
+          <span class="method delete">DELETE</span><span class="path">/expenses/{expense_id}</span>
+          <p class="desc">Delete an expense by ID</p>
+        </div>
+      </div>
+      
+      <div class="api-section">
+        <h3>📋 Budget Item Types</h3>
+        <div class="api-endpoint">
+          <table class="api-table">
+            <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>category_type</code></td><td><span class="type-badge enum">enum</span></td><td>"need" or "want" for 50/30/20 tracking</td></tr>
+              <tr><td><code>amount_mode</code></td><td><span class="type-badge enum">enum</span></td><td>"fixed" or "tracked" for fixed costs</td></tr>
+              <tr><td><code>use_tracked_average</code></td><td><span class="type-badge boolean">boolean</span></td><td>Use rolling average from expense data</td></tr>
+              <tr><td><code>tracking_period_months</code></td><td><span class="type-badge number">number</span></td><td>3, 6, or 12 month rolling average</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div><!-- End API Tab -->
   </div>
   
   <script>
@@ -314,6 +504,17 @@
         document.getElementById('profileDropdown')?.classList.remove('active');
       }
     });
+    
+    // About page tab switching
+    function showAboutTab(tabName) {
+      // Update buttons
+      document.querySelectorAll('.about-tab-btn').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+      
+      // Update content
+      document.querySelectorAll('.about-tab-content').forEach(tab => tab.classList.remove('active'));
+      document.getElementById('tab-' + tabName).classList.add('active');
+    }
   </script>
 </body>
 </html>

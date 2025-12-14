@@ -208,6 +208,35 @@
         
         .chart-container.tall { height: 300px; }
         
+        /* Collapsible cards */
+        .collapsible-card .collapsible-header {
+          user-select: none;
+        }
+        .collapsible-card .collapsible-header:hover {
+          background: var(--bg-hover);
+          margin: -0.5em -0.5em 0.5em -0.5em;
+          padding: 0.5em;
+          border-radius: 8px;
+        }
+        .collapsible-card .collapse-icon {
+          transition: transform 0.2s ease;
+          font-size: 0.8em;
+          color: var(--text-secondary);
+        }
+        .collapsible-card.collapsed .collapse-icon {
+          transform: rotate(-90deg);
+        }
+        .collapsible-card .collapsible-content {
+          overflow: hidden;
+          transition: max-height 0.3s ease, opacity 0.2s ease;
+        }
+        .collapsible-card.collapsed .collapsible-content {
+          max-height: 0 !important;
+          opacity: 0;
+          padding: 0;
+          margin: 0;
+        }
+        
         /* Expense list */
         .expense-list { display: flex; flex-direction: column; gap: 0.8em; }
         .expense-item {
@@ -439,10 +468,19 @@
             </label>
           </div>
           
-          <div class="btn-row">
-            <button type="button" class="btn-secondary" onclick="showCategoryModal()">+ New Category</button>
-            <button type="button" class="btn-secondary" onclick="showSubcategoryModal()">+ New Sub-Category</button>
-            <button type="button" class="btn-secondary" onclick="showManageCategoriesModal()">Manage Categories</button>
+          <!-- Category Management Section -->
+          <div id="categories" class="btn-row" style="background: linear-gradient(135deg, rgba(56,117,232,0.08), rgba(56,117,232,0.12)); padding: 1em; border-radius: 8px; margin: 0.5em 0; border: 1px dashed var(--accent);">
+            <div style="flex: 1; min-width: 200px;">
+              <strong style="color: var(--text-heading); font-size: 0.9em;">📂 Category Management</strong>
+              <p style="margin: 0.3em 0 0.8em 0; font-size: 0.8em; color: var(--text-secondary);">
+                Add new categories and subcategories here to organize your expenses. These will then be available in the Budget page.
+              </p>
+              <div style="display: flex; gap: 0.5em; flex-wrap: wrap;">
+                <button type="button" class="btn-secondary" onclick="showCategoryModal()">+ New Category</button>
+                <button type="button" class="btn-secondary" onclick="showSubcategoryModal()">+ New Sub-Category</button>
+                <button type="button" class="btn-secondary" onclick="showManageCategoriesModal()">⚙️ Manage</button>
+              </div>
+            </div>
           </div>
           
           <div class="form-row full-width">
@@ -603,58 +641,46 @@
         </div>
       </div>
       
-      <!-- Spending Over Time (Stacked Bar) -->
-      <div class="card">
-        <h3>📊 Spending Over Time</h3>
-        <div class="chart-container tall">
-          <canvas id="stackedChart"></canvas>
+      <!-- Spending Over Time (Stacked Bar) - Collapsible -->
+      <div class="card collapsible-card">
+        <h3 class="collapsible-header" onclick="toggleCollapsible(this)" style="cursor: pointer; display: flex; align-items: center; gap: 0.5em;">
+          <span class="collapse-icon">▼</span>
+          <span>📊 Spending Over Time</span>
+        </h3>
+        <div class="collapsible-content">
+          <div class="chart-container tall">
+            <canvas id="stackedChart"></canvas>
+          </div>
         </div>
       </div>
       
-      <!-- Category Breakdown Chart (Doughnut) -->
-      <div class="card">
-        <h3>🥧 Category Breakdown</h3>
-        <div class="chart-container">
-          <canvas id="categoryChart"></canvas>
+      <!-- Category Breakdown Chart (Doughnut) - Collapsible -->
+      <div class="card collapsible-card">
+        <h3 class="collapsible-header" onclick="toggleCollapsible(this)" style="cursor: pointer; display: flex; align-items: center; gap: 0.5em;">
+          <span class="collapse-icon">▼</span>
+          <span>🥧 Category Breakdown</span>
+        </h3>
+        <div class="collapsible-content">
+          <div class="chart-container">
+            <canvas id="categoryChart"></canvas>
+          </div>
         </div>
       </div>
       
-      <!-- Subcategory Breakdown -->
-      <div class="card">
-        <h3>🏷️ Subcategory Breakdown</h3>
-        <div class="chart-container tall">
-          <canvas id="subcategoryChart"></canvas>
+      <!-- Subcategory Breakdown - Collapsible -->
+      <div class="card collapsible-card">
+        <h3 class="collapsible-header" onclick="toggleCollapsible(this)" style="cursor: pointer; display: flex; align-items: center; gap: 0.5em;">
+          <span class="collapse-icon">▼</span>
+          <span>🏷️ Subcategory Breakdown</span>
+        </h3>
+        <div class="collapsible-content">
+          <div class="chart-container tall">
+            <canvas id="subcategoryChart"></canvas>
+          </div>
         </div>
       </div>
       
-      <!-- Category Totals Table -->
-      {% if stats.category_averages %}
-      <div class="card">
-        <h3>📋 Category Summary</h3>
-        <table class="avg-table">
-          <thead>
-            <tr>
-              <th>Category</th>
-              <th class="count"># Expenses</th>
-              <th class="amount">Total</th>
-              <th class="amount">% of Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for cat in stats.category_averages %}
-            <tr>
-              <td>{{ cat.name }}</td>
-              <td class="count">{{ cat.count }}</td>
-              <td class="amount">${{ "{:,.2f}".format(cat.total) }}</td>
-              <td class="amount">{{ "{:.1f}".format((cat.total / stats.total_spending * 100) if stats.total_spending > 0 else 0) }}%</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-      {% endif %}
-      
-      <!-- Subcategory Totals Table -->
+      <!-- Category & Subcategory Details Table -->
       {% if subcategory_stats %}
       <div class="card">
         <h3 style="display: flex; justify-content: space-between; align-items: center;">
@@ -812,6 +838,12 @@
     
     function clearFilters() {
       window.location.href = '/expenses?lookback=' + document.getElementById('lookbackSelect').value;
+    }
+    
+    // Toggle collapsible card sections
+    function toggleCollapsible(header) {
+      const card = header.closest('.collapsible-card');
+      card.classList.toggle('collapsed');
     }
     
     // Format currency helper

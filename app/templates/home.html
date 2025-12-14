@@ -367,6 +367,56 @@
             </a>
           </div>
         </div>
+        
+        <!-- Net Worth Summary Card -->
+        {% if networth_summary %}
+        <div class="card" style="margin-top: 1em;">
+          <h3>💰 Net Worth Snapshot</h3>
+          <div class="quick-stats">
+            <div class="stat-card" style="border-left-color: #28a745;">
+              <div class="label">Total Assets</div>
+              <div class="value" style="color: #28a745;">${{ "{:,.0f}".format(networth_summary.total_assets) }}</div>
+            </div>
+            <div class="stat-card" style="border-left-color: #dc3545;">
+              <div class="label">Total Liabilities</div>
+              <div class="value" style="color: #dc3545;">${{ "{:,.0f}".format(networth_summary.total_liabilities) }}</div>
+            </div>
+            <div class="stat-card" style="border-left-color: var(--accent); background: linear-gradient(135deg, rgba(56,117,232,0.1), rgba(56,117,232,0.15));">
+              <div class="label">Net Worth</div>
+              <div class="value" style="font-size: 1.4em; color: {% if networth_summary.net_worth >= 0 %}#28a745{% else %}#dc3545{% endif %};">
+                ${{ "{:,.0f}".format(networth_summary.net_worth) }}
+              </div>
+            </div>
+            {% if networth_summary.performance and networth_summary.performance.days_tracked > 30 %}
+            <div class="stat-card">
+              <div class="label">YTD Change</div>
+              <div class="value {% if networth_summary.performance.cumulative_change >= 0 %}positive{% else %}negative{% endif %}">
+                {{ "+" if networth_summary.performance.cumulative_change >= 0 else "" }}${{ "{:,.0f}".format(networth_summary.performance.cumulative_change) }}
+                <span style="font-size: 0.7em; margin-left: 0.3em;">({{ "{:.1f}".format(networth_summary.performance.cumulative_pct) }}%)</span>
+              </div>
+              <div class="detail">{{ networth_summary.performance.days_tracked }} days tracked</div>
+            </div>
+            {% endif %}
+          </div>
+          {% if networth_summary.tax_analysis and networth_summary.tax_analysis.total_assets > 0 %}
+          <div style="margin-top: 1em; padding-top: 1em; border-top: 1px solid var(--border-light);">
+            <div class="label" style="margin-bottom: 0.5em;">Tax Treatment Breakdown</div>
+            <div style="display: flex; gap: 0.5em; flex-wrap: wrap; font-size: 0.85em;">
+              <span style="background: rgba(40,167,69,0.15); padding: 0.3em 0.6em; border-radius: 4px; color: #28a745;">
+                Tax-Free: {{ "{:.0f}".format(networth_summary.tax_analysis.tax_free.percentage) }}%
+              </span>
+              <span style="background: rgba(255,193,7,0.15); padding: 0.3em 0.6em; border-radius: 4px; color: #d4a000;">
+                Tax-Deferred: {{ "{:.0f}".format(networth_summary.tax_analysis.tax_deferred.percentage) }}%
+              </span>
+              <span style="background: rgba(220,53,69,0.15); padding: 0.3em 0.6em; border-radius: 4px; color: #dc3545;">
+                Taxable: {{ "{:.0f}".format(networth_summary.tax_analysis.taxable.percentage) }}%
+              </span>
+            </div>
+          </div>
+          {% endif %}
+          <a href="/tools?tab=networth" style="display: block; text-align: center; margin-top: 1em; color: var(--accent); font-size: 0.9em;">View Full Net Worth Details →</a>
+        </div>
+        {% endif %}
       </div>
     </div>
     
