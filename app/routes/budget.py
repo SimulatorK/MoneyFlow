@@ -75,7 +75,8 @@ CATEGORY_TYPES = [
     ("need", "Need"),
     ("want", "Want"),
     ("savings", "Savings"),
-    ("debt", "Debt Payment")
+    ("debt", "Debt Payment"),
+    # ("donation", "Donation")
 ]
 
 # ============================================================================
