@@ -205,15 +205,15 @@ def calculate_net_worth_summary(accounts: List[Account]) -> dict:
             "latest_date": latest_balance.balance_date.isoformat() if latest_balance else None,
             "performance": performance,
             "contribution": {
-                "amount": account.contribution.amount if account.contribution else 0,
-                "frequency": account.contribution.frequency if account.contribution else "monthly",
-                "employer_match": account.contribution.employer_match if account.contribution else 0,
-                "employer_match_type": account.contribution.employer_match_type if account.contribution else "percent",
-                "expected_return": account.contribution.expected_return if account.contribution else 7.0,
-                "interest_rate": account.contribution.interest_rate if account.contribution else 0,
-                "stocks_pct": account.contribution.stocks_pct if account.contribution else 80.0,
-                "bonds_pct": account.contribution.bonds_pct if account.contribution else 15.0,
-                "cash_pct": account.contribution.cash_pct if account.contribution else 5.0,
+                "amount": account.contribution.amount if account.contribution.amount is not None else 0,
+                "frequency": account.contribution.frequency if account.contribution.frequency else "monthly",
+                "employer_match": account.contribution.employer_match if account.contribution.employer_match is not None else 0,
+                "employer_match_type": account.contribution.employer_match_type if account.contribution.employer_match_type else "percent",
+                "expected_return": account.contribution.expected_return if account.contribution.expected_return is not None else 7.0,
+                "interest_rate": account.contribution.interest_rate if account.contribution.interest_rate is not None else 0,
+                "stocks_pct": account.contribution.stocks_pct if account.contribution.stocks_pct is not None else 80.0,
+                "bonds_pct": account.contribution.bonds_pct if account.contribution.bonds_pct is not None else 15.0,
+                "cash_pct": account.contribution.cash_pct if account.contribution.cash_pct is not None else 5.0,
             } if account.contribution else None
         })
         
@@ -1409,24 +1409,58 @@ async def run_montecarlo(
             latest_balance = latest.balance
         
         contrib = acc.contribution
+        
+        # Calculate contribution amount - explicitly handle 0 values
+        contrib_amount = 0
+        if contrib and contrib.amount is not None:
+            contrib_amount = contrib.amount
+        
+        # Frequency multiplier to convert to monthly
+        freq_multiplier = 1  # default monthly
+        if contrib:
+            freq = contrib.frequency or "monthly"
+            if freq == "annually":
+                freq_multiplier = 12
+            elif freq == "quarterly":
+                freq_multiplier = 4
+            elif freq == "monthly":
+                freq_multiplier = 1
+            elif freq == "semi-monthly":
+                freq_multiplier = 2
+            elif freq == "bi-weekly":
+                freq_multiplier = 2.17
+            elif freq == "weekly":
+                freq_multiplier = 4.33
+        
+        monthly_contribution = (contrib_amount * freq_multiplier) / 12
+        
+        # Get portfolio allocation - explicitly allow 0 values, only use defaults for None
+        stocks_pct = 80  # default
+        bonds_pct = 15   # default  
+        cash_pct = 5     # default
+        interest_rate = 0
+        
+        if contrib:
+            if contrib.stocks_pct is not None:
+                stocks_pct = contrib.stocks_pct
+            if contrib.bonds_pct is not None:
+                bonds_pct = contrib.bonds_pct
+            if contrib.cash_pct is not None:
+                cash_pct = contrib.cash_pct
+            if contrib.interest_rate is not None:
+                interest_rate = contrib.interest_rate
+        
         accounts_data.append({
             "id": acc.id,
             "name": acc.name,
             "account_type": acc.account_type,
             "is_asset": acc.is_asset,
             "current_balance": latest_balance,
-            "contribution_monthly": (contrib.amount if contrib else 0) * (
-                12 if (contrib and contrib.frequency == "annually") else
-                4 if (contrib and contrib.frequency == "quarterly") else
-                1 if (contrib and contrib.frequency == "monthly") else
-                2 if (contrib and contrib.frequency == "semi-monthly") else
-                2.17 if (contrib and contrib.frequency == "bi-weekly") else
-                4.33 if (contrib and contrib.frequency == "weekly") else 1
-            ) / 12,  # Convert to monthly
-            "stocks_pct": contrib.stocks_pct if (contrib and hasattr(contrib, 'stocks_pct')) else 80,
-            "bonds_pct": contrib.bonds_pct if (contrib and hasattr(contrib, 'bonds_pct')) else 15,
-            "cash_pct": contrib.cash_pct if (contrib and hasattr(contrib, 'cash_pct')) else 5,
-            "interest_rate": contrib.interest_rate if contrib else 0
+            "contribution_monthly": monthly_contribution,
+            "stocks_pct": stocks_pct,
+            "bonds_pct": bonds_pct,
+            "cash_pct": cash_pct,
+            "interest_rate": interest_rate
         })
     
     # Run simulation
