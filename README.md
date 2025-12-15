@@ -126,12 +126,32 @@ poetry run alembic upgrade head
 
 ### 4. Run the Application
 
-**Development mode with auto-reload:**
+**Using the run script (recommended):**
+```bash
+# Development mode with ngrok tunnel
+./run.sh
+
+# Production mode with ngrok tunnel
+./run.sh --prod
+
+# With periodic refresh (restarts every 6 hours)
+./run.sh --prod --refresh
+
+# Check status
+./run.sh --status
+
+# Stop all services
+./run.sh --stop
+```
+
+**Manual commands:**
+
+Development mode with auto-reload:
 ```bash
 poetry run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-**Production mode:**
+Production mode:
 ```bash
 poetry run uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
 ```
