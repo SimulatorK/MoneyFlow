@@ -246,31 +246,62 @@ def get_expense_stats(db: Session, user_id: int, lookback: str = "1m", category_
                 "is_subcategory": True
             })
     
-    # Vendor statistics
+    # Vendor statistics with category breakdown
     by_vendor = {}
     vendor_counts = {}
+    vendor_categories = {}  # vendor_name -> {category_name: {amount, count}}
+    
     for expense in expenses:
         vendor_name = expense.vendor.name if expense.vendor else "No Vendor"
         vendor_id = expense.vendor_id if expense.vendor else 0
+        category_name = expense.category.name if expense.category else "Uncategorized"
+        
         by_vendor[vendor_name] = by_vendor.get(vendor_name, 0) + expense.amount
         vendor_counts[vendor_name] = vendor_counts.get(vendor_name, 0) + 1
+        
+        # Track categories per vendor
+        if vendor_name not in vendor_categories:
+            vendor_categories[vendor_name] = {}
+        if category_name not in vendor_categories[vendor_name]:
+            vendor_categories[vendor_name][category_name] = {"amount": 0, "count": 0}
+        vendor_categories[vendor_name][category_name]["amount"] += expense.amount
+        vendor_categories[vendor_name][category_name]["count"] += 1
     
     # Sort vendors by amount descending
     by_vendor_sorted = sorted(by_vendor.items(), key=lambda x: x[1], reverse=True)
     
-    # Calculate vendor statistics
+    # Calculate vendor statistics with category breakdown
     vendor_stats = []
     for vendor_name, total in by_vendor_sorted:
         count = vendor_counts.get(vendor_name, 1)
         avg = total / count if count > 0 else 0
         monthly_avg = total / months_in_period if months_in_period > 0 else 0
+        
+        # Build category breakdown for this vendor (sorted by amount)
+        categories = []
+        if vendor_name in vendor_categories:
+            sorted_cats = sorted(
+                vendor_categories[vendor_name].items(),
+                key=lambda x: x[1]["amount"],
+                reverse=True
+            )
+            for cat_name, cat_data in sorted_cats:
+                cat_pct = (cat_data["amount"] / total * 100) if total > 0 else 0
+                categories.append({
+                    "name": cat_name,
+                    "amount": cat_data["amount"],
+                    "count": cat_data["count"],
+                    "percentage": cat_pct
+                })
+        
         vendor_stats.append({
             "name": vendor_name,
             "total": total,
             "count": count,
             "average": avg,
             "monthly_avg": monthly_avg,
-            "percentage": (total / total_in_period * 100) if total_in_period > 0 else 0
+            "percentage": (total / total_in_period * 100) if total_in_period > 0 else 0,
+            "categories": categories
         })
     
     return {

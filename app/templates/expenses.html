@@ -316,6 +316,21 @@
         .avg-table .amount { text-align: right; font-weight: 500; color: #b03030; }
         .avg-table .count { text-align: center; color: #667a9a; }
         
+        /* Vendor breakdown with categories */
+        .vendor-breakdown-table .vendor-row:hover { background: var(--bg-hover, #f8fafd); }
+        .vendor-breakdown-table .vendor-row.expanded { background: var(--border-light, #e8eef8); }
+        .vendor-breakdown-table .vendor-expand-icon { 
+            display: inline-block; 
+            transition: transform 0.2s ease;
+            font-size: 0.8em;
+        }
+        .vendor-breakdown-table .vendor-category-row td { 
+            border-bottom: 1px solid var(--border-light, #f0f4fa); 
+        }
+        .vendor-breakdown-table .vendor-category-row:last-of-type td {
+            border-bottom: 2px solid var(--border-light, #e8eef8);
+        }
+        
         /* Category management */
         .category-manager {
             display: flex; flex-direction: column; gap: 0.5em;
@@ -759,9 +774,10 @@
           <div class="chart-container">
             <canvas id="vendorChart"></canvas>
           </div>
-          <table class="avg-table" style="margin-top: 1em;">
+          <table class="avg-table vendor-breakdown-table" style="margin-top: 1em;">
             <thead>
               <tr>
+                <th style="width: 30px;"></th>
                 <th>Vendor</th>
                 <th class="count">#</th>
                 <th class="amount">Total</th>
@@ -770,15 +786,36 @@
             </thead>
             <tbody>
               {% for v in vendor_stats[:15] %}
-              <tr>
-                <td>{{ v.name }}</td>
+              <tr class="vendor-row" onclick="toggleVendorCategories(this)" style="cursor: pointer;">
+                <td style="text-align: center; color: var(--text-secondary);">
+                  {% if v.categories and v.categories|length > 0 %}
+                  <span class="vendor-expand-icon">▶</span>
+                  {% endif %}
+                </td>
+                <td><strong>{{ v.name }}</strong></td>
                 <td class="count">{{ v.count }}</td>
                 <td class="amount">${{ "{:,.2f}".format(v.total) }}</td>
                 <td class="amount" style="color: var(--accent);">{{ "{:.1f}".format(v.percentage) }}%</td>
               </tr>
+              {% if v.categories %}
+              {% for cat in v.categories %}
+              <tr class="vendor-category-row" style="display: none; background: var(--bg-primary);">
+                <td></td>
+                <td style="padding-left: 1.5em; font-size: 0.9em;">
+                  <span style="color: var(--text-secondary);">↳</span> {{ cat.name }}
+                </td>
+                <td class="count" style="font-size: 0.85em; color: var(--text-secondary);">{{ cat.count }}</td>
+                <td class="amount" style="font-size: 0.9em;">${{ "{:,.2f}".format(cat.amount) }}</td>
+                <td class="amount" style="font-size: 0.85em; color: var(--text-secondary);">{{ "{:.1f}".format(cat.percentage) }}%</td>
+              </tr>
+              {% endfor %}
+              {% endif %}
               {% endfor %}
             </tbody>
           </table>
+          <p style="font-size: 0.8em; color: var(--text-secondary); margin-top: 0.5em; text-align: center;">
+            💡 Click on a vendor row to see category breakdown
+          </p>
         </div>
       </div>
       {% endif %}
@@ -994,6 +1031,25 @@
     function toggleCollapsible(header) {
       const card = header.closest('.collapsible-card');
       card.classList.toggle('collapsed');
+    }
+    
+    // Toggle vendor category breakdown rows
+    function toggleVendorCategories(vendorRow) {
+      const icon = vendorRow.querySelector('.vendor-expand-icon');
+      if (!icon) return; // No categories to expand
+      
+      const isExpanded = vendorRow.classList.contains('expanded');
+      vendorRow.classList.toggle('expanded');
+      
+      // Toggle icon direction
+      icon.textContent = isExpanded ? '▶' : '▼';
+      
+      // Find and toggle all category rows following this vendor row
+      let nextRow = vendorRow.nextElementSibling;
+      while (nextRow && nextRow.classList.contains('vendor-category-row')) {
+        nextRow.style.display = isExpanded ? 'none' : 'table-row';
+        nextRow = nextRow.nextElementSibling;
+      }
     }
     
     // Format currency helper
