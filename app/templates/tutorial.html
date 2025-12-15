@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to MoneyFlow | Getting Started</title>
+    <link rel="stylesheet" href="/static/app.css">
+    <style>
+        :root {
+            --bg-primary: #f5f6fa;
+            --bg-card: #fff;
+            --bg-input: #fff;
+            --text-primary: #222;
+            --text-secondary: #667a9a;
+            --text-heading: #1a3366;
+            --border-color: #ccd;
+            --accent: #3875e8;
+            --accent-hover: #2a5bb8;
+            --success: #28a745;
+            --danger: #dc3545;
+        }
+        
+        * { box-sizing: border-box; }
+        
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a3366 0%, #243869 40%, #2d4a7c 70%, #3875e8 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2em;
+        }
+        
+        .tutorial-container {
+            background: var(--bg-card);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 700px;
+            width: 100%;
+            overflow: hidden;
+        }
+        
+        .tutorial-header {
+            background: linear-gradient(135deg, #1a3366, #3875e8);
+            color: white;
+            padding: 2em;
+            text-align: center;
+        }
+        
+        .tutorial-header h1 {
+            margin: 0 0 0.3em 0;
+            font-size: 2em;
+        }
+        
+        .tutorial-header p {
+            margin: 0;
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+        
+        /* Progress bar */
+        .progress-container {
+            padding: 1.5em 2em;
+            background: #f8fafd;
+            border-bottom: 1px solid #e8eef8;
+        }
+        
+        .progress-steps {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+        }
+        
+        .progress-line {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: #e0e5f0;
+            transform: translateY(-50%);
+            z-index: 1;
+        }
+        
+        .progress-line-fill {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            height: 3px;
+            background: var(--accent);
+            transform: translateY(-50%);
+            z-index: 2;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-step {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #e0e5f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: #889ab0;
+            z-index: 3;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .progress-step.active {
+            background: var(--accent);
+            color: white;
+            transform: scale(1.1);
+            box-shadow: 0 4px 15px rgba(56,117,232,0.4);
+        }
+        
+        .progress-step.completed {
+            background: var(--success);
+            color: white;
+        }
+        
+        .progress-step.completed::after {
+            content: '✓';
+            position: absolute;
+        }
+        
+        .progress-step.completed span {
+            display: none;
+        }
+        
+        .step-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 0.8em;
+        }
+        
+        .step-label {
+            font-size: 0.75em;
+            color: var(--text-secondary);
+            text-align: center;
+            width: 60px;
+        }
+        
+        .step-label.active {
+            color: var(--accent);
+            font-weight: 600;
+        }
+        
+        /* Tutorial content */
+        .tutorial-content {
+            padding: 2em;
+        }
+        
+        .step-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .step-content.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .step-content h2 {
+            margin: 0 0 0.5em 0;
+            color: var(--text-heading);
+            font-size: 1.5em;
+        }
+        
+        .step-content .description {
+            color: var(--text-secondary);
+            margin-bottom: 1.5em;
+            line-height: 1.6;
+        }
+        
+        /* Form styling */
+        .form-group {
+            margin-bottom: 1.2em;
+        }
+        
+        .form-group label {
+            display: block;
+            font-weight: 500;
+            color: var(--text-heading);
+            margin-bottom: 0.4em;
+            font-size: 0.95em;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.8em 1em;
+            border: 2px solid #e0e5f0;
+            border-radius: 10px;
+            font-size: 1em;
+            background: var(--bg-input);
+            color: var(--text-primary);
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(56,117,232,0.1);
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1em;
+        }
+        
+        .form-hint {
+            font-size: 0.8em;
+            color: var(--text-secondary);
+            margin-top: 0.3em;
+        }
+        
+        /* Feature cards */
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1em;
+            margin-top: 1em;
+        }
+        
+        .feature-card {
+            background: #f8fafd;
+            border-radius: 12px;
+            padding: 1.2em;
+            border: 1px solid #e8eef8;
+        }
+        
+        .feature-card .icon {
+            font-size: 1.5em;
+            margin-bottom: 0.3em;
+        }
+        
+        .feature-card h4 {
+            margin: 0 0 0.3em 0;
+            color: var(--text-heading);
+            font-size: 0.95em;
+        }
+        
+        .feature-card p {
+            margin: 0;
+            font-size: 0.85em;
+            color: var(--text-secondary);
+        }
+        
+        /* Buttons */
+        .tutorial-footer {
+            padding: 1.5em 2em;
+            background: #f8fafd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid #e8eef8;
+        }
+        
+        .btn {
+            padding: 0.8em 2em;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+        
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: var(--accent-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(56,117,232,0.3);
+        }
+        
+        .btn-primary:disabled {
+            background: #c5d4e8;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .btn-secondary {
+            background: transparent;
+            color: var(--text-secondary);
+            border: 2px solid #e0e5f0;
+        }
+        
+        .btn-secondary:hover {
+            background: #f0f4fa;
+            color: var(--text-heading);
+        }
+        
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #218838;
+        }
+        
+        /* Validation */
+        .form-group.error input,
+        .form-group.error select {
+            border-color: var(--danger);
+        }
+        
+        .error-message {
+            color: var(--danger);
+            font-size: 0.85em;
+            margin-top: 0.3em;
+            display: none;
+        }
+        
+        .form-group.error .error-message {
+            display: block;
+        }
+        
+        /* Success message */
+        .success-message {
+            background: rgba(40,167,69,0.1);
+            border: 1px solid rgba(40,167,69,0.3);
+            border-radius: 10px;
+            padding: 1em;
+            color: #155724;
+            margin-bottom: 1em;
+            display: flex;
+            align-items: center;
+            gap: 0.5em;
+        }
+        
+        .success-message.hidden {
+            display: none;
+        }
+        
+        /* Welcome animation */
+        .welcome-icon {
+            font-size: 4em;
+            margin-bottom: 0.3em;
+            animation: bounce 1s ease infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        /* Responsive */
+        @media (max-width: 600px) {
+            body { padding: 1em; }
+            .tutorial-container { border-radius: 15px; }
+            .tutorial-header { padding: 1.5em; }
+            .tutorial-content { padding: 1.5em; }
+            .form-row { grid-template-columns: 1fr; }
+            .feature-grid { grid-template-columns: 1fr; }
+            .step-label { font-size: 0.65em; width: 50px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="tutorial-container">
+        <div class="tutorial-header">
+            <div class="welcome-icon">💸</div>
+            <h1>Welcome to MoneyFlow, {{ user.name }}!</h1>
+            <p>Let's set up your financial dashboard in just a few steps</p>
+        </div>
+        
+        <!-- Progress Bar -->
+        <div class="progress-container">
+            <div class="progress-steps">
+                <div class="progress-line"></div>
+                <div class="progress-line-fill" id="progressFill"></div>
+                <div class="progress-step active" id="step1Indicator"><span>1</span></div>
+                <div class="progress-step" id="step2Indicator"><span>2</span></div>
+                <div class="progress-step" id="step3Indicator"><span>3</span></div>
+                <div class="progress-step" id="step4Indicator"><span>4</span></div>
+            </div>
+            <div class="step-labels">
+                <div class="step-label active" id="label1">Income</div>
+                <div class="step-label" id="label2">Expense</div>
+                <div class="step-label" id="label3">Budget</div>
+                <div class="step-label" id="label4">Explore</div>
+            </div>
+        </div>
+        
+        <!-- Step 1: Income Information -->
+        <div class="tutorial-content">
+            <div class="step-content active" id="step1">
+                <h2>📊 Step 1: Your Income</h2>
+                <p class="description">
+                    Start by entering your primary income. This helps MoneyFlow calculate your taxes, 
+                    create accurate budgets, and show how your money flows.
+                </p>
+                
+                <div id="step1Success" class="success-message hidden">
+                    ✅ Income saved successfully!
+                </div>
+                
+                <form id="incomeForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="baseSalary">Annual Salary *</label>
+                            <input type="number" id="baseSalary" name="base_salary" placeholder="75000" required min="0" step="100">
+                            <div class="form-hint">Your total annual income before taxes</div>
+                            <div class="error-message">Please enter a valid salary</div>
+                        </div>
+                        <div class="form-group">
+                            <label for="payFrequency">Pay Frequency *</label>
+                            <select id="payFrequency" name="pay_frequency" required>
+                                <option value="">Select...</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="bi-weekly" selected>Bi-Weekly (Every 2 weeks)</option>
+                                <option value="semi-monthly">Semi-Monthly (Twice a month)</option>
+                                <option value="monthly">Monthly</option>
+                            </select>
+                            <div class="error-message">Please select a pay frequency</div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="filingStatus">Filing Status</label>
+                            <select id="filingStatus" name="filing_status">
+                                <option value="single">Single</option>
+                                <option value="married_filing_jointly" selected>Married Filing Jointly</option>
+                                <option value="married_filing_separately">Married Filing Separately</option>
+                                <option value="head_of_household">Head of Household</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="taxYear">Tax Year</label>
+                            <select id="taxYear" name="tax_year">
+                                <option value="2025" selected>2025</option>
+                                <option value="2024">2024</option>
+                            </select>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Step 2: First Expense -->
+            <div class="step-content" id="step2">
+                <h2>💸 Step 2: Your First Expense</h2>
+                <p class="description">
+                    Track your spending by adding expenses. Let's add your first one! 
+                    Don't worry about getting everything perfect—you can always add more later.
+                </p>
+                
+                <div id="step2Success" class="success-message hidden">
+                    ✅ Expense added successfully!
+                </div>
+                
+                <form id="expenseForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="expenseAmount">Amount ($) *</label>
+                            <input type="number" id="expenseAmount" name="amount" placeholder="25.00" required min="0.01" step="0.01">
+                            <div class="error-message">Please enter a valid amount</div>
+                        </div>
+                        <div class="form-group">
+                            <label for="expenseDate">Date *</label>
+                            <input type="date" id="expenseDate" name="expense_date" required>
+                            <div class="error-message">Please select a date</div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="expenseCategory">Category *</label>
+                            <select id="expenseCategory" name="category" required>
+                                <option value="">Select or type new...</option>
+                                <option value="Groceries">Groceries</option>
+                                <option value="Dining Out">Dining Out</option>
+                                <option value="Transportation">Transportation</option>
+                                <option value="Utilities">Utilities</option>
+                                <option value="Entertainment">Entertainment</option>
+                                <option value="Shopping">Shopping</option>
+                                <option value="Healthcare">Healthcare</option>
+                                <option value="Other">Other</option>
+                            </select>
+                            <div class="error-message">Please select a category</div>
+                        </div>
+                        <div class="form-group">
+                            <label for="expenseNotes">Notes (Optional)</label>
+                            <input type="text" id="expenseNotes" name="notes" placeholder="e.g., Weekly groceries">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Step 3: Budget Overview -->
+            <div class="step-content" id="step3">
+                <h2>📋 Step 3: Budget Basics</h2>
+                <p class="description">
+                    Now let's set up your first budget item. The Budget page helps you track 
+                    fixed costs (rent, subscriptions) and variable expenses (groceries, entertainment).
+                </p>
+                
+                <div id="step3Success" class="success-message hidden">
+                    ✅ Budget item added successfully!
+                </div>
+                
+                <form id="budgetForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="budgetName">Budget Item Name *</label>
+                            <input type="text" id="budgetName" name="name" placeholder="e.g., Rent, Netflix, Groceries" required>
+                            <div class="error-message">Please enter a name</div>
+                        </div>
+                        <div class="form-group">
+                            <label for="budgetAmount">Monthly Amount ($) *</label>
+                            <input type="number" id="budgetAmount" name="amount" placeholder="1500" required min="0" step="0.01">
+                            <div class="error-message">Please enter an amount</div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="budgetType">Type</label>
+                            <select id="budgetType" name="category_type">
+                                <option value="need">Need (Essential)</option>
+                                <option value="want">Want (Discretionary)</option>
+                                <option value="savings">Savings</option>
+                                <option value="debt">Debt Payment</option>
+                            </select>
+                            <div class="form-hint">Helps track the 50/30/20 budget rule</div>
+                        </div>
+                        <div class="form-group">
+                            <label for="budgetFrequency">Frequency</label>
+                            <select id="budgetFrequency" name="frequency">
+                                <option value="monthly" selected>Monthly</option>
+                                <option value="bi-weekly">Bi-Weekly</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="quarterly">Quarterly</option>
+                                <option value="annually">Annually</option>
+                            </select>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Step 4: Explore Features -->
+            <div class="step-content" id="step4">
+                <h2>🎉 You're All Set!</h2>
+                <p class="description">
+                    Great job! You've set up the basics. Here's what else MoneyFlow can do for you:
+                </p>
+                
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <div class="icon">🏠</div>
+                        <h4>Dashboard</h4>
+                        <p>See your money flow with beautiful Sankey charts and spending trends</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="icon">📊</div>
+                        <h4>Tax Calculator</h4>
+                        <p>Calculate federal, state, and FICA taxes with AMT analysis</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="icon">🏦</div>
+                        <h4>Net Worth Tracker</h4>
+                        <p>Track assets and liabilities with historical charts</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="icon">📈</div>
+                        <h4>Monte Carlo</h4>
+                        <p>Project your investments with 1000+ simulations</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="icon">🏪</div>
+                        <h4>Vendor Tracking</h4>
+                        <p>See where you spend most by merchant</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="icon">📚</div>
+                        <h4>Resources</h4>
+                        <p>Curated financial education and tools</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer with Navigation -->
+        <div class="tutorial-footer">
+            <button class="btn btn-secondary" id="backBtn" onclick="previousStep()" style="visibility: hidden;">
+                ← Back
+            </button>
+            <button class="btn btn-primary" id="nextBtn" onclick="nextStep()">
+                Save & Continue →
+            </button>
+        </div>
+    </div>
+    
+    <script>
+        let currentStep = 1;
+        const totalSteps = 4;
+        
+        // Set today's date for expense
+        document.getElementById('expenseDate').value = new Date().toISOString().split('T')[0];
+        
+        function updateProgress() {
+            // Update progress bar fill
+            const fillPercent = ((currentStep - 1) / (totalSteps - 1)) * 100;
+            document.getElementById('progressFill').style.width = `${fillPercent}%`;
+            
+            // Update step indicators
+            for (let i = 1; i <= totalSteps; i++) {
+                const indicator = document.getElementById(`step${i}Indicator`);
+                const label = document.getElementById(`label${i}`);
+                const content = document.getElementById(`step${i}`);
+                
+                indicator.classList.remove('active', 'completed');
+                label.classList.remove('active');
+                content.classList.remove('active');
+                
+                if (i < currentStep) {
+                    indicator.classList.add('completed');
+                } else if (i === currentStep) {
+                    indicator.classList.add('active');
+                    label.classList.add('active');
+                    content.classList.add('active');
+                }
+            }
+            
+            // Update buttons
+            const backBtn = document.getElementById('backBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            
+            backBtn.style.visibility = currentStep === 1 ? 'hidden' : 'visible';
+            
+            if (currentStep === totalSteps) {
+                nextBtn.textContent = '🎉 Start Using MoneyFlow';
+                nextBtn.classList.remove('btn-primary');
+                nextBtn.classList.add('btn-success');
+            } else {
+                nextBtn.textContent = 'Save & Continue →';
+                nextBtn.classList.remove('btn-success');
+                nextBtn.classList.add('btn-primary');
+            }
+        }
+        
+        function validateStep(step) {
+            let isValid = true;
+            
+            if (step === 1) {
+                const salary = document.getElementById('baseSalary');
+                const frequency = document.getElementById('payFrequency');
+                
+                if (!salary.value || parseFloat(salary.value) < 0) {
+                    salary.closest('.form-group').classList.add('error');
+                    isValid = false;
+                } else {
+                    salary.closest('.form-group').classList.remove('error');
+                }
+                
+                if (!frequency.value) {
+                    frequency.closest('.form-group').classList.add('error');
+                    isValid = false;
+                } else {
+                    frequency.closest('.form-group').classList.remove('error');
+                }
+            } else if (step === 2) {
+                const amount = document.getElementById('expenseAmount');
+                const date = document.getElementById('expenseDate');
+                const category = document.getElementById('expenseCategory');
+                
+                if (!amount.value || parseFloat(amount.value) <= 0) {
+                    amount.closest('.form-group').classList.add('error');
+                    isValid = false;
+                } else {
+                    amount.closest('.form-group').classList.remove('error');
+                }
+                
+                if (!date.value) {
+                    date.closest('.form-group').classList.add('error');
+                    isValid = false;
+                } else {
+                    date.closest('.form-group').classList.remove('error');
+                }
+                
+                if (!category.value) {
+                    category.closest('.form-group').classList.add('error');
+                    isValid = false;
+                } else {
+                    category.closest('.form-group').classList.remove('error');
+                }
+            } else if (step === 3) {
+                const name = document.getElementById('budgetName');
+                const amount = document.getElementById('budgetAmount');
+                
+                if (!name.value.trim()) {
+                    name.closest('.form-group').classList.add('error');
+                    isValid = false;
+                } else {
+                    name.closest('.form-group').classList.remove('error');
+                }
+                
+                if (!amount.value || parseFloat(amount.value) < 0) {
+                    amount.closest('.form-group').classList.add('error');
+                    isValid = false;
+                } else {
+                    amount.closest('.form-group').classList.remove('error');
+                }
+            }
+            
+            return isValid;
+        }
+        
+        async function saveStepData(step) {
+            const btn = document.getElementById('nextBtn');
+            btn.disabled = true;
+            btn.textContent = 'Saving...';
+            
+            try {
+                if (step === 1) {
+                    // Save income data
+                    const formData = new FormData();
+                    formData.append('base_salary', document.getElementById('baseSalary').value);
+                    formData.append('pay_frequency', document.getElementById('payFrequency').value);
+                    formData.append('filing_status', document.getElementById('filingStatus').value);
+                    formData.append('tax_year', document.getElementById('taxYear').value);
+                    
+                    const response = await fetch('/tutorial/save-income', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    if (!response.ok) throw new Error('Failed to save income');
+                    document.getElementById('step1Success').classList.remove('hidden');
+                    
+                } else if (step === 2) {
+                    // Save expense data
+                    const formData = new FormData();
+                    formData.append('amount', document.getElementById('expenseAmount').value);
+                    formData.append('expense_date', document.getElementById('expenseDate').value);
+                    formData.append('category', document.getElementById('expenseCategory').value);
+                    formData.append('notes', document.getElementById('expenseNotes').value);
+                    
+                    const response = await fetch('/tutorial/save-expense', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    if (!response.ok) throw new Error('Failed to save expense');
+                    document.getElementById('step2Success').classList.remove('hidden');
+                    
+                } else if (step === 3) {
+                    // Save budget item
+                    const formData = new FormData();
+                    formData.append('name', document.getElementById('budgetName').value);
+                    formData.append('amount', document.getElementById('budgetAmount').value);
+                    formData.append('category_type', document.getElementById('budgetType').value);
+                    formData.append('frequency', document.getElementById('budgetFrequency').value);
+                    
+                    const response = await fetch('/tutorial/save-budget', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    if (!response.ok) throw new Error('Failed to save budget item');
+                    document.getElementById('step3Success').classList.remove('hidden');
+                }
+                
+                return true;
+            } catch (error) {
+                console.error('Error saving data:', error);
+                alert('There was an error saving your data. Please try again.');
+                return false;
+            } finally {
+                btn.disabled = false;
+                updateProgress();
+            }
+        }
+        
+        async function nextStep() {
+            if (currentStep < totalSteps) {
+                // Validate current step
+                if (!validateStep(currentStep)) {
+                    return;
+                }
+                
+                // Save current step data
+                const saved = await saveStepData(currentStep);
+                if (!saved) return;
+                
+                // Wait briefly to show success message
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                currentStep++;
+                updateProgress();
+            } else {
+                // Complete tutorial
+                try {
+                    const response = await fetch('/tutorial/complete', {
+                        method: 'POST'
+                    });
+                    
+                    if (response.ok) {
+                        window.location.href = '/home';
+                    } else {
+                        throw new Error('Failed to complete tutorial');
+                    }
+                } catch (error) {
+                    console.error('Error completing tutorial:', error);
+                    window.location.href = '/home';
+                }
+            }
+        }
+        
+        function previousStep() {
+            if (currentStep > 1) {
+                currentStep--;
+                updateProgress();
+            }
+        }
+        
+        // Initialize
+        updateProgress();
+    </script>
+</body>
+</html>
+
