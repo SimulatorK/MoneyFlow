@@ -73,7 +73,7 @@ A comprehensive personal finance management application built with FastAPI, SQLA
 ### 1. Clone the Repository
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/SimulatorK/MoneyFlow
 cd MasterBudget
 ```
 
@@ -179,6 +179,8 @@ Now access your app at: `https://moneyflow.yourdomain.com`
 brew install ngrok
 ngrok config add-authtoken <your-auth-token>
 ngrok http 8000
+
+ngrok http http://localhost:8000
 ```
 
 ### Option 4: Tailscale (VPN - Free for Personal Use)
