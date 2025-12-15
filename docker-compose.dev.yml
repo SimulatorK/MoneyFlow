@@ -1,0 +1,32 @@
+# =============================================================================
+# MoneyFlow Docker Compose - Development Override
+# =============================================================================
+#
+# Usage:
+#   docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+#
+# Features:
+#   - Hot reload enabled
+#   - Source code mounted for live development
+#   - Single worker (no multiprocessing conflicts with reload)
+#
+# =============================================================================
+
+services:
+  moneyflow:
+    build:
+      context: .
+      target: production  # Could add a dev stage in Dockerfile if needed
+    
+    environment:
+      - DEV_MODE=true
+      - WORKERS=1
+    
+    volumes:
+      # Mount source code for live reload
+      - ./app:/app/app:ro
+      - ./alembic:/app/alembic:ro
+      # Data persists
+      - ./data:/app/data
+      - ./logs:/app/logs
+

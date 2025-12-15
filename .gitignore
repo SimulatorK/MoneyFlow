@@ -81,3 +81,13 @@ app/static/uploads/
 # Run script artifacts
 .pids/
 .ngrok_url
+
+# SSL certificates (security - never commit private keys!)
+certs/
+*.pem
+*.key
+*.crt
+*.p12
+
+# Docker
+.docker/

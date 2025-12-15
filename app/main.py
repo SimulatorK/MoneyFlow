@@ -4,7 +4,7 @@ MoneyFlow - Personal Finance Management Application
 Main FastAPI application entry point. Configures routes, middleware,
 and application lifecycle events.
 
-Version: 1.0.0
+Version: 2.0.0
 """
 
 import logging
@@ -56,7 +56,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="MoneyFlow",
     description="Personal finance management application for tracking income, expenses, budgets, and taxes.",
-    version="1.2.0",  # v1.2.0 - Monte Carlo simulations, portfolio allocation, CSV bulk upload
+    version="2.0.0",  # v2.0.0 - FIRE planning, TWRR, performance periods, withdrawal strategies, Docker support
     lifespan=lifespan
 )
 

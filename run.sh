@@ -8,10 +8,16 @@
 # Usage:
 #   ./run.sh              # Start in development mode (default)
 #   ./run.sh --prod       # Start in production mode (4 workers)
+#   ./run.sh --ssl        # Start with SSL/HTTPS enabled
 #   ./run.sh --refresh    # Enable periodic refresh (every 6 hours)
-#   ./run.sh --prod --refresh  # Production with periodic refresh
+#   ./run.sh --prod --ssl # Production with SSL
 #   ./run.sh --stop       # Stop all running services
 #   ./run.sh --status     # Check status of services
+#
+# Environment variables:
+#   SSL_KEYFILE   - Path to SSL private key (default: ./certs/privkey.pem)
+#   SSL_CERTFILE  - Path to SSL certificate (default: ./certs/fullchain.pem)
+#   SSL_PORT      - HTTPS port (default: 8443)
 #
 # =============================================================================
 
@@ -21,10 +27,14 @@ set -e
 APP_DIR="$(cd "$(dirname "$0")" && pwd)"
 PID_DIR="$APP_DIR/.pids"
 LOG_DIR="$APP_DIR/logs"
+CERT_DIR="$APP_DIR/certs"
 PORT="${PORT:-8000}"
+SSL_PORT="${SSL_PORT:-8443}"
 HOST="${HOST:-0.0.0.0}"
 WORKERS="${WORKERS:-4}"
 REFRESH_INTERVAL="${REFRESH_INTERVAL:-21600}"  # 6 hours in seconds
+SSL_KEYFILE="${SSL_KEYFILE:-$CERT_DIR/privkey.pem}"
+SSL_CERTFILE="${SSL_CERTFILE:-$CERT_DIR/fullchain.pem}"
 
 # Colors for output
 RED='\033[0;31m'
@@ -76,31 +86,48 @@ get_ngrok_url() {
 # Start the uvicorn server
 start_uvicorn() {
     local mode="$1"
+    local use_ssl="$2"
     
     if is_running "$PID_DIR/uvicorn.pid"; then
         log_warn "Uvicorn is already running (PID: $(cat $PID_DIR/uvicorn.pid))"
         return 0
     fi
     
-    log_info "Starting uvicorn server on $HOST:$PORT..."
-    
     cd "$APP_DIR"
     
+    # Build base uvicorn command
+    local UVICORN_CMD="poetry run uvicorn app.main:app --host $HOST"
+    
+    # Add SSL if enabled
+    if [ "$use_ssl" = "ssl" ]; then
+        if [ -f "$SSL_KEYFILE" ] && [ -f "$SSL_CERTFILE" ]; then
+            log_info "SSL enabled - using HTTPS on port $SSL_PORT"
+            UVICORN_CMD="$UVICORN_CMD --port $SSL_PORT --ssl-keyfile=$SSL_KEYFILE --ssl-certfile=$SSL_CERTFILE"
+        else
+            log_error "SSL certificates not found!"
+            log_error "Expected: $SSL_KEYFILE and $SSL_CERTFILE"
+            log_info "Generate self-signed certs with:"
+            log_info "  mkdir -p certs && openssl req -x509 -nodes -days 365 -newkey rsa:2048 \\"
+            log_info "    -keyout certs/privkey.pem -out certs/fullchain.pem -subj '/CN=localhost'"
+            return 1
+        fi
+    else
+        UVICORN_CMD="$UVICORN_CMD --port $PORT"
+    fi
+    
+    # Add mode-specific options
     if [ "$mode" = "prod" ]; then
         log_info "Production mode: $WORKERS workers, no reload"
-        poetry run uvicorn app.main:app \
-            --host "$HOST" \
-            --port "$PORT" \
-            --workers "$WORKERS" \
-            >> "$LOG_DIR/uvicorn.log" 2>&1 &
+        UVICORN_CMD="$UVICORN_CMD --workers $WORKERS"
     else
         log_info "Development mode: auto-reload enabled"
-        poetry run uvicorn app.main:app \
-            --host "$HOST" \
-            --port "$PORT" \
-            --reload \
-            >> "$LOG_DIR/uvicorn.log" 2>&1 &
+        UVICORN_CMD="$UVICORN_CMD --reload"
     fi
+    
+    log_info "Starting: $UVICORN_CMD"
+    
+    # Run the command
+    $UVICORN_CMD >> "$LOG_DIR/uvicorn.log" 2>&1 &
     
     local pid=$!
     echo $pid > "$PID_DIR/uvicorn.pid"
@@ -108,7 +135,13 @@ start_uvicorn() {
     # Wait a moment and check if it started
     sleep 2
     if is_running "$PID_DIR/uvicorn.pid"; then
-        log_success "Uvicorn started (PID: $pid)"
+        if [ "$use_ssl" = "ssl" ]; then
+            log_success "Uvicorn started with HTTPS (PID: $pid)"
+            log_success "Access at: https://localhost:$SSL_PORT"
+        else
+            log_success "Uvicorn started (PID: $pid)"
+            log_success "Access at: http://localhost:$PORT"
+        fi
         return 0
     else
         log_error "Failed to start uvicorn. Check $LOG_DIR/uvicorn.log"
@@ -250,6 +283,7 @@ refresh_loop() {
 # Main function
 main() {
     local mode="dev"
+    local use_ssl=""
     local enable_refresh=false
     
     # Parse arguments
@@ -257,6 +291,10 @@ main() {
         case $1 in
             --prod|--production)
                 mode="prod"
+                shift
+                ;;
+            --ssl|--https)
+                use_ssl="ssl"
                 shift
                 ;;
             --refresh)
@@ -276,12 +314,13 @@ main() {
                 exit 0
                 ;;
             --help|-h)
-                echo "MoneyFlow Application Runner"
+                echo "MoneyFlow Application Runner v2.0.0"
                 echo ""
                 echo "Usage: $0 [OPTIONS]"
                 echo ""
                 echo "Options:"
                 echo "  --prod, --production   Run in production mode (multiple workers)"
+                echo "  --ssl, --https         Enable SSL/HTTPS"
                 echo "  --refresh              Enable periodic refresh (every 6 hours)"
                 echo "  --stop                 Stop all running services"
                 echo "  --status               Show status of services"
@@ -289,10 +328,13 @@ main() {
                 echo "  -h, --help             Show this help message"
                 echo ""
                 echo "Environment Variables:"
-                echo "  PORT                   Server port (default: 8000)"
+                echo "  PORT                   HTTP port (default: 8000)"
+                echo "  SSL_PORT               HTTPS port (default: 8443)"
                 echo "  HOST                   Server host (default: 0.0.0.0)"
                 echo "  WORKERS                Number of workers in prod mode (default: 4)"
                 echo "  REFRESH_INTERVAL       Refresh interval in seconds (default: 21600 = 6h)"
+                echo "  SSL_KEYFILE            Path to SSL private key"
+                echo "  SSL_CERTFILE           Path to SSL certificate"
                 exit 0
                 ;;
             *)
@@ -305,14 +347,15 @@ main() {
     # Banner
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "  💸 MoneyFlow Application Runner"
+    echo "  💸 MoneyFlow Application Runner v2.0.0"
     echo "  Mode: $([ "$mode" = "prod" ] && echo "Production" || echo "Development")"
+    echo "  SSL: $([ "$use_ssl" = "ssl" ] && echo "Enabled (HTTPS)" || echo "Disabled (HTTP)")"
     echo "  Refresh: $([ "$enable_refresh" = true ] && echo "Enabled (every 6h)" || echo "Disabled")"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
     
     # Start services
-    start_uvicorn "$mode"
+    start_uvicorn "$mode" "$use_ssl"
     start_ngrok
     
     # Show status

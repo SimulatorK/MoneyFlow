@@ -1,0 +1,60 @@
+# Git
+.git
+.gitignore
+
+# Python cache
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Tests
+tests/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Development files
+.editorconfig
+.pre-commit-config.yaml
+Makefile
+
+# Run script artifacts (use Docker entrypoint instead)
+.pids/
+.ngrok_url
+ngrok.log
+
+# Local data (will be mounted as volume)
+data/
+logs/
+*.db
+*.sqlite
+
+# SSL certs (mount as volume in production)
+certs/
+
+# Docker files (not needed inside container)
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# Misc
+.DS_Store
+*.log
+

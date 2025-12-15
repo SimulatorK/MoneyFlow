@@ -1,0 +1,86 @@
+# =============================================================================
+# MoneyFlow Docker Compose Configuration
+# =============================================================================
+# 
+# Quick Start:
+#   docker-compose up -d              # Start in detached mode
+#   docker-compose logs -f            # View logs
+#   docker-compose down               # Stop services
+#
+# Development:
+#   docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+#
+# Production with SSL:
+#   docker-compose -f docker-compose.yml -f docker-compose.ssl.yml up -d
+#
+# =============================================================================
+
+services:
+  moneyflow:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: moneyflow:2.0.0
+    container_name: moneyflow-app
+    restart: unless-stopped
+    
+    # Environment variables
+    environment:
+      - PORT=8000
+      - HOST=0.0.0.0
+      - WORKERS=4
+      - TZ=America/Chicago
+      # SSL settings (enable in docker-compose.ssl.yml)
+      - SSL_ENABLED=false
+      # Database path (SQLite)
+      - DATABASE_URL=sqlite:///./data/moneyflow.db
+    
+    # Port mappings
+    ports:
+      - "8000:8000"    # HTTP
+      - "8443:8443"    # HTTPS (when SSL enabled)
+    
+    # Volume mounts
+    volumes:
+      # Persistent data storage
+      - ./data:/app/data
+      # Logs
+      - ./logs:/app/logs
+      # SSL certificates (mount when using SSL)
+      - ./certs:/app/certs:ro
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/docs')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# Named volumes for persistent storage
+volumes:
+  moneyflow-data:
+    driver: local
+
+# Network configuration
+networks:
+  default:
+    name: moneyflow-network
+

@@ -1,7 +1,7 @@
 [project]
 name = "masterbudget"
-version = "1.2.0"
-description = "MoneyFlow - Personal finance management with budgeting, expense tracking, tax calculations, investment projections, and Monte Carlo simulations"
+version = "2.0.0"
+description = "MoneyFlow - Personal finance management with budgeting, expense tracking, tax calculations, investment projections, Monte Carlo simulations, and FIRE planning"
 authors = [
     {name = "masonkelchner"}
 ]

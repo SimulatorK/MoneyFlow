@@ -1,0 +1,35 @@
+# =============================================================================
+# MoneyFlow Docker Compose - SSL/HTTPS Override
+# =============================================================================
+#
+# Usage:
+#   docker-compose -f docker-compose.yml -f docker-compose.ssl.yml up -d
+#
+# Prerequisites:
+#   1. Place your SSL certificates in the ./certs directory:
+#      - ./certs/privkey.pem   (private key)
+#      - ./certs/fullchain.pem (certificate chain)
+#
+#   2. Or generate self-signed certificates for testing:
+#      openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+#        -keyout ./certs/privkey.pem \
+#        -out ./certs/fullchain.pem \
+#        -subj "/CN=localhost"
+#
+# =============================================================================
+
+services:
+  moneyflow:
+    environment:
+      - SSL_ENABLED=true
+      - SSL_KEYFILE=/app/certs/privkey.pem
+      - SSL_CERTFILE=/app/certs/fullchain.pem
+      - PORT=8443
+    
+    ports:
+      - "443:8443"    # HTTPS on standard port
+      - "8443:8443"   # HTTPS on alternate port
+    
+    volumes:
+      - ./certs:/app/certs:ro
+
