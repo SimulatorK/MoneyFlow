@@ -13,9 +13,10 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-
+from fastapi.responses import RedirectResponse
 # Import logging configuration (initializes logging)
 from app.logging_config import get_logger
+from fastapi.responses import FileResponse
 
 # Import route modules
 from app.routes import auth, home
@@ -57,6 +58,17 @@ app = FastAPI(
     version="1.2.0",  # v1.2.0 - Monte Carlo simulations, portfolio allocation, CSV bulk upload
     lifespan=lifespan
 )
+
+@app.get("/")
+async def root():
+    return RedirectResponse(url="/home")
+
+# # Add apple touch icon
+# apple_touch_icon_path = "static/apple-touch-icon.png"
+
+# @app.get("/apple-touch-icon.png", include_in_schema=False)
+# async def get_apple_touch_icon():
+#     return FileResponse(apple_touch_icon_path)
 
 # Mount static files directory
 app.mount("/static", StaticFiles(directory="app/static"), name="static")

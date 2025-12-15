@@ -29,6 +29,25 @@
             --accent: #4d8ef0;
             --accent-glow: rgba(77, 142, 240, 0.15);
         }
+        .app-title {
+          margin: 0;
+          font-size: 2.2em;
+          font-weight: 700;
+          color: #fff;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.5rem;
+        }
+        
+        .app-title img.app-icon {
+          width: 48px;
+          height: 48px;
+          max-width: 48px;
+          max-height: 48px;
+          border-radius: 6px;
+          flex-shrink: 0;
+        }
         
         * { box-sizing: border-box; }
         body { margin: 0; font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-primary); color: var(--text-primary); }
@@ -169,7 +188,15 @@
   <header class="app-header">
     <div class="header-left"></div>
     <div class="header-center">
-      <h1 class="app-title"><span class="icon">💸</span>MoneyFlow<span class="app-version">v1.2.0</span></h1>
+      <h1 class="app-title">
+        <img
+          src="/static/apple-touch-icon.png"
+          alt="MoneyFlow"
+          class="app-icon"
+        />
+        MoneyFlow
+        <span class="app-version">v1.2.0</span>
+      </h1>
       <p class="app-subtitle">Your personal finance command center</p>
     </div>
     <div class="header-right">

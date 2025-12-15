@@ -24,3 +24,22 @@ a:hover { text-decoration: underline; }
     .user-box { padding: 1em; max-width: 98vw; }
     nav .tabs { gap: 0.8em; }
 }
+.app-title {
+    margin: 0;
+    font-size: 2.2em;
+    font-weight: 700;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+  
+  .app-title img.app-icon {
+    width: 26px;
+    height: 26px;
+    max-width: 26px;
+    max-height: 26px;
+    border-radius: 6px;
+    flex-shrink: 0;
+  }

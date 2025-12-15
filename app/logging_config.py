@@ -106,5 +106,5 @@ def get_logger(name: str) -> logging.Logger:
 
 
 # Initialize logging when this module is imported
-setup_logging("INFO")
+setup_logging("DEBUG")
 

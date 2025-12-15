@@ -14,7 +14,7 @@ class IncomeTaxes(Base):
     filing_state = Column(String, default="MO")  # State for state income tax
     
     # Base income
-    base_salary = Column(Float)
+    base_salary = Column(Float, default=0)
     pay_frequency = Column(String)
     
     # Optional investment income (annual)

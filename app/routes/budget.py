@@ -61,11 +61,12 @@ FREQUENCY_TO_MONTHLY = {
     "semi-monthly": 2,     # 24 payments / 12 months
     "monthly": 1,          # Direct monthly amount
     "quarterly": 0.333,    # 4 payments / 12 months
+    "bi-annual": 0.1667,  # 2 payments / 12 months
     "annually": 0.0833     # 1 payment / 12 months
 }
 
 # Available payment frequency options
-FREQUENCIES = ["weekly", "bi-weekly", "semi-monthly", "monthly", "quarterly", "annually"]
+FREQUENCIES = ["weekly", "bi-weekly", "semi-monthly", "monthly", "quarterly", 'bi-annual', "annually"]
 
 # Budget category types following the 50/30/20 rule
 # Needs: Essential expenses (50%)
@@ -317,12 +318,13 @@ def calculate_budget_summary(db: Session, user_id: int, income_data):
     
     total_expenses = total_fixed_monthly + total_variable_monthly
     leftover = net_monthly - total_expenses
+    total_savings += leftover
     
     # Percentages
-    needs_pct = (total_needs / net_monthly * 100) if net_monthly > 0 else 0
-    wants_pct = (total_wants / net_monthly * 100) if net_monthly > 0 else 0
-    savings_pct = (total_savings / net_monthly * 100) if net_monthly > 0 else 0
-    debt_pct = (total_debt / net_monthly * 100) if net_monthly > 0 else 0
+    needs_pct = (total_needs / gross_monthly * 100) if gross_monthly > 0 else 0
+    wants_pct = (total_wants / gross_monthly * 100) if gross_monthly > 0 else 0
+    savings_pct = (total_savings / gross_monthly * 100) if gross_monthly > 0 else 0
+    debt_pct = (total_debt / gross_monthly * 100) if gross_monthly > 0 else 0
     
     return {
         "income": calculated,

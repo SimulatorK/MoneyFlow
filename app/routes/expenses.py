@@ -52,6 +52,8 @@ templates = Jinja2Templates(directory="app/templates")
 
 # Lookback period options (in days)
 LOOKBACK_PERIODS = {
+    "1d": {"days": 1, "label": "1 Day"},
+    "1w": {"days": 7, "label": "1 Week"},
     "1m": {"days": 30, "label": "1 Month"},
     "3m": {"days": 90, "label": "3 Months"},
     "6m": {"days": 180, "label": "6 Months"},
@@ -103,6 +105,7 @@ def get_expense_stats(db: Session, user_id: int, lookback: str = "1m", category_
     category_counts = {}
     category_id_map = {}  # Map category name to id for coloring
     for expense in expenses:
+        # todo: fix expense summing by category
         cat_name = expense.category.name if expense.category else "Uncategorized"
         cat_id = expense.category_id if expense.category else 0
         by_category[cat_name] = by_category.get(cat_name, 0) + expense.amount
@@ -289,12 +292,27 @@ def expenses_page(
     # Get recent expenses
     per_page = 50 if show_all else 10
     offset = (page - 1) * per_page
-    
-    recent_expenses = db.query(Expense).filter(
-        Expense.user_id == user.id
-    ).order_by(Expense.expense_date.desc(), Expense.created_at.desc()).offset(offset).limit(per_page).all()
-    
-    total_expenses = db.query(Expense).filter(Expense.user_id == user.id).count()
+    recent_expenses_query = db.query(Expense).filter(Expense.user_id == user.id)
+
+    #Filter by lookback period
+    today = date.today()
+    lookback_info = LOOKBACK_PERIODS.get(lookback, LOOKBACK_PERIODS["all"])
+    if lookback_info["days"]:
+        start_date = today - timedelta(days=lookback_info["days"])
+    else:
+        start_date = None  # All time
+
+    if start_date:
+        recent_expenses_query = recent_expenses_query.filter(Expense.expense_date >= start_date)
+
+    # Filter by category filters
+    if category_filters and len(category_filters) > 0:
+        recent_expenses_query = recent_expenses_query.filter(Expense.category_id.in_(category_filters))
+
+    recent_expenses = recent_expenses_query.order_by(Expense.expense_date.desc(), Expense.created_at.desc()).offset(offset).limit(per_page).all()
+
+    # Filter total expenses by lookback period
+    total_expenses = recent_expenses_query.count()
     total_pages = (total_expenses + per_page - 1) // per_page
     
     # Get stats for visualizations with lookback and category filters

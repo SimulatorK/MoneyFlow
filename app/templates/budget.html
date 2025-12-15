@@ -34,6 +34,26 @@
             --nav-bg: #161920;
             --accent: #4d8ef0;
         }
+        .app-title {
+          margin: 0;
+          font-size: 2.2em;
+          font-weight: 700;
+          color: #fff;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.5rem;
+        }
+        
+        .app-title img.app-icon {
+          width: 48px;
+          height: 48px;
+          max-width: 48px;
+          max-height: 48px;
+          border-radius: 6px;
+          flex-shrink: 0;
+        }
+        
         * { box-sizing: border-box; }
         body { margin: 0; font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-primary); color: var(--text-primary); }
         
@@ -600,7 +620,7 @@
       
       <!-- Budget Overview -->
       <div class="card">
-        <h3>Monthly Budget Overview</h3>
+        <h3>Monthly Budget Overview (% of gross monthly income)</h3>
         <div class="summary-grid">
           <div class="summary-box">
             <div class="summary-value">${{ "{:,.2f}".format(summary.total_needs) }}</div>
@@ -644,7 +664,7 @@
       
       <!-- 50/30/20 Rule -->
       <div class="card rule-card">
-        <h3>50/30/20 Rule Check</h3>
+        <h3>50/30/20 Rule Check (% of gross monthly income)</h3>
         <p style="font-size:0.85em; color:#667a9a; margin-bottom:1em;">
           A popular budgeting guideline: 50% Needs, 30% Wants, 20% Savings
         </p>
@@ -667,6 +687,13 @@
           <div class="rule-values">
             <span class="rule-actual {% if summary.savings_pct >= 20 %}rule-ok{% else %}rule-warn{% endif %}">{{ "%.0f"|format(summary.savings_pct) }}%</span>
             <span class="rule-target">(target: ≥20%)</span>
+          </div>
+        </div>
+        <div class="rule-item">
+          <span class="rule-label">Debt</span>
+          <div class="rule-values">
+            <span class="rule-actual {% if summary.debt_pct <= 36 %}rule-ok{% else %}rule-warn{% endif %}">{{ "%.0f"|format(summary.debt_pct) }}%</span>
+            <span class="rule-target">(target: ≤36%)</span>
           </div>
         </div>
       </div>
