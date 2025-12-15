@@ -955,7 +955,7 @@
         </div>
         
         <!-- Distribution Stats -->
-        <div style="background: var(--bg-primary); border-radius: 10px; padding: 1.2em; border: 1px solid var(--border-light);">
+        <div style="background: var(--bg-primary); border-radius: 10px; padding: 1.2em; border: 1px solid var(--border-light); margin-bottom: 1em;">
           <h4 style="margin: 0 0 0.8em 0; color: var(--text-heading);">📈 Simulation Statistics</h4>
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1em;">
             <div>
@@ -973,6 +973,46 @@
             <div>
               <div style="font-size: 0.8em; color: var(--text-secondary);">Worst Case</div>
               <div id="mcMin" style="font-weight: 600; color: #dc3545;">-</div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- TWRR Stats -->
+        <div style="background: linear-gradient(135deg, rgba(111,66,193,0.05), rgba(111,66,193,0.15)); border-radius: 10px; padding: 1.2em; border: 1px solid rgba(111,66,193,0.3);">
+          <h4 style="margin: 0 0 0.8em 0; color: #6f42c1;">⏱️ Time-Weighted Rate of Return (TWRR)</h4>
+          <p style="font-size: 0.85em; color: var(--text-secondary); margin: 0 0 1em 0;">
+            TWRR measures pure investment performance by excluding the effect of your periodic contributions.
+          </p>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1em;">
+            <div>
+              <div style="font-size: 0.8em; color: var(--text-secondary);">Median TWRR (p50)</div>
+              <div id="mcTwrrP50" style="font-weight: 600; color: #6f42c1;">-</div>
+            </div>
+            <div>
+              <div style="font-size: 0.8em; color: var(--text-secondary);">Mean TWRR</div>
+              <div id="mcTwrrMean" style="font-weight: 600; color: #6f42c1;">-</div>
+            </div>
+            <div>
+              <div style="font-size: 0.8em; color: var(--text-secondary);">Best (p90)</div>
+              <div id="mcTwrrP90" style="font-weight: 600; color: #28a745;">-</div>
+            </div>
+            <div>
+              <div style="font-size: 0.8em; color: var(--text-secondary);">Worst (p10)</div>
+              <div id="mcTwrrP10" style="font-weight: 600; color: #dc3545;">-</div>
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1em; margin-top: 1em; padding-top: 1em; border-top: 1px solid rgba(111,66,193,0.2);">
+            <div>
+              <div style="font-size: 0.8em; color: var(--text-secondary);">Starting Value</div>
+              <div id="mcStartValue" style="font-weight: 600;">-</div>
+            </div>
+            <div>
+              <div style="font-size: 0.8em; color: var(--text-secondary);">Total Contributions</div>
+              <div id="mcTotalContrib" style="font-weight: 600; color: #17a2b8;">-</div>
+            </div>
+            <div>
+              <div style="font-size: 0.8em; color: var(--text-secondary);">Annual Contribution Rate</div>
+              <div id="mcAnnualContrib" style="font-weight: 600; color: #17a2b8;">-</div>
             </div>
           </div>
         </div>
@@ -2307,6 +2347,11 @@
         totalProjection.push(0);
       }
       
+      // Track totals for TWRR calculation
+      let totalContributions = 0;
+      let twrrProduct = 1; // For geometric linking of period returns
+      let prevTotalBalance = filteredAccounts.reduce((sum, a) => sum + (a.is_asset ? a.current_balance : -a.current_balance), 0);
+      
       filteredAccounts.forEach((account, idx) => {
         const projection = [];
         let balance = account.current_balance;
@@ -2321,6 +2366,10 @@
         const monthlyReturn = account.is_asset 
           ? (expectedReturn / 100 / 12)
           : (interestRate / 100 / 12);
+        
+        // Track contributions for this account
+        account._totalContrib = monthlyContrib * months;
+        totalContributions += account._totalContrib;
         
         // Record initial balance, then apply monthly growth
         let quarterIdx = 0;
@@ -2412,6 +2461,16 @@
       const totalGrowth = endTotal - startTotal;
       const growthPct = startTotal > 0 ? ((endTotal / startTotal - 1) * 100) : 0;
       
+      // Calculate Time-Weighted Rate of Return (TWRR)
+      // TWRR = Investment returns only, excluding the effect of contributions
+      // Formula: (Ending Value - Total Contributions) / Starting Value - 1
+      // Annualized: (1 + TWRR)^(1/years) - 1
+      const investmentGain = endTotal - startTotal - totalContributions;
+      const twrr = startTotal > 0 ? (investmentGain / startTotal) * 100 : 0;
+      const annualizedTWRR = startTotal > 0 && years > 0 
+        ? (Math.pow((endTotal - totalContributions) / startTotal, 1 / years) - 1) * 100 
+        : 0;
+      
       summaryDiv.innerHTML = `
         <div style="background: var(--bg-card); border-radius: 10px; padding: 1em; text-align: center; border-left: 4px solid var(--accent);">
           <div style="font-size: 0.85em; color: var(--text-secondary);">Starting Value</div>
@@ -2426,11 +2485,32 @@
           <div style="font-size: 1.5em; font-weight: 700; color: ${totalGrowth >= 0 ? '#28a745' : '#dc3545'};">
             ${totalGrowth >= 0 ? '+' : ''}$${totalGrowth.toLocaleString('en-US', {maximumFractionDigits: 0})}
           </div>
+          <div style="font-size: 0.75em; color: var(--text-secondary); margin-top: 0.3em;">
+            (${growthPct >= 0 ? '+' : ''}${growthPct.toFixed(1)}% total)
+          </div>
         </div>
-        <div style="background: var(--bg-card); border-radius: 10px; padding: 1em; text-align: center; border-left: 4px solid ${growthPct >= 0 ? '#28a745' : '#dc3545'};">
-          <div style="font-size: 0.85em; color: var(--text-secondary);">Growth %</div>
-          <div style="font-size: 1.5em; font-weight: 700; color: ${growthPct >= 0 ? '#28a745' : '#dc3545'};">
-            ${growthPct >= 0 ? '+' : ''}${growthPct.toFixed(1)}%
+        <div style="background: var(--bg-card); border-radius: 10px; padding: 1em; text-align: center; border-left: 4px solid #17a2b8;">
+          <div style="font-size: 0.85em; color: var(--text-secondary);">Total Contributions</div>
+          <div style="font-size: 1.5em; font-weight: 700; color: #17a2b8;">
+            $${totalContributions.toLocaleString('en-US', {maximumFractionDigits: 0})}
+          </div>
+        </div>
+        <div style="background: var(--bg-card); border-radius: 10px; padding: 1em; text-align: center; border-left: 4px solid ${investmentGain >= 0 ? '#28a745' : '#dc3545'};">
+          <div style="font-size: 0.85em; color: var(--text-secondary);">Investment Gain</div>
+          <div style="font-size: 1.5em; font-weight: 700; color: ${investmentGain >= 0 ? '#28a745' : '#dc3545'};">
+            ${investmentGain >= 0 ? '+' : ''}$${investmentGain.toLocaleString('en-US', {maximumFractionDigits: 0})}
+          </div>
+          <div style="font-size: 0.75em; color: var(--text-secondary); margin-top: 0.3em;">
+            (Growth minus contributions)
+          </div>
+        </div>
+        <div style="background: var(--bg-card); border-radius: 10px; padding: 1em; text-align: center; border-left: 4px solid #6f42c1;">
+          <div style="font-size: 0.85em; color: var(--text-secondary);">Annualized Return (TWRR)</div>
+          <div style="font-size: 1.5em; font-weight: 700; color: #6f42c1;">
+            ${annualizedTWRR >= 0 ? '+' : ''}${annualizedTWRR.toFixed(2)}%
+          </div>
+          <div style="font-size: 0.75em; color: var(--text-secondary); margin-top: 0.3em;">
+            Time-weighted, excludes deposits
           </div>
         </div>
       `;
@@ -2558,6 +2638,22 @@
         document.getElementById('mcStd').textContent = '$' + data.percentiles.std.toLocaleString('en-US', {maximumFractionDigits: 0});
         document.getElementById('mcMax').textContent = '$' + data.percentiles.max.toLocaleString('en-US', {maximumFractionDigits: 0});
         document.getElementById('mcMin').textContent = '$' + data.percentiles.min.toLocaleString('en-US', {maximumFractionDigits: 0});
+        
+        // Update TWRR stats
+        if (data.twrr) {
+          const fmtPct = (v) => (v >= 0 ? '+' : '') + v.toFixed(2) + '%';
+          document.getElementById('mcTwrrP50').textContent = fmtPct(data.twrr.p50);
+          document.getElementById('mcTwrrMean').textContent = fmtPct(data.twrr.mean);
+          document.getElementById('mcTwrrP90').textContent = fmtPct(data.twrr.p90);
+          document.getElementById('mcTwrrP10').textContent = fmtPct(data.twrr.p10);
+        }
+        
+        // Update contribution stats
+        if (data.contributions) {
+          document.getElementById('mcStartValue').textContent = '$' + data.contributions.initial_value.toLocaleString('en-US', {maximumFractionDigits: 0});
+          document.getElementById('mcTotalContrib').textContent = '$' + data.contributions.total_per_simulation.toLocaleString('en-US', {maximumFractionDigits: 0});
+          document.getElementById('mcAnnualContrib').textContent = '$' + data.contributions.annual_rate.toLocaleString('en-US', {maximumFractionDigits: 0}) + '/yr';
+        }
         
         // Update tax analysis if available
         if (data.tax_analysis) {
@@ -2767,6 +2863,21 @@
           document.getElementById('mcStd').textContent = '$' + data.results.percentiles.std.toLocaleString('en-US', {maximumFractionDigits: 0});
           document.getElementById('mcMax').textContent = '$' + data.results.percentiles.max.toLocaleString('en-US', {maximumFractionDigits: 0});
           document.getElementById('mcMin').textContent = '$' + data.results.percentiles.min.toLocaleString('en-US', {maximumFractionDigits: 0});
+          
+          // Update TWRR stats if available
+          if (data.results.twrr) {
+            const fmtPct = (v) => (v >= 0 ? '+' : '') + v.toFixed(2) + '%';
+            document.getElementById('mcTwrrP50').textContent = fmtPct(data.results.twrr.p50);
+            document.getElementById('mcTwrrMean').textContent = fmtPct(data.results.twrr.mean);
+            document.getElementById('mcTwrrP90').textContent = fmtPct(data.results.twrr.p90);
+            document.getElementById('mcTwrrP10').textContent = fmtPct(data.results.twrr.p10);
+          }
+          
+          if (data.results.contributions) {
+            document.getElementById('mcStartValue').textContent = '$' + data.results.contributions.initial_value.toLocaleString('en-US', {maximumFractionDigits: 0});
+            document.getElementById('mcTotalContrib').textContent = '$' + data.results.contributions.total_per_simulation.toLocaleString('en-US', {maximumFractionDigits: 0});
+            document.getElementById('mcAnnualContrib').textContent = '$' + data.results.contributions.annual_rate.toLocaleString('en-US', {maximumFractionDigits: 0}) + '/yr';
+          }
           
           drawMCChart(data.results.path_percentiles);
           document.getElementById('mcResults').style.display = 'block';

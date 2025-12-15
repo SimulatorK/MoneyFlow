@@ -1204,7 +1204,15 @@ def run_monte_carlo_simulation(
     all_final_values_nominal = []  # Before inflation adjustment
     all_paths = []
     all_paths_nominal = []
+    all_twrr = []  # Time-weighted rates of return
+    all_total_contributions = []  # Track total contributions per simulation
     account_final_values = {acc["id"]: [] for acc in accounts_data if acc["is_asset"]}
+    
+    # Calculate total annual contributions for TWRR tracking
+    total_annual_contributions = sum(
+        acc.get("contribution_monthly", 0) * 12 
+        for acc in accounts_data if acc.get("is_asset", False)
+    )
     
     # Run simulations using block bootstrap method
     for sim in range(num_simulations):
@@ -1213,6 +1221,7 @@ def run_monte_carlo_simulation(
         sim_path = [0]  # Track total net worth path
         sim_path_nominal = [0]
         cumulative_inflation = 1.0  # For converting to today's dollars
+        sim_total_contributions = 0  # Track contributions for this simulation
         
         for acc in accounts_data:
             sim_accounts[acc["id"]] = {
@@ -1269,7 +1278,9 @@ def run_monte_carlo_simulation(
                         )
                         # Apply annual return + 12 months of contributions
                         acc["balance"] *= (1 + portfolio_return)
-                        acc["balance"] += acc["contribution_monthly"] * 12
+                        annual_contrib = acc["contribution_monthly"] * 12
+                        acc["balance"] += annual_contrib
+                        sim_total_contributions += annual_contrib
                     else:
                         # Liability - apply interest and payments
                         for month in range(12):
@@ -1297,6 +1308,19 @@ def run_monte_carlo_simulation(
         all_final_values_nominal.append(final_nw_nominal)
         all_paths.append(sim_path)
         all_paths_nominal.append(sim_path_nominal)
+        all_total_contributions.append(sim_total_contributions)
+        
+        # Calculate Time-Weighted Rate of Return (TWRR) for this simulation
+        # TWRR = (Ending Value - Total Contributions) / Starting Value - 1
+        # This gives the pure investment return excluding the effect of deposits
+        if initial_nw > 0:
+            investment_gain = final_nw_nominal - initial_nw - sim_total_contributions
+            total_twrr = investment_gain / initial_nw
+            # Annualize: (1 + TWRR)^(1/years) - 1
+            annualized_twrr = (pow(1 + total_twrr, 1 / years) - 1) if years > 0 else 0
+            all_twrr.append(annualized_twrr)
+        else:
+            all_twrr.append(0)
         
         for acc_id, acc in sim_accounts.items():
             if acc["is_asset"]:
@@ -1327,6 +1351,28 @@ def run_monte_carlo_simulation(
         "p75": float(np.percentile(all_final_values_nom, 75)),
         "p90": float(np.percentile(all_final_values_nom, 90)),
         "mean": float(np.mean(all_final_values_nom)),
+    }
+    
+    # Time-Weighted Rate of Return (TWRR) statistics
+    all_twrr_arr = np.array(all_twrr)
+    all_contributions_arr = np.array(all_total_contributions)
+    initial_value = all_paths[0][0] if all_paths else 0
+    
+    results["twrr"] = {
+        "p10": float(np.percentile(all_twrr_arr, 10) * 100),  # As percentage
+        "p25": float(np.percentile(all_twrr_arr, 25) * 100),
+        "p50": float(np.percentile(all_twrr_arr, 50) * 100),  # Median
+        "p75": float(np.percentile(all_twrr_arr, 75) * 100),
+        "p90": float(np.percentile(all_twrr_arr, 90) * 100),
+        "mean": float(np.mean(all_twrr_arr) * 100),
+        "std": float(np.std(all_twrr_arr) * 100),
+    }
+    
+    # Contribution summary
+    results["contributions"] = {
+        "total_per_simulation": float(np.mean(all_contributions_arr)),
+        "annual_rate": float(total_annual_contributions),
+        "initial_value": float(initial_value),
     }
     
     # Calculate path percentiles for chart
