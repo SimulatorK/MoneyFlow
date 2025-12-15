@@ -77,6 +77,34 @@ git clone https://github.com/SimulatorK/MoneyFlow
 cd MasterBudget
 ```
 
+# Make sure pyenv is setup properly
+# Check if pyenv is in your PATH
+```bash
+which pyenv
+```
+
+# Initialize pyenv in your current shell
+```bash
+eval "$(pyenv init -)"
+```
+# Check what Python versions are installed
+```bash
+pyenv versions
+```
+# Install Python 3.11 if not present
+```bash
+pyenv install 3.11
+```
+# Set it as global or local version
+```bash
+pyenv global 3.11
+```
+# OR for just this project:
+```bash
+cd /Users/mason.kelchner/Desktop/Personal/PersonalProjects/MoneyFlow
+pyenv local 3.11
+```
+
 ### 2. Install Dependencies
 
 ```bash
