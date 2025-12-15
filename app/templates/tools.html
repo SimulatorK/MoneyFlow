@@ -826,32 +826,33 @@
           </label>
           
           <div id="projWithdrawalOptions" style="display: none;">
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1em;">
-              <div class="form-group">
-                <label>Start Withdrawals (Year)</label>
-                <input type="number" id="projWithdrawalStartYear" value="10" min="0" max="40" onchange="updateProjections()">
-                <small style="color: var(--text-secondary);">0 = start immediately</small>
-              </div>
-              <div class="form-group">
-                <label>Annual Withdrawal</label>
-                <div style="position: relative;">
-                  <span style="position: absolute; left: 8px; top: 50%; transform: translateY(-50%); color: var(--text-secondary);">$</span>
-                  <input type="number" id="projAnnualWithdrawal" value="40000" min="0" style="padding-left: 22px;" onchange="updateProjections()">
-                </div>
-              </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1em;">
               <div class="form-group">
                 <label>Withdrawal Method</label>
-                <select id="projWithdrawalMethod" onchange="updateProjections()">
-                  <option value="fixed">Fixed Amount</option>
-                  <option value="percent">% of Portfolio</option>
+                <select id="projWithdrawalMethod" onchange="toggleWithdrawalMethod()">
+                  <option value="fixed">Fixed Annual Amount ($)</option>
+                  <option value="percent">% of Portfolio (SWR)</option>
                 </select>
               </div>
-              <div class="form-group" id="projWithdrawalPctGroup" style="display: none;">
-                <label>Withdrawal Rate</label>
+              <div class="form-group">
+                <label>Start Withdrawals (Year)</label>
+                <input type="number" id="projWithdrawalStartYear" value="10" min="0" max="40" oninput="updateProjections()">
+                <small style="color: var(--text-secondary);">0 = start immediately</small>
+              </div>
+              <div class="form-group" id="projWithdrawalAmountGroup">
+                <label>Annual Withdrawal Amount</label>
                 <div style="position: relative;">
-                  <input type="number" id="projWithdrawalPct" value="4" min="1" max="10" step="0.1" style="padding-right: 22px;" onchange="updateProjections()">
+                  <span style="position: absolute; left: 8px; top: 50%; transform: translateY(-50%); color: var(--text-secondary);">$</span>
+                  <input type="number" id="projAnnualWithdrawal" value="40000" min="0" style="padding-left: 22px;" oninput="updateProjections()">
+                </div>
+              </div>
+              <div class="form-group" id="projWithdrawalPctGroup" style="display: none;">
+                <label>Withdrawal Rate (SWR)</label>
+                <div style="position: relative;">
+                  <input type="number" id="projWithdrawalPct" value="4" min="0.5" max="10" step="0.1" style="padding-right: 22px;" oninput="updateProjections()">
                   <span style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); color: var(--text-secondary);">%</span>
                 </div>
+                <small style="color: var(--text-secondary);">4% is the classic safe rate</small>
               </div>
             </div>
           </div>
@@ -2637,6 +2638,24 @@
     function toggleProjectionWithdrawals() {
       const isChecked = document.getElementById('projIncludeWithdrawals').checked;
       document.getElementById('projWithdrawalOptions').style.display = isChecked ? 'block' : 'none';
+      if (isChecked) {
+        toggleWithdrawalMethod();
+      }
+      updateProjections();
+    }
+    
+    function toggleWithdrawalMethod() {
+      const method = document.getElementById('projWithdrawalMethod').value;
+      const amountGroup = document.getElementById('projWithdrawalAmountGroup');
+      const pctGroup = document.getElementById('projWithdrawalPctGroup');
+      
+      if (method === 'fixed') {
+        amountGroup.style.display = 'block';
+        pctGroup.style.display = 'none';
+      } else {
+        amountGroup.style.display = 'none';
+        pctGroup.style.display = 'block';
+      }
       updateProjections();
     }
     
@@ -2650,12 +2669,6 @@
       const withdrawalMethod = document.getElementById('projWithdrawalMethod')?.value || 'fixed';
       const annualWithdrawal = parseFloat(document.getElementById('projAnnualWithdrawal')?.value) || 40000;
       const withdrawalPct = parseFloat(document.getElementById('projWithdrawalPct')?.value) / 100 || 0.04;
-      
-      // Show/hide percent field based on method
-      const pctGroup = document.getElementById('projWithdrawalPctGroup');
-      if (pctGroup) {
-        pctGroup.style.display = withdrawalMethod === 'percent' ? 'block' : 'none';
-      }
       
       const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
       const ctx = document.getElementById('projectionChart');
