@@ -601,19 +601,31 @@
       </div>
 
       <div class="section">
-        <h4>Missouri State Tax</h4>
+        <h4>{{ calculated.state_name }} State Tax</h4>
         <table>
-          <tr><td>MO Standard Deduction ({{ selected_tax_year }})</td><td>${{ "{:,.2f}".format(calculated.mo_standard_deduction) }}</td></tr>
-          <tr><td>MO Taxable Income</td><td>${{ "{:,.2f}".format(calculated.mo_taxable_income) }}</td></tr>
-          <tr style="border-top:1px solid var(--border-color);"><td><b>Missouri State Tax</b></td><td class="tax"><b>${{ "{:,.2f}".format(calculated.mo_state_tax) }}</b> ({{ "%.1f"|format(calculated.state_rate) }}%)</td></tr>
+          <tr><td>{{ calculated.state_code }} Standard Deduction ({{ selected_tax_year }})</td><td>${{ "{:,.2f}".format(calculated.state_standard_deduction) }}</td></tr>
+          <tr><td>{{ calculated.state_code }} Taxable Income</td><td>${{ "{:,.2f}".format(calculated.state_taxable_income) }}</td></tr>
+          {% if calculated.mental_health_tax > 0 %}
+          <tr><td>Base State Tax</td><td class="tax">${{ "{:,.2f}".format(calculated.state_tax - calculated.mental_health_tax) }}</td></tr>
+          <tr style="background:rgba(255,193,7,0.1);"><td>Mental Health Services Tax (1% over $1M)</td><td class="tax">${{ "{:,.2f}".format(calculated.mental_health_tax) }}</td></tr>
+          {% endif %}
+          <tr style="border-top:1px solid var(--border-color);"><td><b>{{ calculated.state_name }} State Tax</b></td><td class="tax"><b>${{ "{:,.2f}".format(calculated.state_tax) }}</b> ({{ "%.1f"|format(calculated.state_rate) }}%)</td></tr>
         </table>
         
+        {% if calculated.state_code == 'CA' %}
+        <div style="background: rgba(255,193,7,0.1); padding: 0.8em; border-radius: 8px; margin-top: 1em; font-size: 0.9em;">
+          <b>📝 California Tax Note:</b> California has one of the highest state income tax rates in the US (up to 12.3%). 
+          Income over $1 million is also subject to an additional 1% Mental Health Services Tax.
+          California does not have city income taxes.
+        </div>
+        {% endif %}
+        
         <details>
-          <summary>View {{ selected_tax_year }} MO Tax Brackets</summary>
+          <summary>View {{ selected_tax_year }} {{ calculated.state_code }} Tax Brackets</summary>
           <div class="brackets-info">
             <table>
               <tr><th>Bracket</th><th>Rate</th><th>Income in Bracket</th><th>Tax</th></tr>
-              {% for limit, rate, income_in_bracket, tax_in_bracket in calculated.mo_breakdown %}
+              {% for limit, rate, income_in_bracket, tax_in_bracket in calculated.state_breakdown %}
                 <tr{% if tax_in_bracket > 0 %} class="has-tax"{% endif %}>
                   {% if limit == float('inf') %}
                   <td>Over</td>
@@ -669,7 +681,7 @@
           <tr><td>Gross Pay</td><td class="money">${{ "{:,.2f}".format(calculated.gross_per_pay) }}</td></tr>
           <tr style="background:rgba(220,53,69,0.08);"><td colspan="2" style="font-weight:600; color:#dc3545; padding-top:0.8em;">Taxes Withheld</td></tr>
           <tr><td style="padding-left:1em;">Federal Tax</td><td class="tax">−${{ "{:,.2f}".format(calculated.federal_tax_per_pay) }}</td></tr>
-          <tr><td style="padding-left:1em;">State Tax (MO)</td><td class="tax">−${{ "{:,.2f}".format(calculated.state_tax_per_pay) }}</td></tr>
+          <tr><td style="padding-left:1em;">State Tax ({{ calculated.state_code }})</td><td class="tax">−${{ "{:,.2f}".format(calculated.state_tax_per_pay) }}</td></tr>
           <tr><td style="padding-left:1em;">FICA (SS + Medicare)</td><td class="tax">−${{ "{:,.2f}".format(calculated.fica_per_pay) }}</td></tr>
           <tr style="background:rgba(220,53,69,0.1);"><td><b>Total Taxes per Paycheck</b></td><td class="tax"><b>−${{ "{:,.2f}".format(calculated.federal_tax_per_pay + calculated.state_tax_per_pay + calculated.fica_per_pay) }}</b></td></tr>
           
