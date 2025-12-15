@@ -473,6 +473,17 @@
             </label>
           </div>
           
+          <div class="form-row">
+            <label>Vendor (Optional)
+              <select name="vendor_id" id="vendorSelect">
+                <option value="">Select vendor...</option>
+                {% for vendor in vendors %}
+                  <option value="{{ vendor.id }}">{{ vendor.name }}</option>
+                {% endfor %}
+              </select>
+            </label>
+          </div>
+          
           <!-- Recurring Expense Option -->
           <div class="form-row" style="align-items: center;">
             <label style="flex-direction: row; gap: 0.5em; align-items: center;">
@@ -496,17 +507,18 @@
             </label>
           </div>
           
-          <!-- Category Management Section -->
+          <!-- Category & Vendor Management Section -->
           <div id="categories" class="btn-row" style="background: linear-gradient(135deg, rgba(56,117,232,0.08), rgba(56,117,232,0.12)); padding: 1em; border-radius: 8px; margin: 0.5em 0; border: 1px dashed var(--accent);">
             <div style="flex: 1; min-width: 200px;">
-              <strong style="color: var(--text-heading); font-size: 0.9em;">📂 Category Management</strong>
+              <strong style="color: var(--text-heading); font-size: 0.9em;">📂 Categories & Vendors</strong>
               <p style="margin: 0.3em 0 0.8em 0; font-size: 0.8em; color: var(--text-secondary);">
-                Add new categories and subcategories here to organize your expenses. These will then be available in the Budget page.
+                Manage your expense categories, subcategories, and vendors here.
               </p>
               <div style="display: flex; gap: 0.5em; flex-wrap: wrap;">
-                <button type="button" class="btn-secondary" onclick="showCategoryModal()">+ New Category</button>
-                <button type="button" class="btn-secondary" onclick="showSubcategoryModal()">+ New Sub-Category</button>
-                <button type="button" class="btn-secondary" onclick="showManageCategoriesModal()">⚙️ Manage</button>
+                <button type="button" class="btn-secondary" onclick="showCategoryModal()">+ Category</button>
+                <button type="button" class="btn-secondary" onclick="showSubcategoryModal()">+ Sub-Category</button>
+                <button type="button" class="btn-secondary" onclick="showVendorModal()">+ Vendor</button>
+                <button type="button" class="btn-secondary" onclick="showManageCategoriesModal()">⚙️ Manage All</button>
               </div>
             </div>
           </div>
@@ -563,6 +575,9 @@
               {% if expense.subcategory %}
               <div class="expense-subcategory">{{ expense.subcategory.name }}</div>
               {% endif %}
+              {% if expense.vendor %}
+              <div class="expense-vendor" style="font-size: 0.8em; color: #e8385a; font-weight: 500;">🏪 {{ expense.vendor.name }}</div>
+              {% endif %}
               {% if expense.notes %}
               <div class="expense-notes">{{ expense.notes[:50] }}{% if expense.notes|length > 50 %}...{% endif %}</div>
               {% endif %}
@@ -606,37 +621,62 @@
       <!-- Filter Bar -->
       <div class="card">
         <h3>Visualization Filters</h3>
-        <div class="filter-bar">
-          <label>Time Period
-            <select id="lookbackSelect" onchange="applyFilters()">
-              {% for key, val in lookback_periods.items() %}
-              <option value="{{ key }}" {% if current_lookback == key %}selected{% endif %}>{{ val.label }}</option>
-              {% endfor %}
-            </select>
-          </label>
-          <div style="flex:1; min-width:200px;">
-            <label style="margin-bottom:0.3em; display:block;">Categories (select multiple)</label>
-            <div class="category-checkboxes" id="categoryCheckboxes">
-              {% for cat in categories %}
-              <label class="category-checkbox {% if cat.id in category_filters %}checked{% endif %}">
-                <input type="checkbox" value="{{ cat.id }}" {% if cat.id in category_filters %}checked{% endif %} onchange="updateCategorySelection()">
-                {{ cat.name }}
-              </label>
-              {% endfor %}
+        <div class="filter-bar" style="flex-direction: column; gap: 1em;">
+          <div style="display: flex; gap: 1em; flex-wrap: wrap; align-items: flex-end;">
+            <label>Time Period
+              <select id="lookbackSelect" onchange="applyFilters()">
+                {% for key, val in lookback_periods.items() %}
+                <option value="{{ key }}" {% if current_lookback == key %}selected{% endif %}>{{ val.label }}</option>
+                {% endfor %}
+              </select>
+            </label>
+            <div style="display:flex; flex-direction:column; gap:0.5em;">
+              <button class="btn-secondary" onclick="applyFilters()">Apply Filters</button>
+              {% if category_filters or vendor_filters %}
+              <button class="clear-filter" onclick="clearAllFilters()">Clear All Filters</button>
+              {% endif %}
             </div>
-            {% if selected_category_names %}
-            <div class="selected-cats" id="selectedCatsTags">
-              {% for name in selected_category_names %}
-              <span class="selected-cat-tag">{{ name }}</span>
-              {% endfor %}
-            </div>
-            {% endif %}
           </div>
-          <div style="display:flex; flex-direction:column; gap:0.5em; align-self:flex-end;">
-            <button class="btn-secondary" onclick="applyFilters()">Apply Filters</button>
-            {% if category_filters %}
-            <button class="clear-filter" onclick="clearFilters()">Clear Categories</button>
-            {% endif %}
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1em;">
+            <div>
+              <label style="margin-bottom:0.3em; display:block;">Categories (select multiple)</label>
+              <div class="category-checkboxes" id="categoryCheckboxes">
+                {% for cat in categories %}
+                <label class="category-checkbox {% if cat.id in category_filters %}checked{% endif %}">
+                  <input type="checkbox" value="{{ cat.id }}" {% if cat.id in category_filters %}checked{% endif %} onchange="updateCategorySelection()">
+                  {{ cat.name }}
+                </label>
+                {% endfor %}
+              </div>
+              {% if selected_category_names %}
+              <div class="selected-cats" id="selectedCatsTags" style="margin-top: 0.3em;">
+                {% for name in selected_category_names %}
+                <span class="selected-cat-tag" style="font-size: 0.8em; background: var(--accent); color: #fff; padding: 0.2em 0.5em; border-radius: 4px; margin-right: 0.3em;">{{ name }}</span>
+                {% endfor %}
+              </div>
+              {% endif %}
+            </div>
+            <div>
+              <label style="margin-bottom:0.3em; display:block;">Vendors (select multiple)</label>
+              <div class="category-checkboxes" id="vendorCheckboxes">
+                {% for vendor in vendors %}
+                <label class="category-checkbox {% if vendor.id in vendor_filters %}checked{% endif %}">
+                  <input type="checkbox" value="{{ vendor.id }}" {% if vendor.id in vendor_filters %}checked{% endif %} onchange="updateVendorSelection()">
+                  {{ vendor.name }}
+                </label>
+                {% endfor %}
+                {% if not vendors %}
+                <span style="color: var(--text-secondary); font-size: 0.85em; font-style: italic;">No vendors yet. Add one when creating an expense!</span>
+                {% endif %}
+              </div>
+              {% if selected_vendor_names %}
+              <div class="selected-vendors" style="margin-top: 0.3em;">
+                {% for name in selected_vendor_names %}
+                <span style="font-size: 0.8em; background: #e8385a; color: #fff; padding: 0.2em 0.5em; border-radius: 4px; margin-right: 0.3em;">{{ name }}</span>
+                {% endfor %}
+              </div>
+              {% endif %}
+            </div>
           </div>
         </div>
       </div>
@@ -708,6 +748,41 @@
         </div>
       </div>
       
+      <!-- Vendor Breakdown - Collapsible -->
+      {% if vendor_stats %}
+      <div class="card collapsible-card">
+        <h3 class="collapsible-header" onclick="toggleCollapsible(this)" style="cursor: pointer; display: flex; align-items: center; gap: 0.5em;">
+          <span class="collapse-icon">▼</span>
+          <span>🏪 Vendor Breakdown</span>
+        </h3>
+        <div class="collapsible-content">
+          <div class="chart-container">
+            <canvas id="vendorChart"></canvas>
+          </div>
+          <table class="avg-table" style="margin-top: 1em;">
+            <thead>
+              <tr>
+                <th>Vendor</th>
+                <th class="count">#</th>
+                <th class="amount">Total</th>
+                <th class="amount">% of Spend</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for v in vendor_stats[:15] %}
+              <tr>
+                <td>{{ v.name }}</td>
+                <td class="count">{{ v.count }}</td>
+                <td class="amount">${{ "{:,.2f}".format(v.total) }}</td>
+                <td class="amount" style="color: var(--accent);">{{ "{:.1f}".format(v.percentage) }}%</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      {% endif %}
+      
       <!-- Category & Subcategory Details Table -->
       {% if subcategory_stats %}
       <div class="card">
@@ -767,6 +842,19 @@
     </div>
   </div>
   
+  <!-- Vendor Modal -->
+  <div class="modal-overlay" id="vendorModal">
+    <div class="modal">
+      <h4>Add New Vendor</h4>
+      <p style="font-size:0.9em; color:#667a9a; margin-bottom:1em;">Track spending by merchant/vendor</p>
+      <input type="text" id="newVendorName" placeholder="Vendor name (e.g., Amazon, Walmart)...">
+      <div class="modal-btns">
+        <button class="btn-secondary" onclick="closeVendorModal()">Cancel</button>
+        <button class="btn-primary" onclick="createVendor()">Add</button>
+      </div>
+    </div>
+  </div>
+  
   <!-- Manage Categories Modal -->
   <div class="modal-overlay" id="manageCategoriesModal">
     <div class="modal">
@@ -813,6 +901,17 @@
             </select>
           </label>
         </div>
+        <div style="margin-bottom:1em;">
+          <label style="display:flex; flex-direction:column; gap:0.3em; font-size:0.95em; color:#344a7a;">
+            Vendor (Optional)
+            <select name="vendor_id" id="editExpenseVendor">
+              <option value="">Select vendor...</option>
+              {% for vendor in vendors %}
+              <option value="{{ vendor.id }}">{{ vendor.name }}</option>
+              {% endfor %}
+            </select>
+          </label>
+        </div>
         <label style="display:flex; flex-direction:column; gap:0.3em; font-size:0.95em; color:#344a7a; margin-bottom:1em;">
           Notes (Optional)
           <textarea name="notes" id="editExpenseNotes" style="padding:0.5em; border:1px solid #ccd; border-radius:6px; resize:vertical; min-height:60px;"></textarea>
@@ -854,18 +953,41 @@
       const lookback = document.getElementById('lookbackSelect').value;
       
       // Get all checked category IDs
-      const checkedBoxes = document.querySelectorAll('#categoryCheckboxes input:checked');
-      const categoryIds = Array.from(checkedBoxes).map(cb => cb.value);
+      const categoryBoxes = document.querySelectorAll('#categoryCheckboxes input:checked');
+      const categoryIds = Array.from(categoryBoxes).map(cb => cb.value);
+      
+      // Get all checked vendor IDs
+      const vendorBoxes = document.querySelectorAll('#vendorCheckboxes input:checked');
+      const vendorIds = Array.from(vendorBoxes).map(cb => cb.value);
       
       let url = '/expenses?lookback=' + lookback;
       if (categoryIds.length > 0) {
         url += '&categories_filter=' + categoryIds.join(',');
       }
+      if (vendorIds.length > 0) {
+        url += '&vendors_filter=' + vendorIds.join(',');
+      }
       window.location.href = url;
     }
     
-    function clearFilters() {
+    function clearAllFilters() {
       window.location.href = '/expenses?lookback=' + document.getElementById('lookbackSelect').value;
+    }
+    
+    function clearFilters() {
+      clearAllFilters();
+    }
+    
+    function updateVendorSelection() {
+      // Update visual state of vendor checkboxes
+      document.querySelectorAll('#vendorCheckboxes .category-checkbox').forEach(label => {
+        const checkbox = label.querySelector('input');
+        if (checkbox.checked) {
+          label.classList.add('checked');
+        } else {
+          label.classList.remove('checked');
+        }
+      });
     }
     
     // Toggle collapsible card sections
@@ -998,6 +1120,52 @@
         closeSubcategoryModal();
       } catch (err) {
         console.error('Error creating subcategory:', err);
+      }
+    }
+    
+    // Vendor modal
+    function showVendorModal() {
+      document.getElementById('vendorModal').classList.add('active');
+      document.getElementById('newVendorName').focus();
+    }
+    
+    function closeVendorModal() {
+      document.getElementById('vendorModal').classList.remove('active');
+      document.getElementById('newVendorName').value = '';
+    }
+    
+    async function createVendor() {
+      const name = document.getElementById('newVendorName').value.trim();
+      if (!name) return;
+      
+      try {
+        const formData = new FormData();
+        formData.append('vendor_name', name);
+        
+        const response = await fetch('/expenses/vendor/add', {
+          method: 'POST',
+          body: formData
+        });
+        
+        const data = await response.json();
+        
+        // Add to dropdowns (add form and edit form)
+        ['vendorSelect', 'editExpenseVendor'].forEach(selectId => {
+          const select = document.getElementById(selectId);
+          if (select) {
+            const option = document.createElement('option');
+            option.value = data.id;
+            option.textContent = data.name;
+            select.appendChild(option);
+          }
+        });
+        
+        // Select the new vendor
+        document.getElementById('vendorSelect').value = data.id;
+        
+        closeVendorModal();
+      } catch (err) {
+        console.error('Error creating vendor:', err);
       }
     }
     
@@ -1135,6 +1303,13 @@
         await loadEditSubcategories();
         if (data.subcategory_id) {
           document.getElementById('editExpenseSubcategory').value = data.subcategory_id;
+        }
+        
+        // Set vendor if present
+        if (data.vendor_id) {
+          document.getElementById('editExpenseVendor').value = data.vendor_id;
+        } else {
+          document.getElementById('editExpenseVendor').value = '';
         }
         
         // Update form action
@@ -1389,6 +1564,49 @@
             plugins: {
               legend: { display: false },
               title: { display: true, text: 'No expenses recorded yet', font: { size: 14 }, color: '#889ab0' }
+            }
+          }
+        });
+      }
+    }
+    
+    // Vendor Doughnut Chart
+    const vendorCtx = document.getElementById('vendorChart');
+    if (vendorCtx) {
+      const vendorData = {{ stats.by_vendor | tojson if stats.by_vendor else '[]' }};
+      
+      if (vendorData && vendorData.length > 0) {
+        // Take top 10 vendors for chart
+        const topVendors = vendorData.slice(0, 10);
+        const vendorColors = [
+          '#e8385a', '#38e878', '#e8a838', '#a838e8', '#38c8e8',
+          '#e8e838', '#8838e8', '#38e8a8', '#e85838', '#3875e8'
+        ];
+        
+        new Chart(vendorCtx, {
+          type: 'doughnut',
+          data: {
+            labels: topVendors.map(d => d[0]),
+            datasets: [{
+              data: topVendors.map(d => d[1]),
+              backgroundColor: topVendors.map((d, i) => vendorColors[i % vendorColors.length])
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 } } },
+              tooltip: {
+                callbacks: {
+                  label: function(context) {
+                    const value = context.parsed;
+                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                    const percentage = ((value / total) * 100).toFixed(1);
+                    return `$${value.toLocaleString()} (${percentage}%)`;
+                  }
+                }
+              }
             }
           }
         });
