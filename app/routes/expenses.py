@@ -36,7 +36,7 @@ from datetime import date, datetime, timedelta
 from typing import Optional, List
 from app.db import get_db
 from app.models.user import User
-from app.models.expense import Category, SubCategory, Expense
+from app.models.expense import Category, SubCategory, Expense, Vendor
 from app.logging_config import get_logger
 from calendar import monthrange
 import base64
@@ -77,8 +77,8 @@ def get_profile_picture_data(user):
     return None, None
 
 
-def get_expense_stats(db: Session, user_id: int, lookback: str = "1m", category_filters: Optional[List[int]] = None):
-    """Calculate expense statistics for visualizations with lookback period and multi-category filter."""
+def get_expense_stats(db: Session, user_id: int, lookback: str = "1m", category_filters: Optional[List[int]] = None, vendor_filters: Optional[List[int]] = None):
+    """Calculate expense statistics for visualizations with lookback period, category, and vendor filters."""
     today = date.today()
     
     # Determine date range
@@ -94,6 +94,8 @@ def get_expense_stats(db: Session, user_id: int, lookback: str = "1m", category_
         query = query.filter(Expense.expense_date >= start_date)
     if category_filters and len(category_filters) > 0:
         query = query.filter(Expense.category_id.in_(category_filters))
+    if vendor_filters and len(vendor_filters) > 0:
+        query = query.filter(Expense.vendor_id.in_(vendor_filters))
     
     expenses = query.order_by(Expense.expense_date).all()
     
@@ -244,6 +246,33 @@ def get_expense_stats(db: Session, user_id: int, lookback: str = "1m", category_
                 "is_subcategory": True
             })
     
+    # Vendor statistics
+    by_vendor = {}
+    vendor_counts = {}
+    for expense in expenses:
+        vendor_name = expense.vendor.name if expense.vendor else "No Vendor"
+        vendor_id = expense.vendor_id if expense.vendor else 0
+        by_vendor[vendor_name] = by_vendor.get(vendor_name, 0) + expense.amount
+        vendor_counts[vendor_name] = vendor_counts.get(vendor_name, 0) + 1
+    
+    # Sort vendors by amount descending
+    by_vendor_sorted = sorted(by_vendor.items(), key=lambda x: x[1], reverse=True)
+    
+    # Calculate vendor statistics
+    vendor_stats = []
+    for vendor_name, total in by_vendor_sorted:
+        count = vendor_counts.get(vendor_name, 1)
+        avg = total / count if count > 0 else 0
+        monthly_avg = total / months_in_period if months_in_period > 0 else 0
+        vendor_stats.append({
+            "name": vendor_name,
+            "total": total,
+            "count": count,
+            "average": avg,
+            "monthly_avg": monthly_avg,
+            "percentage": (total / total_in_period * 100) if total_in_period > 0 else 0
+        })
+    
     return {
         "total_in_period": total_in_period,
         "total_spending": total_in_period,  # Alias for template
@@ -255,6 +284,8 @@ def get_expense_stats(db: Session, user_id: int, lookback: str = "1m", category_
         "scatter_data": scatter_data,
         "subcategory_chart_data": subcategory_chart_data,
         "subcategory_stats": subcategory_stats_list,
+        "vendor_stats": vendor_stats,
+        "by_vendor": by_vendor_sorted,
         "expense_count": len(expenses),
         "overall_avg": overall_avg,
         "daily_avg": daily_avg,
@@ -272,7 +303,8 @@ def expenses_page(
     page: int = Query(1, ge=1),
     show_all: bool = Query(False),
     lookback: str = Query("all"),
-    categories_filter: str = Query("")  # Comma-separated category IDs
+    categories_filter: str = Query(""),  # Comma-separated category IDs
+    vendors_filter: str = Query("")  # Comma-separated vendor IDs
 ):
     user = get_current_user(request, db)
     if not user:
@@ -281,6 +313,9 @@ def expenses_page(
     # Get user's categories with subcategories
     categories = db.query(Category).filter(Category.user_id == user.id).order_by(Category.name).all()
     
+    # Get user's vendors
+    vendors = db.query(Vendor).filter(Vendor.user_id == user.id).order_by(Vendor.name).all()
+    
     # Parse category filters (comma-separated IDs)
     category_filters = []
     if categories_filter:
@@ -288,6 +323,14 @@ def expenses_page(
             category_filters = [int(c.strip()) for c in categories_filter.split(",") if c.strip()]
         except ValueError:
             category_filters = []
+    
+    # Parse vendor filters (comma-separated IDs)
+    vendor_filters = []
+    if vendors_filter:
+        try:
+            vendor_filters = [int(v.strip()) for v in vendors_filter.split(",") if v.strip()]
+        except ValueError:
+            vendor_filters = []
     
     # Get recent expenses
     per_page = 50 if show_all else 10
@@ -308,6 +351,10 @@ def expenses_page(
     # Filter by category filters
     if category_filters and len(category_filters) > 0:
         recent_expenses_query = recent_expenses_query.filter(Expense.category_id.in_(category_filters))
+    
+    # Filter by vendor filters
+    if vendor_filters and len(vendor_filters) > 0:
+        recent_expenses_query = recent_expenses_query.filter(Expense.vendor_id.in_(vendor_filters))
 
     recent_expenses = recent_expenses_query.order_by(Expense.expense_date.desc(), Expense.created_at.desc()).offset(offset).limit(per_page).all()
 
@@ -315,8 +362,8 @@ def expenses_page(
     total_expenses = recent_expenses_query.count()
     total_pages = (total_expenses + per_page - 1) // per_page
     
-    # Get stats for visualizations with lookback and category filters
-    stats = get_expense_stats(db, user.id, lookback, category_filters if category_filters else None)
+    # Get stats for visualizations with lookback, category, and vendor filters
+    stats = get_expense_stats(db, user.id, lookback, category_filters if category_filters else None, vendor_filters if vendor_filters else None)
     
     # Get selected category names for display
     selected_category_names = []
@@ -326,6 +373,14 @@ def expenses_page(
             if cat:
                 selected_category_names.append(cat.name)
     
+    # Get selected vendor names for display
+    selected_vendor_names = []
+    if vendor_filters:
+        for vendor_id in vendor_filters:
+            vendor = db.query(Vendor).filter(Vendor.id == vendor_id).first()
+            if vendor:
+                selected_vendor_names.append(vendor.name)
+    
     profile_picture_b64, profile_picture_type = get_profile_picture_data(user)
     
     return templates.TemplateResponse("expenses.html", {
@@ -333,10 +388,12 @@ def expenses_page(
         "title": "Expenses",
         "user": user,
         "categories": categories,
+        "vendors": vendors,
         "recent_expenses": recent_expenses,
         "stats": stats,
         "subcategory_stats": stats.get("subcategory_stats", []),
         "subcategory_chart_data": stats.get("subcategory_chart_data", []),
+        "vendor_stats": stats.get("vendor_stats", []),
         "today": date.today().isoformat(),
         "page": page,
         "total_pages": total_pages,
@@ -348,6 +405,9 @@ def expenses_page(
         "category_filters": category_filters,
         "categories_filter_str": categories_filter,
         "selected_category_names": selected_category_names,
+        "vendor_filters": vendor_filters,
+        "vendors_filter_str": vendors_filter,
+        "selected_vendor_names": selected_vendor_names,
         "profile_picture_b64": profile_picture_b64,
         "profile_picture_type": profile_picture_type,
         "dark_mode": user.dark_mode
@@ -360,6 +420,7 @@ def add_expense(
     db: Session = Depends(get_db),
     category_id: int = Form(...),
     subcategory_id: Optional[int] = Form(None),
+    vendor_id: Optional[int] = Form(None),
     amount: float = Form(...),
     expense_date: str = Form(...),
     notes: Optional[str] = Form(None),
@@ -391,6 +452,15 @@ def add_expense(
     if not category:
         return RedirectResponse("/expenses")
     
+    # Verify vendor belongs to user (if provided)
+    if vendor_id and vendor_id > 0:
+        vendor = db.query(Vendor).filter(
+            Vendor.id == vendor_id,
+            Vendor.user_id == user.id
+        ).first()
+        if not vendor:
+            vendor_id = None
+    
     # Determine if recurring
     is_recurring_val = "yes" if is_recurring == "yes" else "no"
     frequency_val = frequency if is_recurring_val == "yes" and frequency else None
@@ -400,6 +470,7 @@ def add_expense(
         user_id=user.id,
         category_id=category_id,
         subcategory_id=subcategory_id if subcategory_id and subcategory_id > 0 else None,
+        vendor_id=vendor_id if vendor_id and vendor_id > 0 else None,
         amount=amount,
         expense_date=parsed_date,
         notes=notes if notes and notes.strip() else None,
@@ -517,6 +588,7 @@ def get_expense(expense_id: int, request: Request, db: Session = Depends(get_db)
         "id": expense.id,
         "category_id": expense.category_id,
         "subcategory_id": expense.subcategory_id,
+        "vendor_id": expense.vendor_id,
         "amount": expense.amount,
         "expense_date": expense.expense_date.isoformat(),
         "notes": expense.notes or ""
@@ -530,6 +602,7 @@ def update_expense(
     db: Session = Depends(get_db),
     category_id: int = Form(...),
     subcategory_id: Optional[int] = Form(None),
+    vendor_id: Optional[int] = Form(None),
     amount: float = Form(...),
     expense_date: str = Form(...),
     notes: Optional[str] = Form(None)
@@ -562,9 +635,19 @@ def update_expense(
     if not category:
         return RedirectResponse("/expenses")
     
+    # Verify vendor belongs to user (if provided)
+    if vendor_id and vendor_id > 0:
+        vendor = db.query(Vendor).filter(
+            Vendor.id == vendor_id,
+            Vendor.user_id == user.id
+        ).first()
+        if not vendor:
+            vendor_id = None
+    
     # Update expense
     expense.category_id = category_id
     expense.subcategory_id = subcategory_id if subcategory_id and subcategory_id > 0 else None
+    expense.vendor_id = vendor_id if vendor_id and vendor_id > 0 else None
     expense.amount = amount
     expense.expense_date = parsed_date
     expense.notes = notes if notes and notes.strip() else None
@@ -653,6 +736,114 @@ def delete_subcategory(subcategory_id: int, request: Request, db: Session = Depe
     db.delete(subcategory)
     db.commit()
     return JSONResponse({"success": True})
+
+
+# =============================================================================
+# Vendor Management
+# =============================================================================
+
+@router.post("/expenses/vendor/add")
+def add_vendor(
+    request: Request,
+    db: Session = Depends(get_db),
+    vendor_name: str = Form(...)
+):
+    """Add a new vendor."""
+    user = get_current_user(request, db)
+    if not user:
+        return JSONResponse({"error": "Not authenticated"}, status_code=401)
+    
+    # Check if vendor already exists
+    existing = db.query(Vendor).filter(
+        Vendor.user_id == user.id,
+        Vendor.name == vendor_name.strip()
+    ).first()
+    
+    if existing:
+        return JSONResponse({"id": existing.id, "name": existing.name})
+    
+    # Create new vendor
+    vendor = Vendor(user_id=user.id, name=vendor_name.strip())
+    db.add(vendor)
+    db.commit()
+    db.refresh(vendor)
+    
+    return JSONResponse({"id": vendor.id, "name": vendor.name})
+
+
+@router.get("/api/vendors")
+def get_vendors(request: Request, db: Session = Depends(get_db)):
+    """API endpoint to get all vendors for a user."""
+    user = get_current_user(request, db)
+    if not user:
+        return JSONResponse({"error": "Not authenticated"}, status_code=401)
+    
+    vendors = db.query(Vendor).filter(Vendor.user_id == user.id).order_by(Vendor.name).all()
+    
+    result = []
+    for vendor in vendors:
+        expense_count = db.query(Expense).filter(Expense.vendor_id == vendor.id).count()
+        total_spent = db.query(func.sum(Expense.amount)).filter(Expense.vendor_id == vendor.id).scalar() or 0
+        result.append({
+            "id": vendor.id,
+            "name": vendor.name,
+            "expense_count": expense_count,
+            "total_spent": total_spent
+        })
+    
+    return JSONResponse({"vendors": result})
+
+
+@router.delete("/expenses/vendor/{vendor_id}")
+def delete_vendor(vendor_id: int, request: Request, db: Session = Depends(get_db)):
+    """Delete a vendor. Expenses using it will have vendor set to null."""
+    user = get_current_user(request, db)
+    if not user:
+        return JSONResponse({"error": "Not authenticated"}, status_code=401)
+    
+    vendor = db.query(Vendor).filter(
+        Vendor.id == vendor_id,
+        Vendor.user_id == user.id
+    ).first()
+    
+    if not vendor:
+        return JSONResponse({"error": "Vendor not found"}, status_code=404)
+    
+    # Update expenses to remove vendor reference
+    db.query(Expense).filter(Expense.vendor_id == vendor_id).update(
+        {"vendor_id": None}
+    )
+    
+    # Delete the vendor
+    db.delete(vendor)
+    db.commit()
+    return JSONResponse({"success": True})
+
+
+@router.post("/expenses/vendor/{vendor_id}/update")
+def update_vendor(
+    vendor_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    vendor_name: str = Form(...)
+):
+    """Update a vendor name."""
+    user = get_current_user(request, db)
+    if not user:
+        return JSONResponse({"error": "Not authenticated"}, status_code=401)
+    
+    vendor = db.query(Vendor).filter(
+        Vendor.id == vendor_id,
+        Vendor.user_id == user.id
+    ).first()
+    
+    if not vendor:
+        return JSONResponse({"error": "Vendor not found"}, status_code=404)
+    
+    vendor.name = vendor_name.strip()
+    db.commit()
+    
+    return JSONResponse({"success": True, "id": vendor.id, "name": vendor.name})
 
 
 @router.get("/api/categories")
