@@ -310,6 +310,11 @@ def home(request: Request, db: Session = Depends(get_db)):
     
     logger.debug(f"Authenticated user: {user.username}")
     
+    # Check if user needs to complete tutorial
+    if not user.tutorial_completed:
+        logger.info(f"Redirecting user {user.username} to tutorial")
+        return RedirectResponse("/tutorial")
+    
     profile_picture_b64, profile_picture_type = get_profile_picture_data(user)
     
     # Get income and budget data for Sankey chart

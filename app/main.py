@@ -26,6 +26,7 @@ from app.routes import budget
 from app.routes import profile
 from app.routes import forum
 from app.routes import tools
+from app.routes import tutorial
 
 # Get logger for this module
 logger = get_logger(__name__)
@@ -78,6 +79,7 @@ templates = Jinja2Templates(directory="app/templates")
 
 # Include route modules
 app.include_router(auth.router, tags=["Authentication"])
+app.include_router(tutorial.router, tags=["Tutorial"])
 app.include_router(home.router, tags=["Dashboard"])
 app.include_router(income_taxes.router, tags=["Income & Taxes"])
 app.include_router(expenses.router, tags=["Expenses"])
