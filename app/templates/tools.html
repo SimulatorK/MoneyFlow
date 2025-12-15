@@ -560,37 +560,59 @@
       </div>
       
       <!-- Performance Metrics -->
-      {% if networth_summary.performance and networth_summary.performance.days_tracked > 0 %}
       <div style="background: var(--bg-primary); border-radius: 10px; padding: 1em 1.2em; margin-bottom: 1.5em; border: 1px solid var(--border-light);">
-        <h4 style="margin: 0 0 0.8em 0; color: var(--text-heading); font-size: 0.95em;">📊 Performance Metrics</h4>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1em;">
-          <div>
-            <div style="font-size: 0.8em; color: var(--text-secondary);">Total Change</div>
-            <div style="font-size: 1.3em; font-weight: 600; color: {% if networth_summary.performance.cumulative_change >= 0 %}#28a745{% else %}#dc3545{% endif %};">
-              {{ "+" if networth_summary.performance.cumulative_change >= 0 else "" }}${{ "{:,.0f}".format(networth_summary.performance.cumulative_change) }}
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8em; flex-wrap: wrap; gap: 0.5em;">
+          <h4 style="margin: 0; color: var(--text-heading); font-size: 0.95em;">📊 Performance Metrics</h4>
+          <select id="performancePeriod" onchange="updatePerformanceMetrics()" style="padding: 0.4em 0.8em; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-input); color: var(--text-primary); font-size: 0.85em;">
+            <option value="1m">1 Month</option>
+            <option value="3m">3 Months</option>
+            <option value="6m">6 Months</option>
+            <option value="ytd">Year to Date</option>
+            <option value="1y">1 Year</option>
+            <option value="2y">2 Years</option>
+            <option value="5y">5 Years</option>
+            <option value="all" selected>All Time</option>
+          </select>
+        </div>
+        <div id="performanceMetricsContent">
+          {% if networth_summary.performance and networth_summary.performance.days_tracked > 0 %}
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1em;">
+            <div>
+              <div style="font-size: 0.8em; color: var(--text-secondary);">Total Change</div>
+              <div id="perfTotalChange" style="font-size: 1.3em; font-weight: 600; color: {% if networth_summary.performance.cumulative_change >= 0 %}#28a745{% else %}#dc3545{% endif %};">
+                {{ "+" if networth_summary.performance.cumulative_change >= 0 else "" }}${{ "{:,.0f}".format(networth_summary.performance.cumulative_change) }}
+              </div>
+            </div>
+            <div>
+              <div style="font-size: 0.8em; color: var(--text-secondary);">Cumulative Return</div>
+              <div id="perfCumulativePct" style="font-size: 1.3em; font-weight: 600; color: {% if networth_summary.performance.cumulative_pct >= 0 %}#28a745{% else %}#dc3545{% endif %};">
+                {{ "+" if networth_summary.performance.cumulative_pct >= 0 else "" }}{{ "{:.1f}".format(networth_summary.performance.cumulative_pct) }}%
+              </div>
+            </div>
+            <div>
+              <div style="font-size: 0.8em; color: var(--text-secondary);">Annualized Return</div>
+              <div id="perfAnnualized" style="font-size: 1.3em; font-weight: 600; color: {% if networth_summary.performance.annualized_pct >= 0 %}#28a745{% else %}#dc3545{% endif %};">
+                {{ "+" if networth_summary.performance.annualized_pct >= 0 else "" }}{{ "{:.1f}".format(networth_summary.performance.annualized_pct) }}%
+              </div>
+            </div>
+            <div>
+              <div style="font-size: 0.8em; color: var(--text-secondary);">Starting Balance</div>
+              <div id="perfStartBalance" style="font-size: 1.3em; font-weight: 600; color: var(--text-heading);">
+                ${{ "{:,.0f}".format(networth_summary.performance.first_balance if networth_summary.performance else 0) }}
+              </div>
+            </div>
+            <div>
+              <div style="font-size: 0.8em; color: var(--text-secondary);">Days in Period</div>
+              <div id="perfDaysTracked" style="font-size: 1.3em; font-weight: 600; color: var(--text-heading);">
+                {{ networth_summary.performance.days_tracked }}
+              </div>
             </div>
           </div>
-          <div>
-            <div style="font-size: 0.8em; color: var(--text-secondary);">Cumulative Return</div>
-            <div style="font-size: 1.3em; font-weight: 600; color: {% if networth_summary.performance.cumulative_pct >= 0 %}#28a745{% else %}#dc3545{% endif %};">
-              {{ "+" if networth_summary.performance.cumulative_pct >= 0 else "" }}{{ "{:.1f}".format(networth_summary.performance.cumulative_pct) }}%
-            </div>
-          </div>
-          <div>
-            <div style="font-size: 0.8em; color: var(--text-secondary);">Annualized Return</div>
-            <div style="font-size: 1.3em; font-weight: 600; color: {% if networth_summary.performance.annualized_pct >= 0 %}#28a745{% else %}#dc3545{% endif %};">
-              {{ "+" if networth_summary.performance.annualized_pct >= 0 else "" }}{{ "{:.1f}".format(networth_summary.performance.annualized_pct) }}%
-            </div>
-          </div>
-          <div>
-            <div style="font-size: 0.8em; color: var(--text-secondary);">Days Tracked</div>
-            <div style="font-size: 1.3em; font-weight: 600; color: var(--text-heading);">
-              {{ networth_summary.performance.days_tracked }}
-            </div>
-          </div>
+          {% else %}
+          <p style="color: var(--text-secondary); margin: 0; font-size: 0.9em;">Add balance entries over time to see performance metrics.</p>
+          {% endif %}
         </div>
       </div>
-      {% endif %}
       
       <!-- Tax Analysis -->
       {% if networth_summary.tax_analysis and networth_summary.tax_analysis.total_assets > 0 %}
@@ -2403,6 +2425,70 @@
     
     function closeAccountDetailsModal() {
       document.getElementById('accountDetailsModal').classList.remove('active');
+    }
+    
+    async function updatePerformanceMetrics() {
+      const period = document.getElementById('performancePeriod').value;
+      const contentDiv = document.getElementById('performanceMetricsContent');
+      
+      // Show loading state
+      contentDiv.innerHTML = '<p style="color: var(--text-secondary); margin: 0;">Loading...</p>';
+      
+      try {
+        const response = await fetch(`/tools/networth/performance?period=${period}`);
+        const data = await response.json();
+        
+        if (data.error) {
+          contentDiv.innerHTML = `<p style="color: #dc3545; margin: 0;">${data.error}</p>`;
+          return;
+        }
+        
+        const perf = data.performance;
+        const changeColor = perf.cumulative_change >= 0 ? '#28a745' : '#dc3545';
+        const pctColor = perf.cumulative_pct >= 0 ? '#28a745' : '#dc3545';
+        const annColor = perf.annualized_pct >= 0 ? '#28a745' : '#dc3545';
+        const changeSign = perf.cumulative_change >= 0 ? '+' : '';
+        const pctSign = perf.cumulative_pct >= 0 ? '+' : '';
+        const annSign = perf.annualized_pct >= 0 ? '+' : '';
+        
+        contentDiv.innerHTML = `
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1em;">
+            <div>
+              <div style="font-size: 0.8em; color: var(--text-secondary);">Total Change</div>
+              <div id="perfTotalChange" style="font-size: 1.3em; font-weight: 600; color: ${changeColor};">
+                ${changeSign}$${Math.abs(perf.cumulative_change).toLocaleString('en-US', {maximumFractionDigits: 0})}
+              </div>
+            </div>
+            <div>
+              <div style="font-size: 0.8em; color: var(--text-secondary);">Cumulative Return</div>
+              <div id="perfCumulativePct" style="font-size: 1.3em; font-weight: 600; color: ${pctColor};">
+                ${pctSign}${perf.cumulative_pct.toFixed(1)}%
+              </div>
+            </div>
+            <div>
+              <div style="font-size: 0.8em; color: var(--text-secondary);">Annualized Return</div>
+              <div id="perfAnnualized" style="font-size: 1.3em; font-weight: 600; color: ${annColor};">
+                ${annSign}${perf.annualized_pct.toFixed(1)}%
+              </div>
+            </div>
+            <div>
+              <div style="font-size: 0.8em; color: var(--text-secondary);">Starting Balance</div>
+              <div id="perfStartBalance" style="font-size: 1.3em; font-weight: 600; color: var(--text-heading);">
+                $${perf.first_balance.toLocaleString('en-US', {maximumFractionDigits: 0})}
+              </div>
+            </div>
+            <div>
+              <div style="font-size: 0.8em; color: var(--text-secondary);">Days in Period</div>
+              <div id="perfDaysTracked" style="font-size: 1.3em; font-weight: 600; color: var(--text-heading);">
+                ${perf.days_tracked}
+              </div>
+            </div>
+          </div>
+        `;
+      } catch (err) {
+        console.error('Error fetching performance:', err);
+        contentDiv.innerHTML = '<p style="color: #dc3545; margin: 0;">Error loading performance data</p>';
+      }
     }
     
     function drawNetworthChart() {

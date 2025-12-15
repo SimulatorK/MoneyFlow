@@ -105,29 +105,64 @@ def get_profile_picture_data(user):
     return None, None
 
 
-def calculate_performance_metrics(balances: list, current_balance: float) -> dict:
+def calculate_performance_metrics(balances: list, current_balance: float, period: str = "all") -> dict:
     """
     Calculate performance metrics for an account or overall net worth.
     
     Args:
         balances: List of balance entries sorted by date
         current_balance: Current balance value
+        period: Time period - "1m", "3m", "6m", "1y", "ytd", "2y", "5y", or "all"
         
     Returns:
         Dictionary with cumulative and annualized % changes
     """
-    if not balances or len(balances) < 2:
+    if not balances or len(balances) < 1:
         return {
             "cumulative_change": 0,
             "cumulative_pct": 0,
             "annualized_pct": 0,
             "first_date": None,
             "first_balance": current_balance,
-            "days_tracked": 0
+            "days_tracked": 0,
+            "period": period,
+            "period_label": get_period_label(period)
         }
     
     sorted_balances = sorted(balances, key=lambda b: b.balance_date if hasattr(b, 'balance_date') else b['date'])
-    first = sorted_balances[0]
+    
+    # Calculate start date based on period
+    today = date.today()
+    if period == "1m":
+        start_date = today - timedelta(days=30)
+    elif period == "3m":
+        start_date = today - timedelta(days=90)
+    elif period == "6m":
+        start_date = today - timedelta(days=180)
+    elif period == "1y":
+        start_date = today - timedelta(days=365)
+    elif period == "ytd":
+        start_date = date(today.year, 1, 1)
+    elif period == "2y":
+        start_date = today - timedelta(days=730)
+    elif period == "5y":
+        start_date = today - timedelta(days=1825)
+    else:  # "all"
+        start_date = None
+    
+    # Filter balances to period and find the closest one to start date
+    if start_date:
+        # Find the balance closest to (but not after) the start date
+        filtered = [b for b in sorted_balances 
+                   if (b.balance_date if hasattr(b, 'balance_date') else datetime.strptime(b['date'], '%Y-%m-%d').date()) <= start_date]
+        if filtered:
+            first = filtered[-1]  # Last one before/on start date
+        else:
+            # No balance before start date, use first available
+            first = sorted_balances[0]
+    else:
+        first = sorted_balances[0]
+    
     first_balance = first.balance if hasattr(first, 'balance') else first['balance']
     first_date = first.balance_date if hasattr(first, 'balance_date') else datetime.strptime(first['date'], '%Y-%m-%d').date()
     
@@ -138,14 +173,16 @@ def calculate_performance_metrics(balances: list, current_balance: float) -> dic
             "annualized_pct": 0,
             "first_date": first_date.isoformat() if first_date else None,
             "first_balance": first_balance,
-            "days_tracked": (date.today() - first_date).days if first_date else 0
+            "days_tracked": (today - first_date).days if first_date else 0,
+            "period": period,
+            "period_label": get_period_label(period)
         }
     
     cumulative_change = current_balance - first_balance
     cumulative_pct = (cumulative_change / abs(first_balance)) * 100
     
     # Calculate annualized return
-    days_tracked = (date.today() - first_date).days
+    days_tracked = (today - first_date).days
     if days_tracked > 0 and first_balance > 0:
         years = days_tracked / 365.25
         if years > 0 and current_balance > 0:
@@ -162,8 +199,25 @@ def calculate_performance_metrics(balances: list, current_balance: float) -> dic
         "annualized_pct": annualized_pct,
         "first_date": first_date.isoformat() if first_date else None,
         "first_balance": first_balance,
-        "days_tracked": days_tracked
+        "days_tracked": days_tracked,
+        "period": period,
+        "period_label": get_period_label(period)
     }
+
+
+def get_period_label(period: str) -> str:
+    """Get human-readable label for a period."""
+    labels = {
+        "1m": "1 Month",
+        "3m": "3 Months",
+        "6m": "6 Months",
+        "1y": "1 Year",
+        "ytd": "Year to Date",
+        "2y": "2 Years",
+        "5y": "5 Years",
+        "all": "All Time"
+    }
+    return labels.get(period, "All Time")
 
 
 def calculate_net_worth_summary(accounts: List[Account]) -> dict:
@@ -970,6 +1024,130 @@ async def get_networth_data(request: Request, db: Session = Depends(get_db)):
     return JSONResponse({
         "summary": summary,
         "balance_history": balance_history
+    })
+
+
+@router.get("/tools/networth/performance")
+async def get_networth_performance(
+    request: Request,
+    period: str = "all",
+    db: Session = Depends(get_db)
+):
+    """
+    Get net worth performance metrics for a specific time period.
+    
+    Args:
+        period: Time period - "1m", "3m", "6m", "1y", "ytd", "2y", "5y", or "all"
+    """
+    user = get_current_user(request, db)
+    if not user:
+        return JSONResponse({"error": "Not authenticated"}, status_code=401)
+    
+    # Get all accounts with balances
+    accounts = db.query(Account).filter(
+        Account.user_id == user.id,
+        Account.is_active == True
+    ).all()
+    
+    if not accounts:
+        return JSONResponse({
+            "performance": {
+                "cumulative_change": 0,
+                "cumulative_pct": 0,
+                "annualized_pct": 0,
+                "first_date": None,
+                "first_balance": 0,
+                "days_tracked": 0,
+                "period": period,
+                "period_label": get_period_label(period)
+            },
+            "account_performance": []
+        })
+    
+    # Calculate current net worth
+    net_worth = 0
+    for account in accounts:
+        current_balance = 0
+        if account.balances:
+            latest = max(account.balances, key=lambda b: b.balance_date)
+            current_balance = latest.balance
+        if account.is_asset:
+            net_worth += current_balance
+        else:
+            net_worth -= current_balance
+    
+    # Build combined net worth history across all accounts
+    all_dates = set()
+    for account in accounts:
+        for balance in account.balances:
+            all_dates.add(balance.balance_date)
+    
+    if not all_dates:
+        return JSONResponse({
+            "performance": {
+                "cumulative_change": 0,
+                "cumulative_pct": 0,
+                "annualized_pct": 0,
+                "first_date": None,
+                "first_balance": net_worth,
+                "days_tracked": 0,
+                "period": period,
+                "period_label": get_period_label(period)
+            },
+            "account_performance": []
+        })
+    
+    # Sort dates
+    sorted_dates = sorted(all_dates)
+    
+    # Build net worth for each date
+    net_worth_history = []
+    for dt in sorted_dates:
+        date_nw = 0
+        for account in accounts:
+            # Find balance on or before this date
+            account_balances = [b for b in account.balances if b.balance_date <= dt]
+            if account_balances:
+                latest = max(account_balances, key=lambda b: b.balance_date)
+                if account.is_asset:
+                    date_nw += latest.balance
+                else:
+                    date_nw -= latest.balance
+        net_worth_history.append({
+            "date": dt.isoformat(),
+            "balance": date_nw
+        })
+    
+    # Create mock balance objects for calculate_performance_metrics
+    class MockBalance:
+        def __init__(self, d, b):
+            self.balance_date = datetime.strptime(d, '%Y-%m-%d').date() if isinstance(d, str) else d
+            self.balance = b
+    
+    mock_balances = [MockBalance(h['date'], h['balance']) for h in net_worth_history]
+    
+    # Calculate overall performance for the period
+    overall_performance = calculate_performance_metrics(mock_balances, net_worth, period)
+    
+    # Calculate per-account performance
+    account_performance = []
+    for account in accounts:
+        if not account.balances:
+            continue
+        current_balance = max(account.balances, key=lambda b: b.balance_date).balance
+        perf = calculate_performance_metrics(list(account.balances), current_balance, period)
+        account_performance.append({
+            "id": account.id,
+            "name": account.name,
+            "is_asset": account.is_asset,
+            "current_balance": current_balance,
+            **perf
+        })
+    
+    return JSONResponse({
+        "performance": overall_performance,
+        "account_performance": account_performance,
+        "current_net_worth": net_worth
     })
 
 
