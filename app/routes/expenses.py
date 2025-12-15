@@ -914,20 +914,24 @@ def download_csv_template(request: Request, db: Session = Depends(get_db)):
     output = io.StringIO()
     writer = csv.writer(output)
     
+    # Get user's vendors
+    vendors = db.query(Vendor).filter(Vendor.user_id == user.id).order_by(Vendor.name).all()
+    
     # Header row
     writer.writerow([
         "date",           # YYYY-MM-DD format
         "amount",         # Numeric value
         "category",       # Category name (must match existing or will be created)
         "subcategory",    # Subcategory name (optional, must match existing or will be created)
+        "vendor",         # Vendor name (optional, must match existing or will be created)
         "notes"           # Optional notes
     ])
     
     # Example rows
     today = date.today().isoformat()
-    writer.writerow([today, "25.99", "Groceries", "Food", "Weekly grocery shopping"])
-    writer.writerow([today, "9.99", "Entertainment", "Streaming", "Netflix subscription"])
-    writer.writerow([today, "50.00", "Transportation", "", "Gas fill-up"])
+    writer.writerow([today, "25.99", "Groceries", "Food", "Trader Joe's", "Weekly grocery shopping"])
+    writer.writerow([today, "9.99", "Entertainment", "Streaming", "Netflix", "Monthly subscription"])
+    writer.writerow([today, "50.00", "Transportation", "", "Shell", "Gas fill-up"])
     
     # Add a comment section with instructions
     writer.writerow([])
@@ -936,6 +940,7 @@ def download_csv_template(request: Request, db: Session = Depends(get_db)):
     writer.writerow(["# - amount: Numeric value (e.g., 25.99)"])
     writer.writerow(["# - category: Required. If category doesn't exist, it will be created"])
     writer.writerow(["# - subcategory: Optional. If provided but doesn't exist, it will be created"])
+    writer.writerow(["# - vendor: Optional. If provided but doesn't exist, it will be created"])
     writer.writerow(["# - notes: Optional description"])
     writer.writerow([])
     writer.writerow(["# YOUR EXISTING CATEGORIES:"])
@@ -943,6 +948,14 @@ def download_csv_template(request: Request, db: Session = Depends(get_db)):
     for cat in categories:
         subcats = ", ".join([s.name for s in cat.subcategories]) if cat.subcategories else "(no subcategories)"
         writer.writerow([f"# {cat.name}: {subcats}"])
+    
+    writer.writerow([])
+    writer.writerow(["# YOUR EXISTING VENDORS:"])
+    if vendors:
+        vendor_names = ", ".join([v.name for v in vendors])
+        writer.writerow([f"# {vendor_names}"])
+    else:
+        writer.writerow(["# (no vendors yet - they will be created automatically)"])
     
     # Seek to beginning of stream
     output.seek(0)
@@ -988,6 +1001,7 @@ def export_expenses_csv(
         "amount",
         "category",
         "subcategory",
+        "vendor",
         "notes",
         "is_recurring",
         "frequency"
@@ -1000,6 +1014,7 @@ def export_expenses_csv(
             f"{expense.amount:.2f}",
             expense.category.name if expense.category else "",
             expense.subcategory.name if expense.subcategory else "",
+            expense.vendor.name if expense.vendor else "",
             expense.notes or "",
             expense.is_recurring or "",
             expense.frequency or ""
@@ -1044,13 +1059,18 @@ async def bulk_upload_expenses(
             "success": 0,
             "errors": [],
             "categories_created": [],
-            "subcategories_created": []
+            "subcategories_created": [],
+            "vendors_created": []
         }
         
-        # Cache for categories/subcategories
+        # Cache for categories/subcategories/vendors
         category_cache = {}
         for cat in db.query(Category).filter(Category.user_id == user.id).all():
             category_cache[cat.name.lower()] = cat
+        
+        vendor_cache = {}
+        for v in db.query(Vendor).filter(Vendor.user_id == user.id).all():
+            vendor_cache[v.name.lower()] = v
         
         row_num = 1
         for row in reader:
@@ -1115,6 +1135,22 @@ async def bulk_upload_expenses(
                         db.flush()
                         results["subcategories_created"].append(f"{category_name} > {subcategory_name}")
                 
+                # Get or create vendor (if provided)
+                vendor = None
+                vendor_name = row.get('vendor', '').strip()
+                
+                if vendor_name:
+                    vendor_key = vendor_name.lower()
+                    if vendor_key in vendor_cache:
+                        vendor = vendor_cache[vendor_key]
+                    else:
+                        # Create new vendor
+                        vendor = Vendor(user_id=user.id, name=vendor_name)
+                        db.add(vendor)
+                        db.flush()
+                        vendor_cache[vendor_key] = vendor
+                        results["vendors_created"].append(vendor_name)
+                
                 # Create expense
                 notes = row.get('notes', '').strip() or None
                 
@@ -1122,6 +1158,7 @@ async def bulk_upload_expenses(
                     user_id=user.id,
                     category_id=category.id,
                     subcategory_id=subcategory.id if subcategory else None,
+                    vendor_id=vendor.id if vendor else None,
                     amount=amount,
                     expense_date=expense_date,
                     notes=notes
