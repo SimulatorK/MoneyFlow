@@ -279,6 +279,7 @@
       <button class="tool-tab" id="networthTab" onclick="showTool('networth')">💰 Net Worth Manager</button>
       <button class="tool-tab" id="projectionsTab" onclick="showTool('projections')">📈 Investment Projections</button>
       <button class="tool-tab" id="montecarloTab" onclick="showTool('montecarlo')">🎲 Monte Carlo</button>
+      <button class="tool-tab" id="fireTab" onclick="showTool('fire')">🔥 FIRE Planning</button>
       
       <div class="saved-scenarios-section" id="mortgageSavedSection">
         <select id="savedScenarios" class="saved-scenarios-select">
@@ -801,6 +802,7 @@
               <option value="15">15 Years</option>
               <option value="20">20 Years</option>
               <option value="30">30 Years</option>
+              <option value="40">40 Years</option>
             </select>
           </div>
           <div class="form-group">
@@ -815,6 +817,46 @@
             </select>
           </div>
         </div>
+        
+        <!-- Withdrawal Phase Options -->
+        <div style="margin-bottom: 1em; padding: 1em; background: rgba(255,107,53,0.05); border-radius: 8px; border: 1px solid rgba(255,107,53,0.2);">
+          <label style="display: flex; align-items: center; gap: 0.5em; cursor: pointer; margin-bottom: 0.8em;">
+            <input type="checkbox" id="projIncludeWithdrawals" onchange="toggleProjectionWithdrawals()">
+            <span style="font-weight: 600; color: #ff6b35;">🔥 Include Withdrawal Phase (FIRE)</span>
+          </label>
+          
+          <div id="projWithdrawalOptions" style="display: none;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1em;">
+              <div class="form-group">
+                <label>Start Withdrawals (Year)</label>
+                <input type="number" id="projWithdrawalStartYear" value="10" min="0" max="40" onchange="updateProjections()">
+                <small style="color: var(--text-secondary);">0 = start immediately</small>
+              </div>
+              <div class="form-group">
+                <label>Annual Withdrawal</label>
+                <div style="position: relative;">
+                  <span style="position: absolute; left: 8px; top: 50%; transform: translateY(-50%); color: var(--text-secondary);">$</span>
+                  <input type="number" id="projAnnualWithdrawal" value="40000" min="0" style="padding-left: 22px;" onchange="updateProjections()">
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Withdrawal Method</label>
+                <select id="projWithdrawalMethod" onchange="updateProjections()">
+                  <option value="fixed">Fixed Amount</option>
+                  <option value="percent">% of Portfolio</option>
+                </select>
+              </div>
+              <div class="form-group" id="projWithdrawalPctGroup" style="display: none;">
+                <label>Withdrawal Rate</label>
+                <div style="position: relative;">
+                  <input type="number" id="projWithdrawalPct" value="4" min="1" max="10" step="0.1" style="padding-right: 22px;" onchange="updateProjections()">
+                  <span style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); color: var(--text-secondary);">%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
         <button class="btn-calculate" onclick="updateProjections()" style="width: auto;">Update Projections</button>
       </div>
       
@@ -1065,6 +1107,291 @@
         <h4 style="color: var(--text-heading); margin-bottom: 0.8em;">📁 Saved Scenarios</h4>
         <div id="mcSavedScenarios" style="max-height: 200px; overflow-y: auto;">
           <p style="color: var(--text-secondary); font-size: 0.9em;">Run a simulation to save it as a scenario.</p>
+        </div>
+      </div>
+    </div>
+    
+    <!-- FIRE Planning Section -->
+    <div id="fire-section" class="calculator-card" style="display: none;">
+      <h2>🔥 FIRE Planning</h2>
+      <p class="subtitle">Plan your path to Financial Independence and Retire Early with multiple FIRE approaches and withdrawal strategies.</p>
+      
+      <!-- FIRE Overview -->
+      <div style="background: rgba(255,107,53,0.1); border-radius: 10px; padding: 1em; margin-bottom: 1.5em; border: 1px solid rgba(255,107,53,0.3);">
+        <h4 style="margin: 0 0 0.5em 0; color: #ff6b35; font-size: 0.95em;">🔥 What is FIRE?</h4>
+        <p style="margin: 0; font-size: 0.85em; color: var(--text-secondary);">
+          <strong>F</strong>inancial <strong>I</strong>ndependence, <strong>R</strong>etire <strong>E</strong>arly - the goal is to save enough that your investments can support your living expenses indefinitely, 
+          giving you the freedom to work optionally. Your <strong>FI Number</strong> is typically 25× your annual expenses (based on the 4% safe withdrawal rate).
+        </p>
+      </div>
+      
+      <!-- FIRE Inputs -->
+      <div style="background: var(--bg-primary); border-radius: 10px; padding: 1.2em; margin-bottom: 1.5em; border: 1px solid var(--border-light);">
+        <h4 style="margin: 0 0 1em 0; color: var(--text-heading);">📊 Your FIRE Profile</h4>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1em; margin-bottom: 1.5em;">
+          <div class="form-group">
+            <label>Current Age</label>
+            <input type="number" id="fireCurrentAge" value="30" min="18" max="80" style="width: 100%;">
+          </div>
+          <div class="form-group">
+            <label>Target Retirement Age</label>
+            <input type="number" id="fireTargetAge" value="50" min="25" max="90" style="width: 100%;">
+          </div>
+          <div class="form-group">
+            <label>Life Expectancy</label>
+            <input type="number" id="fireLifeExpectancy" value="90" min="60" max="110" style="width: 100%;">
+          </div>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1em; margin-bottom: 1.5em;">
+          <div class="form-group">
+            <label>Annual Expenses (Current)</label>
+            <div style="position: relative;">
+              <span style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-secondary);">$</span>
+              <input type="number" id="fireAnnualExpenses" value="50000" min="0" style="width: 100%; padding-left: 25px;">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Expected Expenses in Retirement</label>
+            <div style="position: relative;">
+              <span style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-secondary);">$</span>
+              <input type="number" id="fireRetirementExpenses" value="40000" min="0" style="width: 100%; padding-left: 25px;">
+            </div>
+            <small style="color: var(--text-secondary);">Often 80% of pre-retirement</small>
+          </div>
+          <div class="form-group">
+            <label>Social Security (Monthly, at 67)</label>
+            <div style="position: relative;">
+              <span style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-secondary);">$</span>
+              <input type="number" id="fireSocialSecurity" value="2000" min="0" style="width: 100%; padding-left: 25px;">
+            </div>
+            <small style="color: var(--text-secondary);">0 if not planning to receive</small>
+          </div>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1em;">
+          <div class="form-group">
+            <label>Inflation Rate Assumption</label>
+            <div style="position: relative;">
+              <input type="number" id="fireInflationRate" value="3.0" min="0" max="10" step="0.1" style="width: 100%; padding-right: 25px;">
+              <span style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--text-secondary);">%</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>FIRE Type</label>
+            <select id="fireType" onchange="updateFIREType()">
+              <option value="regular">Regular FIRE (25× expenses)</option>
+              <option value="lean">Lean FIRE (25× minimal expenses)</option>
+              <option value="fat">Fat FIRE (25× luxury expenses)</option>
+              <option value="coast">Coast FIRE (stop saving, coast to retirement)</option>
+              <option value="barista">Barista FIRE (part-time work + investments)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Withdrawal Strategy Section -->
+      <div style="background: var(--bg-primary); border-radius: 10px; padding: 1.2em; margin-bottom: 1.5em; border: 1px solid var(--border-light);">
+        <h4 style="margin: 0 0 1em 0; color: var(--text-heading);">💸 Withdrawal Strategy</h4>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1em; margin-bottom: 1em;">
+          <div class="form-group">
+            <label>Withdrawal Method</label>
+            <select id="fireWithdrawalMethod" onchange="updateWithdrawalOptions()">
+              <option value="fixed_swr">Fixed Safe Withdrawal Rate (SWR)</option>
+              <option value="variable_pct">Variable Percentage Withdrawal (VPW)</option>
+              <option value="guardrails">Guardrails (Guyton-Klinger)</option>
+              <option value="floor_ceiling">Floor & Ceiling</option>
+            </select>
+          </div>
+          
+          <div class="form-group" id="swrRateGroup">
+            <label>Withdrawal Rate</label>
+            <div style="position: relative;">
+              <input type="number" id="fireSWR" value="4.0" min="1" max="10" step="0.1" style="width: 100%; padding-right: 25px;">
+              <span style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--text-secondary);">%</span>
+            </div>
+            <small style="color: var(--text-secondary);">4% is the classic "safe" rate</small>
+          </div>
+        </div>
+        
+        <!-- Dynamic Withdrawal Options (hidden by default) -->
+        <div id="guardrailsOptions" style="display: none; margin-top: 1em; padding: 1em; background: rgba(56,117,232,0.05); border-radius: 8px;">
+          <h5 style="margin: 0 0 0.8em 0; color: var(--text-heading);">Guardrails Strategy Options</h5>
+          <p style="font-size: 0.85em; color: var(--text-secondary); margin-bottom: 1em;">
+            Increase withdrawals after good years, decrease after bad years within set boundaries.
+          </p>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1em;">
+            <div class="form-group">
+              <label>Upper Guardrail</label>
+              <div style="position: relative;">
+                <input type="number" id="fireUpperGuardrail" value="5.0" min="1" max="10" step="0.1" style="width: 100%; padding-right: 25px;">
+                <span style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--text-secondary);">%</span>
+              </div>
+              <small style="color: #28a745;">Max increase after good year</small>
+            </div>
+            <div class="form-group">
+              <label>Lower Guardrail</label>
+              <div style="position: relative;">
+                <input type="number" id="fireLowerGuardrail" value="3.0" min="1" max="10" step="0.1" style="width: 100%; padding-right: 25px;">
+                <span style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--text-secondary);">%</span>
+              </div>
+              <small style="color: #dc3545;">Min decrease after bad year</small>
+            </div>
+            <div class="form-group">
+              <label>Adjustment %</label>
+              <div style="position: relative;">
+                <input type="number" id="fireGuardrailAdjust" value="10" min="1" max="25" step="1" style="width: 100%; padding-right: 25px;">
+                <span style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--text-secondary);">%</span>
+              </div>
+              <small style="color: var(--text-secondary);">How much to adjust</small>
+            </div>
+          </div>
+        </div>
+        
+        <div id="floorCeilingOptions" style="display: none; margin-top: 1em; padding: 1em; background: rgba(56,117,232,0.05); border-radius: 8px;">
+          <h5 style="margin: 0 0 0.8em 0; color: var(--text-heading);">Floor & Ceiling Options</h5>
+          <p style="font-size: 0.85em; color: var(--text-secondary); margin-bottom: 1em;">
+            Set minimum and maximum annual withdrawal amounts regardless of portfolio value.
+          </p>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1em;">
+            <div class="form-group">
+              <label>Floor (Minimum Annual)</label>
+              <div style="position: relative;">
+                <span style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-secondary);">$</span>
+                <input type="number" id="fireFloor" value="30000" min="0" style="width: 100%; padding-left: 25px;">
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Ceiling (Maximum Annual)</label>
+              <div style="position: relative;">
+                <span style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-secondary);">$</span>
+                <input type="number" id="fireCeiling" value="80000" min="0" style="width: 100%; padding-left: 25px;">
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div id="vpwOptions" style="display: none; margin-top: 1em; padding: 1em; background: rgba(56,117,232,0.05); border-radius: 8px;">
+          <h5 style="margin: 0 0 0.8em 0; color: var(--text-heading);">Variable Percentage Withdrawal (VPW)</h5>
+          <p style="font-size: 0.85em; color: var(--text-secondary); margin-bottom: 0;">
+            Withdraws a percentage based on remaining life expectancy and portfolio value. Automatically adjusts each year - higher withdrawals as you age.
+            <br><strong>Formula:</strong> Withdrawal = Portfolio Value × (1 ÷ Remaining Years)
+          </p>
+        </div>
+      </div>
+      
+      <!-- Include in Simulations -->
+      <div style="background: var(--bg-primary); border-radius: 10px; padding: 1.2em; margin-bottom: 1.5em; border: 1px solid var(--border-light);">
+        <h4 style="margin: 0 0 1em 0; color: var(--text-heading);">🔗 Simulation Integration</h4>
+        <p style="font-size: 0.9em; color: var(--text-secondary); margin-bottom: 1em;">
+          Include withdrawal phase in your projections and Monte Carlo simulations.
+        </p>
+        
+        <div style="display: flex; flex-wrap: wrap; gap: 1.5em;">
+          <label style="display: flex; align-items: center; gap: 0.5em; cursor: pointer;">
+            <input type="checkbox" id="fireIncludeInProjections" checked>
+            <span>Include in Investment Projections</span>
+          </label>
+          <label style="display: flex; align-items: center; gap: 0.5em; cursor: pointer;">
+            <input type="checkbox" id="fireIncludeInMonteCarlo" checked>
+            <span>Include in Monte Carlo Simulation</span>
+          </label>
+        </div>
+      </div>
+      
+      <!-- Calculate Button -->
+      <button class="btn-calculate" onclick="calculateFIRE()" style="margin-bottom: 1.5em;">🔥 Calculate FIRE Plan</button>
+      
+      <!-- FIRE Results -->
+      <div id="fireResults" style="display: none;">
+        <!-- Key Metrics -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1em; margin-bottom: 1.5em;">
+          <div style="background: linear-gradient(135deg, rgba(255,107,53,0.1), rgba(255,107,53,0.2)); padding: 1.2em; border-radius: 10px; text-align: center; border: 1px solid rgba(255,107,53,0.3);">
+            <div style="font-size: 0.85em; color: var(--text-secondary);">🎯 FI Number</div>
+            <div id="fireFINumber" style="font-size: 1.8em; font-weight: 700; color: #ff6b35;">-</div>
+            <div style="font-size: 0.75em; color: var(--text-secondary);">Target portfolio value</div>
+          </div>
+          <div style="background: linear-gradient(135deg, rgba(40,167,69,0.1), rgba(40,167,69,0.2)); padding: 1.2em; border-radius: 10px; text-align: center; border: 1px solid rgba(40,167,69,0.3);">
+            <div style="font-size: 0.85em; color: var(--text-secondary);">📍 Current Progress</div>
+            <div id="fireCurrentProgress" style="font-size: 1.8em; font-weight: 700; color: #28a745;">-</div>
+            <div style="font-size: 0.75em; color: var(--text-secondary);">of FI Number</div>
+          </div>
+          <div style="background: linear-gradient(135deg, rgba(56,117,232,0.1), rgba(56,117,232,0.2)); padding: 1.2em; border-radius: 10px; text-align: center; border: 1px solid rgba(56,117,232,0.3);">
+            <div style="font-size: 0.85em; color: var(--text-secondary);">📅 Years to FI</div>
+            <div id="fireYearsToFI" style="font-size: 1.8em; font-weight: 700; color: var(--accent);">-</div>
+            <div id="fireFIAge" style="font-size: 0.75em; color: var(--text-secondary);">FI at age -</div>
+          </div>
+          <div style="background: linear-gradient(135deg, rgba(111,66,193,0.1), rgba(111,66,193,0.2)); padding: 1.2em; border-radius: 10px; text-align: center; border: 1px solid rgba(111,66,193,0.3);">
+            <div style="font-size: 0.85em; color: var(--text-secondary);">💰 Annual Withdrawal</div>
+            <div id="fireAnnualWithdrawal" style="font-size: 1.8em; font-weight: 700; color: #6f42c1;">-</div>
+            <div style="font-size: 0.75em; color: var(--text-secondary);">First year of retirement</div>
+          </div>
+        </div>
+        
+        <!-- Progress Bar -->
+        <div style="background: var(--bg-primary); border-radius: 10px; padding: 1.2em; margin-bottom: 1.5em; border: 1px solid var(--border-light);">
+          <h4 style="margin: 0 0 1em 0; color: var(--text-heading);">🏃 Progress to Financial Independence</h4>
+          <div style="background: var(--bg-card); border-radius: 10px; overflow: hidden; height: 30px; position: relative;">
+            <div id="fireProgressBar" style="height: 100%; background: linear-gradient(90deg, #ff6b35, #ffc107, #28a745); width: 0%; transition: width 1s ease-out;"></div>
+            <div id="fireProgressText" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: 600; color: var(--text-heading);">0%</div>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-top: 0.5em; font-size: 0.85em; color: var(--text-secondary);">
+            <span>$0</span>
+            <span id="fireProgressMid">-</span>
+            <span id="fireProgressEnd">-</span>
+          </div>
+        </div>
+        
+        <!-- Withdrawal Strategy Details -->
+        <div style="background: var(--bg-primary); border-radius: 10px; padding: 1.2em; margin-bottom: 1.5em; border: 1px solid var(--border-light);">
+          <h4 style="margin: 0 0 1em 0; color: var(--text-heading);">📋 Withdrawal Strategy Details</h4>
+          <div id="fireWithdrawalDetails">
+            <!-- Populated by JavaScript -->
+          </div>
+        </div>
+        
+        <!-- Monte Carlo Success Rate (if enabled) -->
+        <div id="fireMCResults" style="display: none; background: linear-gradient(135deg, rgba(56,117,232,0.05), rgba(56,117,232,0.15)); border-radius: 10px; padding: 1.2em; margin-bottom: 1.5em; border: 1px solid rgba(56,117,232,0.3);">
+          <h4 style="margin: 0 0 1em 0; color: var(--accent);">🎲 Monte Carlo Success Rate</h4>
+          <p style="font-size: 0.9em; color: var(--text-secondary); margin-bottom: 1em;">
+            Probability that your portfolio will last through retirement based on historical market simulations.
+          </p>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1em;">
+            <div style="text-align: center; padding: 1em; background: var(--bg-card); border-radius: 8px;">
+              <div style="font-size: 0.85em; color: var(--text-secondary);">Success Rate</div>
+              <div id="fireMCSuccessRate" style="font-size: 2em; font-weight: 700; color: #28a745;">-</div>
+            </div>
+            <div style="text-align: center; padding: 1em; background: var(--bg-card); border-radius: 8px;">
+              <div style="font-size: 0.85em; color: var(--text-secondary);">Median Ending Balance</div>
+              <div id="fireMCMedianEnd" style="font-size: 1.5em; font-weight: 600; color: var(--text-heading);">-</div>
+            </div>
+            <div style="text-align: center; padding: 1em; background: var(--bg-card); border-radius: 8px;">
+              <div style="font-size: 0.85em; color: var(--text-secondary);">Worst Case (p10)</div>
+              <div id="fireMCWorstCase" style="font-size: 1.5em; font-weight: 600; color: #dc3545;">-</div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- FIRE Types Comparison -->
+        <div style="background: var(--bg-primary); border-radius: 10px; padding: 1.2em; border: 1px solid var(--border-light);">
+          <h4 style="margin: 0 0 1em 0; color: var(--text-heading);">📊 FIRE Approaches Comparison</h4>
+          <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.9em;">
+              <thead>
+                <tr style="border-bottom: 2px solid var(--border-color);">
+                  <th style="text-align: left; padding: 0.8em 0.5em; color: var(--text-heading);">FIRE Type</th>
+                  <th style="text-align: right; padding: 0.8em 0.5em; color: var(--text-heading);">Annual Spending</th>
+                  <th style="text-align: right; padding: 0.8em 0.5em; color: var(--text-heading);">FI Number</th>
+                  <th style="text-align: right; padding: 0.8em 0.5em; color: var(--text-heading);">Monthly Withdrawal</th>
+                </tr>
+              </thead>
+              <tbody id="fireComparisonTable">
+                <!-- Populated by JavaScript -->
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
@@ -1924,10 +2251,12 @@
       const networthSection = document.getElementById('networth-manager');
       const projectionsSection = document.getElementById('investment-projections');
       const montecarloSection = document.getElementById('montecarlo-section');
+      const fireSection = document.getElementById('fire-section');
       const mortgageTab = document.getElementById('mortgageTab');
       const networthTab = document.getElementById('networthTab');
       const projectionsTab = document.getElementById('projectionsTab');
       const montecarloTab = document.getElementById('montecarloTab');
+      const fireTab = document.getElementById('fireTab');
       const mortgageSaved = document.getElementById('mortgageSavedSection');
       
       // Hide all sections
@@ -1935,10 +2264,12 @@
       networthSection.style.display = 'none';
       projectionsSection.style.display = 'none';
       montecarloSection.style.display = 'none';
+      fireSection.style.display = 'none';
       mortgageTab.classList.remove('active');
       networthTab.classList.remove('active');
       projectionsTab.classList.remove('active');
       montecarloTab.classList.remove('active');
+      fireTab.classList.remove('active');
       mortgageSaved.style.display = 'none';
       
       if (tool === 'mortgage') {
@@ -1957,6 +2288,10 @@
         montecarloSection.style.display = 'block';
         montecarloTab.classList.add('active');
         loadMCSavedScenarios();
+      } else if (tool === 'fire') {
+        fireSection.style.display = 'block';
+        fireTab.classList.add('active');
+        initFIRECalculator();
       }
     }
     
@@ -2299,9 +2634,28 @@
       'annually': 1
     };
     
+    function toggleProjectionWithdrawals() {
+      const isChecked = document.getElementById('projIncludeWithdrawals').checked;
+      document.getElementById('projWithdrawalOptions').style.display = isChecked ? 'block' : 'none';
+      updateProjections();
+    }
+    
     function updateProjections() {
       const years = parseInt(document.getElementById('projectionYears').value) || 10;
       const filter = document.getElementById('projectionFilter').value;
+      
+      // Withdrawal settings
+      const includeWithdrawals = document.getElementById('projIncludeWithdrawals')?.checked || false;
+      const withdrawalStartYear = parseInt(document.getElementById('projWithdrawalStartYear')?.value) || 0;
+      const withdrawalMethod = document.getElementById('projWithdrawalMethod')?.value || 'fixed';
+      const annualWithdrawal = parseFloat(document.getElementById('projAnnualWithdrawal')?.value) || 40000;
+      const withdrawalPct = parseFloat(document.getElementById('projWithdrawalPct')?.value) / 100 || 0.04;
+      
+      // Show/hide percent field based on method
+      const pctGroup = document.getElementById('projWithdrawalPctGroup');
+      if (pctGroup) {
+        pctGroup.style.display = withdrawalMethod === 'percent' ? 'block' : 'none';
+      }
       
       const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
       const ctx = document.getElementById('projectionChart');
@@ -2349,6 +2703,7 @@
       
       // Track totals for TWRR calculation
       let totalContributions = 0;
+      let totalWithdrawals = 0;
       let twrrProduct = 1; // For geometric linking of period returns
       let prevTotalBalance = filteredAccounts.reduce((sum, a) => sum + (a.is_asset ? a.current_balance : -a.current_balance), 0);
       
@@ -2382,8 +2737,37 @@
           
           // Apply monthly growth/payments
           if (account.is_asset) {
-            // Assets grow with returns and contributions
-            balance = balance * (1 + monthlyReturn) + monthlyContrib;
+            const currentYear = Math.floor(m / 12);
+            const isWithdrawalPhase = includeWithdrawals && currentYear >= withdrawalStartYear;
+            
+            if (isWithdrawalPhase) {
+              // Withdrawal phase: apply returns then withdraw, no contributions
+              balance = balance * (1 + monthlyReturn);
+              
+              // Apply monthly withdrawal (proportional from all assets)
+              if (balance > 0) {
+                let monthlyWithdrawal;
+                if (withdrawalMethod === 'percent') {
+                  monthlyWithdrawal = balance * (withdrawalPct / 12);
+                } else {
+                  // Fixed annual amount divided by 12
+                  // Proportional to this account's share of total assets
+                  const totalAssetBalance = filteredAccounts
+                    .filter(a => a.is_asset)
+                    .reduce((sum, a) => sum + (a._currentBalance || a.current_balance), 0);
+                  const accShare = totalAssetBalance > 0 ? balance / totalAssetBalance : 0;
+                  monthlyWithdrawal = (annualWithdrawal / 12) * accShare;
+                }
+                balance = Math.max(0, balance - monthlyWithdrawal);
+                totalWithdrawals += monthlyWithdrawal;
+              }
+            } else {
+              // Accumulation phase: grow with returns and contributions
+              balance = balance * (1 + monthlyReturn) + monthlyContrib;
+            }
+            
+            // Track current balance for proportional withdrawals
+            account._currentBalance = balance;
           } else {
             // Liabilities: balance decreases with payments, increases with interest
             const interest = balance * monthlyReturn;
@@ -2462,13 +2846,14 @@
       const growthPct = startTotal > 0 ? ((endTotal / startTotal - 1) * 100) : 0;
       
       // Calculate Time-Weighted Rate of Return (TWRR)
-      // TWRR = Investment returns only, excluding the effect of contributions
-      // Formula: (Ending Value - Total Contributions) / Starting Value - 1
+      // TWRR = Investment returns only, excluding the effect of contributions AND withdrawals
+      // Formula: (Ending Value + Total Withdrawals - Total Contributions) / Starting Value - 1
       // Annualized: (1 + TWRR)^(1/years) - 1
-      const investmentGain = endTotal - startTotal - totalContributions;
+      const netFlows = totalContributions - totalWithdrawals;
+      const investmentGain = endTotal - startTotal - netFlows;
       const twrr = startTotal > 0 ? (investmentGain / startTotal) * 100 : 0;
       const annualizedTWRR = startTotal > 0 && years > 0 
-        ? (Math.pow((endTotal - totalContributions) / startTotal, 1 / years) - 1) * 100 
+        ? (Math.pow((endTotal + totalWithdrawals - totalContributions) / startTotal, 1 / years) - 1) * 100 
         : 0;
       
       summaryDiv.innerHTML = `
@@ -2495,13 +2880,24 @@
             $${totalContributions.toLocaleString('en-US', {maximumFractionDigits: 0})}
           </div>
         </div>
+        ${totalWithdrawals > 0 ? `
+        <div style="background: var(--bg-card); border-radius: 10px; padding: 1em; text-align: center; border-left: 4px solid #ff6b35;">
+          <div style="font-size: 0.85em; color: var(--text-secondary);">🔥 Total Withdrawals</div>
+          <div style="font-size: 1.5em; font-weight: 700; color: #ff6b35;">
+            $${totalWithdrawals.toLocaleString('en-US', {maximumFractionDigits: 0})}
+          </div>
+          <div style="font-size: 0.75em; color: var(--text-secondary); margin-top: 0.3em;">
+            $${Math.round(totalWithdrawals / Math.max(1, years - withdrawalStartYear)).toLocaleString()}/year avg
+          </div>
+        </div>
+        ` : ''}
         <div style="background: var(--bg-card); border-radius: 10px; padding: 1em; text-align: center; border-left: 4px solid ${investmentGain >= 0 ? '#28a745' : '#dc3545'};">
           <div style="font-size: 0.85em; color: var(--text-secondary);">Investment Gain</div>
           <div style="font-size: 1.5em; font-weight: 700; color: ${investmentGain >= 0 ? '#28a745' : '#dc3545'};">
             ${investmentGain >= 0 ? '+' : ''}$${investmentGain.toLocaleString('en-US', {maximumFractionDigits: 0})}
           </div>
           <div style="font-size: 0.75em; color: var(--text-secondary); margin-top: 0.3em;">
-            (Growth minus contributions)
+            ${totalWithdrawals > 0 ? '(Growth + withdrawals - contributions)' : '(Growth minus contributions)'}
           </div>
         </div>
         <div style="background: var(--bg-card); border-radius: 10px; padding: 1em; text-align: center; border-left: 4px solid #6f42c1;">
@@ -2903,6 +3299,364 @@
         }
       } catch (err) {
         alert('Error deleting: ' + err.message);
+      }
+    }
+    
+    // ==========================================================================
+    // FIRE Planning Functions
+    // ==========================================================================
+    
+    function initFIRECalculator() {
+      // Initialize with current net worth from the manager
+      const currentNetWorth = {{ networth_summary.total_net_worth | default(0) }};
+      // Pre-populate based on net worth
+      updateWithdrawalOptions();
+    }
+    
+    function updateFIREType() {
+      const fireType = document.getElementById('fireType').value;
+      const baseExpenses = parseFloat(document.getElementById('fireAnnualExpenses').value) || 50000;
+      const retirementExpenses = document.getElementById('fireRetirementExpenses');
+      
+      // Suggest retirement expenses based on FIRE type
+      switch(fireType) {
+        case 'lean':
+          retirementExpenses.value = Math.round(baseExpenses * 0.6);
+          break;
+        case 'regular':
+          retirementExpenses.value = Math.round(baseExpenses * 0.8);
+          break;
+        case 'fat':
+          retirementExpenses.value = Math.round(baseExpenses * 1.2);
+          break;
+        case 'coast':
+        case 'barista':
+          retirementExpenses.value = Math.round(baseExpenses * 0.7);
+          break;
+      }
+    }
+    
+    function updateWithdrawalOptions() {
+      const method = document.getElementById('fireWithdrawalMethod').value;
+      const swrGroup = document.getElementById('swrRateGroup');
+      const guardrailsOpts = document.getElementById('guardrailsOptions');
+      const floorCeilingOpts = document.getElementById('floorCeilingOptions');
+      const vpwOpts = document.getElementById('vpwOptions');
+      
+      // Hide all optional sections
+      guardrailsOpts.style.display = 'none';
+      floorCeilingOpts.style.display = 'none';
+      vpwOpts.style.display = 'none';
+      swrGroup.style.display = 'block';
+      
+      switch(method) {
+        case 'fixed_swr':
+          // Default - just show SWR input
+          break;
+        case 'variable_pct':
+          vpwOpts.style.display = 'block';
+          swrGroup.style.display = 'none';
+          break;
+        case 'guardrails':
+          guardrailsOpts.style.display = 'block';
+          break;
+        case 'floor_ceiling':
+          floorCeilingOpts.style.display = 'block';
+          break;
+      }
+    }
+    
+    function calculateFIRE() {
+      // Get inputs
+      const currentAge = parseInt(document.getElementById('fireCurrentAge').value) || 30;
+      const targetAge = parseInt(document.getElementById('fireTargetAge').value) || 50;
+      const lifeExpectancy = parseInt(document.getElementById('fireLifeExpectancy').value) || 90;
+      const annualExpenses = parseFloat(document.getElementById('fireAnnualExpenses').value) || 50000;
+      const retirementExpenses = parseFloat(document.getElementById('fireRetirementExpenses').value) || 40000;
+      const socialSecurity = parseFloat(document.getElementById('fireSocialSecurity').value) || 0;
+      const inflationRate = parseFloat(document.getElementById('fireInflationRate').value) / 100 || 0.03;
+      const fireType = document.getElementById('fireType').value;
+      const withdrawalMethod = document.getElementById('fireWithdrawalMethod').value;
+      const swr = parseFloat(document.getElementById('fireSWR').value) / 100 || 0.04;
+      
+      // Get current net worth from accounts
+      const currentNetWorth = {{ networth_summary.total_net_worth | default(0) }};
+      const totalAssets = {{ networth_summary.total_assets | default(0) }};
+      
+      // Calculate FI Number based on withdrawal rate
+      let fiNumber;
+      let annualWithdrawal;
+      
+      if (withdrawalMethod === 'variable_pct') {
+        // VPW - use average withdrawal rate based on retirement length
+        const retirementYears = lifeExpectancy - targetAge;
+        const avgWithdrawalRate = 1 / (retirementYears * 0.7); // Conservative factor
+        fiNumber = retirementExpenses / avgWithdrawalRate;
+        annualWithdrawal = retirementExpenses;
+      } else {
+        // Fixed SWR or guardrails/floor-ceiling (use base SWR for FI number)
+        fiNumber = retirementExpenses / swr;
+        annualWithdrawal = fiNumber * swr;
+      }
+      
+      // Adjust FI number based on FIRE type
+      let adjustedFINumber = fiNumber;
+      switch(fireType) {
+        case 'lean':
+          adjustedFINumber = fiNumber * 0.8;
+          break;
+        case 'fat':
+          adjustedFINumber = fiNumber * 1.5;
+          break;
+        case 'coast':
+          // Coast FIRE: calculate what you need now to coast to regular retirement at 65
+          const coastYears = 65 - currentAge;
+          const growthRate = 0.07; // Assume 7% growth
+          adjustedFINumber = fiNumber / Math.pow(1 + growthRate, coastYears);
+          break;
+        case 'barista':
+          // Assume part-time income covers 30% of expenses
+          adjustedFINumber = fiNumber * 0.7;
+          break;
+      }
+      
+      // Calculate current progress
+      const progressPct = Math.min((totalAssets / adjustedFINumber) * 100, 100);
+      
+      // Calculate years to FI (simplified formula)
+      // Using compound growth formula: FV = PV(1+r)^n + PMT*((1+r)^n - 1)/r
+      const annualSavings = {{ networth_summary.accounts | selectattr('is_asset') | map(attribute='contribution') | selectattr('amount', 'defined') | map(attribute='amount') | sum | default(0) }} * 12;
+      const expectedReturn = 0.07; // 7% average return
+      
+      let yearsToFI;
+      if (totalAssets >= adjustedFINumber) {
+        yearsToFI = 0;
+      } else if (annualSavings <= 0) {
+        yearsToFI = Infinity;
+      } else {
+        // Solve for n: FI = Assets*(1+r)^n + Savings*((1+r)^n - 1)/r
+        // Numerical approximation
+        yearsToFI = 0;
+        let projectedValue = totalAssets;
+        while (projectedValue < adjustedFINumber && yearsToFI < 100) {
+          projectedValue = projectedValue * (1 + expectedReturn) + annualSavings;
+          yearsToFI++;
+        }
+      }
+      
+      const fiAge = currentAge + yearsToFI;
+      
+      // Update UI
+      document.getElementById('fireResults').style.display = 'block';
+      document.getElementById('fireFINumber').textContent = '$' + Math.round(adjustedFINumber).toLocaleString('en-US');
+      document.getElementById('fireCurrentProgress').textContent = progressPct.toFixed(1) + '%';
+      document.getElementById('fireYearsToFI').textContent = yearsToFI === Infinity ? '∞' : yearsToFI;
+      document.getElementById('fireFIAge').textContent = yearsToFI === Infinity ? 'Need to increase savings' : `FI at age ${fiAge}`;
+      document.getElementById('fireAnnualWithdrawal').textContent = '$' + Math.round(annualWithdrawal).toLocaleString('en-US');
+      
+      // Progress bar
+      document.getElementById('fireProgressBar').style.width = progressPct + '%';
+      document.getElementById('fireProgressText').textContent = progressPct.toFixed(0) + '%';
+      document.getElementById('fireProgressMid').textContent = '$' + Math.round(adjustedFINumber / 2).toLocaleString('en-US');
+      document.getElementById('fireProgressEnd').textContent = '$' + Math.round(adjustedFINumber).toLocaleString('en-US');
+      
+      // Withdrawal strategy details
+      updateWithdrawalDetails(withdrawalMethod, swr, retirementExpenses, adjustedFINumber);
+      
+      // FIRE types comparison table
+      updateFIREComparison(annualExpenses, retirementExpenses, swr);
+      
+      // Run Monte Carlo if enabled
+      if (document.getElementById('fireIncludeInMonteCarlo').checked) {
+        runFIREMonteCarlo(adjustedFINumber, yearsToFI, lifeExpectancy - targetAge, withdrawalMethod, swr);
+      }
+    }
+    
+    function updateWithdrawalDetails(method, swr, expenses, fiNumber) {
+      const detailsDiv = document.getElementById('fireWithdrawalDetails');
+      let html = '';
+      
+      switch(method) {
+        case 'fixed_swr':
+          html = `
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1em;">
+              <div>
+                <strong>Strategy:</strong> Fixed Safe Withdrawal Rate<br>
+                <span style="color: var(--text-secondary);">Withdraw ${(swr * 100).toFixed(1)}% of initial portfolio annually, adjusted for inflation.</span>
+              </div>
+              <div>
+                <strong>Annual Withdrawal:</strong> $${Math.round(fiNumber * swr).toLocaleString()}<br>
+                <strong>Monthly:</strong> $${Math.round(fiNumber * swr / 12).toLocaleString()}
+              </div>
+              <div>
+                <strong>Historical Success:</strong> ~95% for 30 years<br>
+                <span style="color: var(--text-secondary);">Based on 4% rule studies</span>
+              </div>
+            </div>
+          `;
+          break;
+          
+        case 'variable_pct':
+          const vpwYears = parseInt(document.getElementById('fireLifeExpectancy').value) - parseInt(document.getElementById('fireTargetAge').value);
+          const initialVPW = 1 / vpwYears;
+          html = `
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1em;">
+              <div>
+                <strong>Strategy:</strong> Variable Percentage Withdrawal<br>
+                <span style="color: var(--text-secondary);">Withdrawal % increases as you age based on remaining years.</span>
+              </div>
+              <div>
+                <strong>Year 1 Rate:</strong> ${(initialVPW * 100).toFixed(2)}%<br>
+                <strong>Initial Withdrawal:</strong> $${Math.round(fiNumber * initialVPW).toLocaleString()}
+              </div>
+              <div>
+                <strong>Benefit:</strong> Very low failure risk<br>
+                <span style="color: var(--text-secondary);">Adapts automatically to market conditions</span>
+              </div>
+            </div>
+          `;
+          break;
+          
+        case 'guardrails':
+          const upper = parseFloat(document.getElementById('fireUpperGuardrail').value) || 5;
+          const lower = parseFloat(document.getElementById('fireLowerGuardrail').value) || 3;
+          const adjust = parseFloat(document.getElementById('fireGuardrailAdjust').value) || 10;
+          html = `
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1em;">
+              <div>
+                <strong>Strategy:</strong> Guardrails (Guyton-Klinger)<br>
+                <span style="color: var(--text-secondary);">Adjust spending based on portfolio performance.</span>
+              </div>
+              <div>
+                <strong>Base Rate:</strong> ${(swr * 100).toFixed(1)}%<br>
+                <strong>Range:</strong> ${lower}% - ${upper}%
+              </div>
+              <div>
+                <strong>Adjustment:</strong> ±${adjust}%<br>
+                <span style="color: var(--text-secondary);">When hitting guardrails</span>
+              </div>
+            </div>
+            <div style="margin-top: 1em; padding: 0.8em; background: var(--bg-card); border-radius: 6px;">
+              <strong>How it works:</strong>
+              <ul style="margin: 0.5em 0 0 1.5em; color: var(--text-secondary);">
+                <li>If withdrawal rate exceeds ${upper}% → reduce spending by ${adjust}%</li>
+                <li>If withdrawal rate drops below ${lower}% → increase spending by ${adjust}%</li>
+                <li>Otherwise, maintain previous spending + inflation adjustment</li>
+              </ul>
+            </div>
+          `;
+          break;
+          
+        case 'floor_ceiling':
+          const floor = parseFloat(document.getElementById('fireFloor').value) || 30000;
+          const ceiling = parseFloat(document.getElementById('fireCeiling').value) || 80000;
+          html = `
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1em;">
+              <div>
+                <strong>Strategy:</strong> Floor & Ceiling<br>
+                <span style="color: var(--text-secondary);">Flexible spending within fixed boundaries.</span>
+              </div>
+              <div>
+                <strong>Floor:</strong> $${floor.toLocaleString()}/year<br>
+                <span style="color: var(--text-secondary);">Minimum guaranteed spending</span>
+              </div>
+              <div>
+                <strong>Ceiling:</strong> $${ceiling.toLocaleString()}/year<br>
+                <span style="color: var(--text-secondary);">Maximum spending limit</span>
+              </div>
+            </div>
+            <div style="margin-top: 1em; padding: 0.8em; background: var(--bg-card); border-radius: 6px;">
+              <strong>How it works:</strong> Use ${(swr * 100).toFixed(1)}% of current portfolio, but never less than $${floor.toLocaleString()} or more than $${ceiling.toLocaleString()}.
+            </div>
+          `;
+          break;
+      }
+      
+      detailsDiv.innerHTML = html;
+    }
+    
+    function updateFIREComparison(currentExpenses, retirementExpenses, swr) {
+      const tableBody = document.getElementById('fireComparisonTable');
+      
+      const types = [
+        { name: 'Lean FIRE', icon: '🥗', spending: currentExpenses * 0.6 },
+        { name: 'Regular FIRE', icon: '🏠', spending: retirementExpenses },
+        { name: 'Fat FIRE', icon: '🎉', spending: currentExpenses * 1.5 },
+        { name: 'Coast FIRE', icon: '⛵', spending: retirementExpenses * 0.7 },
+        { name: 'Barista FIRE', icon: '☕', spending: retirementExpenses * 0.7 },
+      ];
+      
+      tableBody.innerHTML = types.map(t => {
+        const fi = t.spending / swr;
+        const monthly = t.spending / 12;
+        return `
+          <tr style="border-bottom: 1px solid var(--border-light);">
+            <td style="padding: 0.8em 0.5em;">${t.icon} ${t.name}</td>
+            <td style="text-align: right; padding: 0.8em 0.5em;">$${Math.round(t.spending).toLocaleString()}</td>
+            <td style="text-align: right; padding: 0.8em 0.5em; font-weight: 600;">$${Math.round(fi).toLocaleString()}</td>
+            <td style="text-align: right; padding: 0.8em 0.5em;">$${Math.round(monthly).toLocaleString()}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+    
+    async function runFIREMonteCarlo(fiNumber, yearsToFI, retirementYears, withdrawalMethod, swr) {
+      const resultsDiv = document.getElementById('fireMCResults');
+      resultsDiv.style.display = 'block';
+      
+      document.getElementById('fireMCSuccessRate').textContent = 'Running...';
+      document.getElementById('fireMCMedianEnd').textContent = '-';
+      document.getElementById('fireMCWorstCase').textContent = '-';
+      
+      // Get withdrawal parameters
+      const params = {
+        years: retirementYears,
+        num_simulations: 1000,
+        show_todays_dollars: true,
+        include_withdrawals: true,
+        withdrawal_method: withdrawalMethod,
+        withdrawal_rate: swr,
+        annual_withdrawal: fiNumber * swr,
+      };
+      
+      // Add method-specific params
+      if (withdrawalMethod === 'guardrails') {
+        params.upper_guardrail = parseFloat(document.getElementById('fireUpperGuardrail').value) / 100 || 0.05;
+        params.lower_guardrail = parseFloat(document.getElementById('fireLowerGuardrail').value) / 100 || 0.03;
+        params.guardrail_adjustment = parseFloat(document.getElementById('fireGuardrailAdjust').value) / 100 || 0.10;
+      } else if (withdrawalMethod === 'floor_ceiling') {
+        params.withdrawal_floor = parseFloat(document.getElementById('fireFloor').value) || 30000;
+        params.withdrawal_ceiling = parseFloat(document.getElementById('fireCeiling').value) || 80000;
+      }
+      
+      try {
+        const response = await fetch('/tools/montecarlo/run', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(params)
+        });
+        
+        const data = await response.json();
+        
+        if (data.error) {
+          document.getElementById('fireMCSuccessRate').textContent = 'Error';
+          return;
+        }
+        
+        // Calculate success rate (portfolios that didn't run out)
+        const successRate = data.fire_success_rate ?? 
+          ((data.percentiles.p10 > 0 ? 90 : data.percentiles.p25 > 0 ? 75 : 50) + '%');
+        
+        document.getElementById('fireMCSuccessRate').textContent = 
+          typeof successRate === 'number' ? successRate.toFixed(1) + '%' : successRate;
+        document.getElementById('fireMCMedianEnd').textContent = 
+          '$' + Math.round(data.percentiles.p50).toLocaleString('en-US');
+        document.getElementById('fireMCWorstCase').textContent = 
+          '$' + Math.round(data.percentiles.p10).toLocaleString('en-US');
+          
+      } catch (err) {
+        console.error('FIRE Monte Carlo error:', err);
+        document.getElementById('fireMCSuccessRate').textContent = 'Error';
       }
     }
   </script>

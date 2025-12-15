@@ -1137,7 +1137,17 @@ def run_monte_carlo_simulation(
     years: int = 30, 
     num_simulations: int = 1000,
     include_inflation: bool = True,
-    show_todays_dollars: bool = True
+    show_todays_dollars: bool = True,
+    # Withdrawal parameters for FIRE planning
+    include_withdrawals: bool = False,
+    withdrawal_method: str = "fixed_swr",
+    withdrawal_rate: float = 0.04,
+    annual_withdrawal: Optional[float] = None,
+    upper_guardrail: float = 0.05,
+    lower_guardrail: float = 0.03,
+    guardrail_adjustment: float = 0.10,
+    withdrawal_floor: float = 0,
+    withdrawal_ceiling: float = 0
 ) -> dict:
     """
     Run Monte Carlo simulation for investment projections.
@@ -1214,6 +1224,10 @@ def run_monte_carlo_simulation(
         for acc in accounts_data if acc.get("is_asset", False)
     )
     
+    # Track success rate for FIRE simulations
+    all_sim_success = []  # Track if each simulation succeeded (portfolio didn't deplete)
+    all_total_withdrawals = []  # Track total withdrawals per simulation
+    
     # Run simulations using block bootstrap method
     for sim in range(num_simulations):
         # Initialize account balances for this simulation
@@ -1222,6 +1236,7 @@ def run_monte_carlo_simulation(
         sim_path_nominal = [0]
         cumulative_inflation = 1.0  # For converting to today's dollars
         sim_total_contributions = 0  # Track contributions for this simulation
+        sim_total_withdrawals = 0  # Track withdrawals for this simulation
         
         for acc in accounts_data:
             sim_accounts[acc["id"]] = {
@@ -1289,11 +1304,77 @@ def run_monte_carlo_simulation(
                     
                     acc["path"].append(acc["balance"])
                 
-                # Calculate net worth at end of year
+                # Calculate net worth at end of year (before withdrawals)
                 year_nw_nominal = sum(
                     acc["balance"] if acc["is_asset"] else -acc["balance"]
                     for acc in sim_accounts.values()
                 )
+                
+                # Apply withdrawals if enabled
+                if include_withdrawals and year_nw_nominal > 0:
+                    # Calculate this year's withdrawal based on method
+                    year_withdrawal = 0
+                    
+                    if withdrawal_method == "fixed_swr":
+                        # Fixed percentage of initial portfolio, adjusted for inflation
+                        if annual_withdrawal is not None:
+                            year_withdrawal = annual_withdrawal * cumulative_inflation
+                        else:
+                            year_withdrawal = initial_nw * withdrawal_rate * cumulative_inflation
+                    
+                    elif withdrawal_method == "variable_pct":
+                        # VPW: Withdraw based on remaining years
+                        remaining_years = max(1, years - year_idx)
+                        vpw_rate = 1 / remaining_years
+                        year_withdrawal = year_nw_nominal * vpw_rate
+                    
+                    elif withdrawal_method == "guardrails":
+                        # Guyton-Klinger guardrails
+                        if annual_withdrawal is not None:
+                            base_withdrawal = annual_withdrawal * cumulative_inflation
+                        else:
+                            base_withdrawal = initial_nw * withdrawal_rate * cumulative_inflation
+                        
+                        current_rate = base_withdrawal / year_nw_nominal if year_nw_nominal > 0 else 0
+                        
+                        if current_rate > upper_guardrail:
+                            # Portfolio shrunk too much - reduce spending
+                            year_withdrawal = base_withdrawal * (1 - guardrail_adjustment)
+                        elif current_rate < lower_guardrail:
+                            # Portfolio grew - can increase spending
+                            year_withdrawal = base_withdrawal * (1 + guardrail_adjustment)
+                        else:
+                            year_withdrawal = base_withdrawal
+                    
+                    elif withdrawal_method == "floor_ceiling":
+                        # Floor and ceiling approach
+                        if annual_withdrawal is not None:
+                            base_withdrawal = annual_withdrawal * cumulative_inflation
+                        else:
+                            base_withdrawal = year_nw_nominal * withdrawal_rate
+                        
+                        # Apply floor and ceiling (inflation-adjusted)
+                        adj_floor = withdrawal_floor * cumulative_inflation if withdrawal_floor > 0 else 0
+                        adj_ceiling = withdrawal_ceiling * cumulative_inflation if withdrawal_ceiling > 0 else float('inf')
+                        
+                        year_withdrawal = max(adj_floor, min(base_withdrawal, adj_ceiling))
+                    
+                    # Distribute withdrawal proportionally across asset accounts
+                    total_assets = sum(acc["balance"] for acc in sim_accounts.values() if acc["is_asset"])
+                    if total_assets > 0:
+                        for acc_id, acc in sim_accounts.items():
+                            if acc["is_asset"]:
+                                acc_share = acc["balance"] / total_assets
+                                withdrawal_from_acc = min(acc["balance"], year_withdrawal * acc_share)
+                                acc["balance"] -= withdrawal_from_acc
+                    
+                    sim_total_withdrawals += year_withdrawal
+                    
+                    # Recalculate net worth after withdrawals
+                    year_nw_nominal = sum(
+                        acc["balance"] if acc["is_asset"] else -acc["balance"]
+                        for acc in sim_accounts.values()
+                    )
                 # Convert to today's dollars if requested
                 year_nw_real = year_nw_nominal / cumulative_inflation if show_todays_dollars else year_nw_nominal
                 
@@ -1309,6 +1390,11 @@ def run_monte_carlo_simulation(
         all_paths.append(sim_path)
         all_paths_nominal.append(sim_path_nominal)
         all_total_contributions.append(sim_total_contributions)
+        all_total_withdrawals.append(sim_total_withdrawals)
+        
+        # Track success for FIRE simulations (portfolio didn't run out)
+        sim_succeeded = final_nw_nominal > 0
+        all_sim_success.append(sim_succeeded)
         
         # Calculate Time-Weighted Rate of Return (TWRR) for this simulation
         # TWRR = (Ending Value - Total Contributions) / Starting Value - 1
@@ -1375,6 +1461,23 @@ def run_monte_carlo_simulation(
         "initial_value": float(initial_value),
     }
     
+    # FIRE / Withdrawal statistics
+    if include_withdrawals:
+        success_count = sum(all_sim_success)
+        success_rate = (success_count / num_simulations) * 100 if num_simulations > 0 else 0
+        all_withdrawals_arr = np.array(all_total_withdrawals)
+        
+        results["fire_success_rate"] = float(success_rate)
+        results["fire_statistics"] = {
+            "success_rate": float(success_rate),
+            "success_count": int(success_count),
+            "failure_count": int(num_simulations - success_count),
+            "total_withdrawals_mean": float(np.mean(all_withdrawals_arr)),
+            "total_withdrawals_median": float(np.median(all_withdrawals_arr)),
+            "annual_withdrawal_avg": float(np.mean(all_withdrawals_arr) / years) if years > 0 else 0,
+            "withdrawal_method": withdrawal_method,
+        }
+    
     # Calculate path percentiles for chart
     all_paths = np.array(all_paths)
     results["path_percentiles"] = {
@@ -1411,10 +1514,29 @@ class MonteCarloRequest(BaseModel):
         num_simulations: Number of simulations to run (more = higher precision, default 1000)
         show_todays_dollars: If True, results are adjusted for inflation to show
                             purchasing power in today's dollars (default True)
+        include_withdrawals: If True, simulate retirement withdrawals (default False)
+        withdrawal_method: Strategy for withdrawals (fixed_swr, variable_pct, guardrails, floor_ceiling)
+        withdrawal_rate: Base withdrawal rate as decimal (default 0.04 = 4%)
+        annual_withdrawal: Fixed annual withdrawal amount (optional, overrides rate)
+        upper_guardrail: Upper guardrail rate for Guyton-Klinger (default 0.05)
+        lower_guardrail: Lower guardrail rate for Guyton-Klinger (default 0.03)
+        guardrail_adjustment: Adjustment percentage for guardrails (default 0.10)
+        withdrawal_floor: Minimum annual withdrawal for floor/ceiling (default 0)
+        withdrawal_ceiling: Maximum annual withdrawal for floor/ceiling (default 0 = no limit)
     """
     years: int = 30
     num_simulations: int = 1000
     show_todays_dollars: bool = True
+    # Withdrawal parameters
+    include_withdrawals: bool = False
+    withdrawal_method: str = "fixed_swr"
+    withdrawal_rate: float = 0.04
+    annual_withdrawal: Optional[float] = None
+    upper_guardrail: float = 0.05
+    lower_guardrail: float = 0.03
+    guardrail_adjustment: float = 0.10
+    withdrawal_floor: float = 0
+    withdrawal_ceiling: float = 0
 
 
 @router.post("/tools/montecarlo/run")
@@ -1516,7 +1638,17 @@ async def run_montecarlo(
             years=body.years,
             num_simulations=body.num_simulations,
             include_inflation=True,
-            show_todays_dollars=body.show_todays_dollars
+            show_todays_dollars=body.show_todays_dollars,
+            # FIRE / Withdrawal parameters
+            include_withdrawals=body.include_withdrawals,
+            withdrawal_method=body.withdrawal_method,
+            withdrawal_rate=body.withdrawal_rate,
+            annual_withdrawal=body.annual_withdrawal,
+            upper_guardrail=body.upper_guardrail,
+            lower_guardrail=body.lower_guardrail,
+            guardrail_adjustment=body.guardrail_adjustment,
+            withdrawal_floor=body.withdrawal_floor,
+            withdrawal_ceiling=body.withdrawal_ceiling
         )
         
         # Add tax analysis to results based on current and projected values
