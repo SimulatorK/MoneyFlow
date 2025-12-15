@@ -133,38 +133,56 @@ def calculate_performance_metrics(balances: list, current_balance: float, period
     
     # Calculate start date based on period
     today = date.today()
-    if period == "1m":
-        start_date = today - timedelta(days=30)
-    elif period == "3m":
-        start_date = today - timedelta(days=90)
-    elif period == "6m":
-        start_date = today - timedelta(days=180)
-    elif period == "1y":
-        start_date = today - timedelta(days=365)
-    elif period == "ytd":
-        start_date = date(today.year, 1, 1)
-    elif period == "2y":
-        start_date = today - timedelta(days=730)
-    elif period == "5y":
-        start_date = today - timedelta(days=1825)
-    else:  # "all"
-        start_date = None
+    period_start_date = None  # The target start date for the period
     
-    # Filter balances to period and find the closest one to start date
-    if start_date:
-        # Find the balance closest to (but not after) the start date
-        filtered = [b for b in sorted_balances 
-                   if (b.balance_date if hasattr(b, 'balance_date') else datetime.strptime(b['date'], '%Y-%m-%d').date()) <= start_date]
-        if filtered:
-            first = filtered[-1]  # Last one before/on start date
+    if period == "1m":
+        period_start_date = today - timedelta(days=30)
+    elif period == "3m":
+        period_start_date = today - timedelta(days=90)
+    elif period == "6m":
+        period_start_date = today - timedelta(days=180)
+    elif period == "1y":
+        period_start_date = today - timedelta(days=365)
+    elif period == "ytd":
+        period_start_date = date(today.year, 1, 1)
+    elif period == "2y":
+        period_start_date = today - timedelta(days=730)
+    elif period == "5y":
+        period_start_date = today - timedelta(days=1825)
+    # else: "all" - period_start_date stays None
+    
+    # Find the balance to use as the starting point
+    if period_start_date:
+        # Find the balance closest to (but not after) the period start date
+        # OR the first balance after if none before
+        balances_before = []
+        balances_after = []
+        
+        for b in sorted_balances:
+            b_date = b.balance_date if hasattr(b, 'balance_date') else datetime.strptime(b['date'], '%Y-%m-%d').date()
+            if b_date <= period_start_date:
+                balances_before.append((b, b_date))
+            else:
+                balances_after.append((b, b_date))
+        
+        if balances_before:
+            # Use the most recent balance before/on the period start
+            first, first_date = balances_before[-1]
+        elif balances_after:
+            # No balance before period start, use the first available after
+            first, first_date = balances_after[0]
         else:
-            # No balance before start date, use first available
             first = sorted_balances[0]
+            first_date = first.balance_date if hasattr(first, 'balance_date') else datetime.strptime(first['date'], '%Y-%m-%d').date()
     else:
+        # "all" time - use very first balance
         first = sorted_balances[0]
+        first_date = first.balance_date if hasattr(first, 'balance_date') else datetime.strptime(first['date'], '%Y-%m-%d').date()
     
     first_balance = first.balance if hasattr(first, 'balance') else first['balance']
-    first_date = first.balance_date if hasattr(first, 'balance_date') else datetime.strptime(first['date'], '%Y-%m-%d').date()
+    
+    # Calculate the actual days in the measurement period
+    days_tracked = (today - first_date).days
     
     if first_balance == 0:
         return {
@@ -173,7 +191,7 @@ def calculate_performance_metrics(balances: list, current_balance: float, period
             "annualized_pct": 0,
             "first_date": first_date.isoformat() if first_date else None,
             "first_balance": first_balance,
-            "days_tracked": (today - first_date).days if first_date else 0,
+            "days_tracked": days_tracked,
             "period": period,
             "period_label": get_period_label(period)
         }
@@ -182,7 +200,6 @@ def calculate_performance_metrics(balances: list, current_balance: float, period
     cumulative_pct = (cumulative_change / abs(first_balance)) * 100
     
     # Calculate annualized return
-    days_tracked = (today - first_date).days
     if days_tracked > 0 and first_balance > 0:
         years = days_tracked / 365.25
         if years > 0 and current_balance > 0:
