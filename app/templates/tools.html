@@ -2307,16 +2307,27 @@
         const projection = [];
         let balance = account.current_balance;
         const contrib = account.contribution || {};
-        const monthlyContrib = (contrib.amount || 0) * (FREQUENCY_MULTIPLIERS[contrib.frequency || 'monthly'] / 12);
-        const monthlyReturn = account.is_asset 
-          ? ((contrib.expected_return || 7.0) / 100 / 12)
-          : ((contrib.interest_rate || 0) / 100 / 12);
         
+        // Use nullish coalescing (??) so that 0 is treated as 0, not defaulted
+        const contribAmount = contrib.amount ?? 0;
+        const expectedReturn = contrib.expected_return ?? 7.0;
+        const interestRate = contrib.interest_rate ?? 0;
+        
+        const monthlyContrib = contribAmount * (FREQUENCY_MULTIPLIERS[contrib.frequency || 'monthly'] / 12);
+        const monthlyReturn = account.is_asset 
+          ? (expectedReturn / 100 / 12)
+          : (interestRate / 100 / 12);
+        
+        // Record initial balance, then apply monthly growth
+        let quarterIdx = 0;
         for (let m = 0; m <= months; m++) {
-          if (m % 3 === 0) { // Every quarter
+          // Record quarterly snapshots (every 3 months)
+          if (m % 3 === 0) {
             projection.push(account.is_asset ? balance : -balance);
+            quarterIdx++;
           }
           
+          // Apply monthly growth/payments
           if (account.is_asset) {
             // Assets grow with returns and contributions
             balance = balance * (1 + monthlyReturn) + monthlyContrib;
