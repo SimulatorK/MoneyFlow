@@ -211,6 +211,9 @@ def calculate_net_worth_summary(accounts: List[Account]) -> dict:
                 "employer_match_type": account.contribution.employer_match_type if account.contribution else "percent",
                 "expected_return": account.contribution.expected_return if account.contribution else 7.0,
                 "interest_rate": account.contribution.interest_rate if account.contribution else 0,
+                "stocks_pct": account.contribution.stocks_pct if account.contribution else 80.0,
+                "bonds_pct": account.contribution.bonds_pct if account.contribution else 15.0,
+                "cash_pct": account.contribution.cash_pct if account.contribution else 5.0,
             } if account.contribution else None
         })
         
@@ -1007,6 +1010,11 @@ async def get_account_details(
             "employer_match": account.contribution.employer_match,
             "employer_match_type": account.contribution.employer_match_type,
             "employer_match_limit": account.contribution.employer_match_limit,
+            "expected_return": account.contribution.expected_return,
+            "interest_rate": account.contribution.interest_rate,
+            "stocks_pct": account.contribution.stocks_pct,
+            "bonds_pct": account.contribution.bonds_pct,
+            "cash_pct": account.contribution.cash_pct,
             "notes": account.contribution.notes
         }
     
@@ -1042,6 +1050,88 @@ HISTORICAL_INFLATION = [
 ]
 
 
+def calculate_rolling_period_returns(returns: np.ndarray, period_years: int) -> dict:
+    """
+    Calculate rolling period statistics for historical returns.
+    
+    For a given investment period (e.g., 10, 15, 20, 25, 30 years),
+    calculates all possible rolling period returns and their statistics.
+    
+    Args:
+        returns: Array of annual returns
+        period_years: Investment period length in years
+        
+    Returns:
+        Dictionary with mean, std, min, max, and all rolling returns
+    """
+    if len(returns) < period_years:
+        # Not enough data, return simple mean
+        return {
+            "mean": float(np.mean(returns)),
+            "std": float(np.std(returns)),
+            "min": float(np.min(returns)),
+            "max": float(np.max(returns)),
+            "rolling_cagrs": []
+        }
+    
+    # Calculate CAGR for each rolling period
+    rolling_cagrs = []
+    for i in range(len(returns) - period_years + 1):
+        period_returns = returns[i:i + period_years]
+        # Calculate CAGR: (1+r1)(1+r2)...(1+rn)^(1/n) - 1
+        cumulative = np.prod(1 + period_returns)
+        cagr = cumulative ** (1 / period_years) - 1
+        rolling_cagrs.append(cagr)
+    
+    rolling_cagrs = np.array(rolling_cagrs)
+    
+    return {
+        "mean": float(np.mean(rolling_cagrs)),
+        "std": float(np.std(rolling_cagrs)),
+        "min": float(np.min(rolling_cagrs)),
+        "max": float(np.max(rolling_cagrs)),
+        "rolling_cagrs": rolling_cagrs.tolist()
+    }
+
+
+def get_period_adjusted_returns(projection_years: int) -> dict:
+    """
+    Get period-appropriate expected return statistics for stocks, bonds, and cash.
+    
+    Historical data shows that longer investment periods typically have
+    less volatile outcomes - the range of possible returns narrows.
+    
+    Args:
+        projection_years: Number of years to project
+        
+    Returns:
+        Dictionary with period-adjusted statistics for each asset class
+    """
+    stock_returns = np.array(HISTORICAL_RETURNS["stocks"])
+    bond_returns = np.array(HISTORICAL_RETURNS["bonds"])
+    cash_returns = np.array(HISTORICAL_RETURNS["cash"])
+    
+    # Round projection years to nearest standard period
+    if projection_years <= 10:
+        period = 10
+    elif projection_years <= 15:
+        period = 15
+    elif projection_years <= 20:
+        period = 20
+    elif projection_years <= 25:
+        period = 25
+    else:
+        period = 30
+    
+    return {
+        "projection_years": projection_years,
+        "period_used": period,
+        "stocks": calculate_rolling_period_returns(stock_returns, period),
+        "bonds": calculate_rolling_period_returns(bond_returns, period),
+        "cash": calculate_rolling_period_returns(cash_returns, period)
+    }
+
+
 def run_monte_carlo_simulation(
     accounts_data: List[dict], 
     years: int = 30, 
@@ -1053,8 +1143,14 @@ def run_monte_carlo_simulation(
     Run Monte Carlo simulation for investment projections.
     
     Uses historical returns data for stocks, bonds, and cash to simulate
-    potential portfolio outcomes over time. Optionally adjusts for inflation
-    to show results in today's purchasing power.
+    potential portfolio outcomes over time. Employs "block bootstrap" method
+    that samples consecutive historical periods to preserve year-to-year
+    correlations and momentum effects in market data.
+    
+    Period-appropriate behavior:
+    - Uses rolling historical period statistics for the given projection length
+    - Samples from consecutive historical sequences (block bootstrap)
+    - Maintains correlation between stocks, bonds, cash, and inflation
     
     Args:
         accounts_data: List of account configurations with current balance,
@@ -1067,6 +1163,9 @@ def run_monte_carlo_simulation(
     Returns:
         Dictionary with simulation results including percentiles and distributions
     """
+    # Get period-adjusted expected return statistics for context
+    period_stats = get_period_adjusted_returns(years)
+    
     results = {
         "simulations": [],
         "percentiles": {},
@@ -1074,7 +1173,23 @@ def run_monte_carlo_simulation(
         "account_results": {},
         "years": years,
         "num_simulations": num_simulations,
-        "inflation_adjusted": show_todays_dollars
+        "inflation_adjusted": show_todays_dollars,
+        "period_statistics": {
+            "period_used": period_stats["period_used"],
+            "stocks": {
+                "historical_mean_cagr": round(period_stats["stocks"]["mean"] * 100, 2),
+                "historical_min_cagr": round(period_stats["stocks"]["min"] * 100, 2),
+                "historical_max_cagr": round(period_stats["stocks"]["max"] * 100, 2),
+            },
+            "bonds": {
+                "historical_mean_cagr": round(period_stats["bonds"]["mean"] * 100, 2),
+                "historical_min_cagr": round(period_stats["bonds"]["min"] * 100, 2),
+                "historical_max_cagr": round(period_stats["bonds"]["max"] * 100, 2),
+            },
+            "cash": {
+                "historical_mean_cagr": round(period_stats["cash"]["mean"] * 100, 2),
+            }
+        }
     }
     
     # Get historical returns
@@ -1082,6 +1197,7 @@ def run_monte_carlo_simulation(
     bond_returns = np.array(HISTORICAL_RETURNS["bonds"])
     cash_returns = np.array(HISTORICAL_RETURNS["cash"])
     inflation_rates = np.array(HISTORICAL_INFLATION)
+    num_historical_years = len(stock_returns)
     
     # Initialize tracking arrays
     all_final_values = []
@@ -1090,7 +1206,7 @@ def run_monte_carlo_simulation(
     all_paths_nominal = []
     account_final_values = {acc["id"]: [] for acc in accounts_data if acc["is_asset"]}
     
-    # Run simulations
+    # Run simulations using block bootstrap method
     for sim in range(num_simulations):
         # Initialize account balances for this simulation
         sim_accounts = {}
@@ -1117,48 +1233,62 @@ def run_monte_carlo_simulation(
         sim_path[0] = initial_nw
         sim_path_nominal[0] = initial_nw
         
-        # Simulate each year
-        for year in range(years):
-            # Select random year from historical data
-            hist_idx = random.randint(0, len(stock_returns) - 1)
-            yr_stock = stock_returns[hist_idx]
-            yr_bond = bond_returns[hist_idx]
-            yr_cash = cash_returns[hist_idx]
+        # Block bootstrap: select a random starting year and use consecutive years
+        # This preserves historical correlations between asset classes and momentum
+        # For each "block", we pick a random starting point and use sequential years
+        block_size = min(years, 10)  # Use blocks of up to 10 years
+        
+        year_idx = 0
+        while year_idx < years:
+            # Pick a random starting point in history
+            max_start = num_historical_years - block_size
+            block_start = random.randint(0, max(0, max_start))
             
-            # Get inflation for this year (use same historical index for correlation)
-            inf_idx = min(hist_idx, len(inflation_rates) - 1)
-            yr_inflation = inflation_rates[inf_idx] if include_inflation else 0
-            cumulative_inflation *= (1 + yr_inflation)
-            
-            for acc_id, acc in sim_accounts.items():
-                if acc["is_asset"]:
-                    # Apply weighted return based on portfolio allocation
-                    portfolio_return = (
-                        acc["stocks_pct"] * yr_stock +
-                        acc["bonds_pct"] * yr_bond +
-                        acc["cash_pct"] * yr_cash
-                    )
-                    # Apply annual return + 12 months of contributions
-                    acc["balance"] *= (1 + portfolio_return)
-                    acc["balance"] += acc["contribution_monthly"] * 12
-                else:
-                    # Liability - apply interest and payments
-                    for month in range(12):
-                        acc["balance"] *= (1 + acc["interest_rate"])
-                        acc["balance"] = max(0, acc["balance"] - acc["contribution_monthly"])
+            # Use consecutive years from this starting point
+            for block_year in range(block_size):
+                if year_idx >= years:
+                    break
+                    
+                hist_idx = (block_start + block_year) % num_historical_years
+                yr_stock = stock_returns[hist_idx]
+                yr_bond = bond_returns[hist_idx]
+                yr_cash = cash_returns[hist_idx]
                 
-                acc["path"].append(acc["balance"])
-            
-            # Calculate net worth at end of year
-            year_nw_nominal = sum(
-                acc["balance"] if acc["is_asset"] else -acc["balance"]
-                for acc in sim_accounts.values()
-            )
-            # Convert to today's dollars if requested
-            year_nw_real = year_nw_nominal / cumulative_inflation if show_todays_dollars else year_nw_nominal
-            
-            sim_path.append(year_nw_real)
-            sim_path_nominal.append(year_nw_nominal)
+                # Get inflation for this year (use same historical index for correlation)
+                inf_idx = min(hist_idx, len(inflation_rates) - 1)
+                yr_inflation = inflation_rates[inf_idx] if include_inflation else 0
+                cumulative_inflation *= (1 + yr_inflation)
+                
+                for acc_id, acc in sim_accounts.items():
+                    if acc["is_asset"]:
+                        # Apply weighted return based on portfolio allocation
+                        portfolio_return = (
+                            acc["stocks_pct"] * yr_stock +
+                            acc["bonds_pct"] * yr_bond +
+                            acc["cash_pct"] * yr_cash
+                        )
+                        # Apply annual return + 12 months of contributions
+                        acc["balance"] *= (1 + portfolio_return)
+                        acc["balance"] += acc["contribution_monthly"] * 12
+                    else:
+                        # Liability - apply interest and payments
+                        for month in range(12):
+                            acc["balance"] *= (1 + acc["interest_rate"])
+                            acc["balance"] = max(0, acc["balance"] - acc["contribution_monthly"])
+                    
+                    acc["path"].append(acc["balance"])
+                
+                # Calculate net worth at end of year
+                year_nw_nominal = sum(
+                    acc["balance"] if acc["is_asset"] else -acc["balance"]
+                    for acc in sim_accounts.values()
+                )
+                # Convert to today's dollars if requested
+                year_nw_real = year_nw_nominal / cumulative_inflation if show_todays_dollars else year_nw_nominal
+                
+                sim_path.append(year_nw_real)
+                sim_path_nominal.append(year_nw_nominal)
+                year_idx += 1
         
         # Record final values
         final_nw = sim_path[-1]
