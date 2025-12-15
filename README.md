@@ -182,6 +182,8 @@ ngrok http 8000
 
 ngrok http http://localhost:8000
 ```
+# navigate to
+https://maximiliano-shipless-unliberally.ngrok-free.dev/home
 
 ### Option 4: Tailscale (VPN - Free for Personal Use)
 
