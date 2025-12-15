@@ -1192,6 +1192,10 @@
   </div>
   
   <script>
+    // Global variables - declared at top to avoid initialization issues
+    let lastMCResults = null;
+    let mcChart = null;
+    
     // Track down payment mode for each scenario (true = $, false = %)
     const dpMode = { A: true, B: true };
     let mortgageChart = null;
@@ -2512,9 +2516,6 @@
     // ==========================================================================
     // Monte Carlo Simulation
     // ==========================================================================
-    
-    let mcChart = null;
-    let lastMCResults = null;
     
     async function runMonteCarlo() {
       const years = parseInt(document.getElementById('mcYears').value) || 30;
