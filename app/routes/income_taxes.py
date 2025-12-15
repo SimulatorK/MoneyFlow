@@ -66,9 +66,10 @@ FILING_STATUSES = [
     ("head_of_household", "Head of Household"),
 ]
 
-# Only Missouri for now
+# Supported states for tax calculation
 FILING_STATES = [
     ("MO", "Missouri"),
+    ("CA", "California"),
 ]
 
 TAX_YEARS = [2023, 2024, 2025, 2026]
@@ -140,6 +141,34 @@ TAX_DATA = {
             "married_filing_jointly": 27700, "married_filing_separately": 13850,
             "single": 13850, "head_of_household": 20800,
         },
+        # California tax brackets (2023)
+        "ca_brackets": {
+            "married_filing_jointly": [
+                (20198, 0.01), (47884, 0.02), (75576, 0.04), (104910, 0.06),
+                (132590, 0.08), (677278, 0.093), (812728, 0.103), (1354550, 0.113),
+                (float('inf'), 0.123),
+            ],
+            "married_filing_separately": [
+                (10099, 0.01), (23942, 0.02), (37788, 0.04), (52455, 0.06),
+                (66295, 0.08), (338639, 0.093), (406364, 0.103), (677275, 0.113),
+                (float('inf'), 0.123),
+            ],
+            "single": [
+                (10099, 0.01), (23942, 0.02), (37788, 0.04), (52455, 0.06),
+                (66295, 0.08), (338639, 0.093), (406364, 0.103), (677275, 0.113),
+                (float('inf'), 0.123),
+            ],
+            "head_of_household": [
+                (20212, 0.01), (47887, 0.02), (61730, 0.04), (76397, 0.06),
+                (90240, 0.08), (460547, 0.093), (552658, 0.103), (921095, 0.113),
+                (float('inf'), 0.123),
+            ],
+        },
+        "ca_standard_deductions": {
+            "married_filing_jointly": 10726, "married_filing_separately": 5363,
+            "single": 5363, "head_of_household": 10726,
+        },
+        "ca_mental_health_threshold": 1000000,  # 1% surcharge over $1M
     },
     2024: {
         "federal_brackets": {
@@ -193,6 +222,34 @@ TAX_DATA = {
             "married_filing_jointly": 29200, "married_filing_separately": 14600,
             "single": 14600, "head_of_household": 21900,
         },
+        # California tax brackets (2024)
+        "ca_brackets": {
+            "married_filing_jointly": [
+                (20824, 0.01), (49368, 0.02), (77918, 0.04), (108162, 0.06),
+                (136700, 0.08), (698274, 0.093), (837922, 0.103), (1396542, 0.113),
+                (float('inf'), 0.123),
+            ],
+            "married_filing_separately": [
+                (10412, 0.01), (24684, 0.02), (38959, 0.04), (54081, 0.06),
+                (68350, 0.08), (349137, 0.093), (418961, 0.103), (698271, 0.113),
+                (float('inf'), 0.123),
+            ],
+            "single": [
+                (10412, 0.01), (24684, 0.02), (38959, 0.04), (54081, 0.06),
+                (68350, 0.08), (349137, 0.093), (418961, 0.103), (698271, 0.113),
+                (float('inf'), 0.123),
+            ],
+            "head_of_household": [
+                (20839, 0.01), (49371, 0.02), (63644, 0.04), (78765, 0.06),
+                (93037, 0.08), (474824, 0.093), (569790, 0.103), (949649, 0.113),
+                (float('inf'), 0.123),
+            ],
+        },
+        "ca_standard_deductions": {
+            "married_filing_jointly": 11056, "married_filing_separately": 5528,
+            "single": 5528, "head_of_household": 11056,
+        },
+        "ca_mental_health_threshold": 1000000,
     },
     2025: {
         "federal_brackets": {
@@ -246,6 +303,34 @@ TAX_DATA = {
             "married_filing_jointly": 30000, "married_filing_separately": 15000,
             "single": 15000, "head_of_household": 22500,
         },
+        # California tax brackets (2025 - estimated based on inflation adjustments)
+        "ca_brackets": {
+            "married_filing_jointly": [
+                (21450, 0.01), (50850, 0.02), (80260, 0.04), (111410, 0.06),
+                (140800, 0.08), (719220, 0.093), (863060, 0.103), (1438440, 0.113),
+                (float('inf'), 0.123),
+            ],
+            "married_filing_separately": [
+                (10725, 0.01), (25425, 0.02), (40130, 0.04), (55705, 0.06),
+                (70400, 0.08), (359610, 0.093), (431530, 0.103), (719220, 0.113),
+                (float('inf'), 0.123),
+            ],
+            "single": [
+                (10725, 0.01), (25425, 0.02), (40130, 0.04), (55705, 0.06),
+                (70400, 0.08), (359610, 0.093), (431530, 0.103), (719220, 0.113),
+                (float('inf'), 0.123),
+            ],
+            "head_of_household": [
+                (21465, 0.01), (50855, 0.02), (65555, 0.04), (81130, 0.06),
+                (95830, 0.08), (489070, 0.093), (586890, 0.103), (978140, 0.113),
+                (float('inf'), 0.123),
+            ],
+        },
+        "ca_standard_deductions": {
+            "married_filing_jointly": 11390, "married_filing_separately": 5695,
+            "single": 5695, "head_of_household": 11390,
+        },
+        "ca_mental_health_threshold": 1000000,
     },
     2026: {
         "federal_brackets": {
@@ -299,6 +384,34 @@ TAX_DATA = {
             "married_filing_jointly": 32200, "married_filing_separately": 16100,
             "single": 16100, "head_of_household": 24200,
         },
+        # California tax brackets (2026 - estimated based on inflation adjustments)
+        "ca_brackets": {
+            "married_filing_jointly": [
+                (22100, 0.01), (52380, 0.02), (82670, 0.04), (114750, 0.06),
+                (145020, 0.08), (740800, 0.093), (888950, 0.103), (1481600, 0.113),
+                (float('inf'), 0.123),
+            ],
+            "married_filing_separately": [
+                (11050, 0.01), (26190, 0.02), (41335, 0.04), (57375, 0.06),
+                (72510, 0.08), (370400, 0.093), (444475, 0.103), (740800, 0.113),
+                (float('inf'), 0.123),
+            ],
+            "single": [
+                (11050, 0.01), (26190, 0.02), (41335, 0.04), (57375, 0.06),
+                (72510, 0.08), (370400, 0.093), (444475, 0.103), (740800, 0.113),
+                (float('inf'), 0.123),
+            ],
+            "head_of_household": [
+                (22115, 0.01), (52380, 0.02), (67525, 0.04), (83565, 0.06),
+                (98705, 0.08), (503740, 0.093), (604500, 0.103), (1007580, 0.113),
+                (float('inf'), 0.123),
+            ],
+        },
+        "ca_standard_deductions": {
+            "married_filing_jointly": 11730, "married_filing_separately": 5865,
+            "single": 5865, "head_of_household": 11730,
+        },
+        "ca_mental_health_threshold": 1000000,
     },
 }
 
@@ -385,6 +498,122 @@ def calculate_missouri_tax_with_breakdown(mo_taxable_income, tax_year):
             breakdown.append((limit, rate, taxable_in_bracket, tax_in_bracket))
         prev_limit = limit
     return tax, breakdown
+
+
+def calculate_california_tax_with_breakdown(ca_taxable_income, filing_status, tax_year):
+    """
+    Calculate California state income tax, with per-bracket breakdown.
+    
+    California has:
+    - Progressive income tax brackets (1% to 12.3%)
+    - Mental Health Services Tax: 1% surcharge on income over $1 million
+    - No city income taxes in California (unlike some states)
+    
+    Args:
+        ca_taxable_income: California taxable income (after standard deduction)
+        filing_status: Tax filing status
+        tax_year: Tax year for rate lookup
+        
+    Returns:
+        Tuple of (total_tax, bracket_breakdown, mental_health_tax)
+    """
+    year_data = get_tax_year_data(tax_year)
+    ca_brackets = year_data.get("ca_brackets", {}).get(filing_status, 
+                   year_data.get("ca_brackets", {}).get("single", []))
+    mental_health_threshold = year_data.get("ca_mental_health_threshold", 1000000)
+    
+    if not ca_brackets:
+        return 0, [], 0
+    
+    tax = 0.0
+    prev_limit = 0
+    breakdown = []
+    
+    for limit, rate in ca_brackets:
+        if ca_taxable_income <= prev_limit:
+            breakdown.append((limit, rate, 0, 0))
+        else:
+            taxable_in_bracket = min(ca_taxable_income, limit) - prev_limit
+            tax_in_bracket = taxable_in_bracket * rate
+            tax += tax_in_bracket
+            breakdown.append((limit, rate, taxable_in_bracket, tax_in_bracket))
+        prev_limit = limit
+    
+    # Mental Health Services Tax (1% on income over $1M)
+    mental_health_tax = 0
+    if ca_taxable_income > mental_health_threshold:
+        mental_health_tax = (ca_taxable_income - mental_health_threshold) * 0.01
+    
+    total_tax = tax + mental_health_tax
+    
+    return total_tax, breakdown, mental_health_tax
+
+
+def calculate_state_tax(agi, filing_status, filing_state, tax_year):
+    """
+    Calculate state income tax for the specified state.
+    
+    Args:
+        agi: Adjusted Gross Income
+        filing_status: Tax filing status
+        filing_state: Two-letter state code (e.g., 'MO', 'CA')
+        tax_year: Tax year for rate lookup
+        
+    Returns:
+        Dictionary with state tax details
+    """
+    year_data = get_tax_year_data(tax_year)
+    
+    if filing_state == "MO":
+        mo_standard_deduction = year_data["mo_standard_deductions"].get(filing_status, 15175)
+        mo_taxable_income = max(0, agi - mo_standard_deduction)
+        state_tax, state_breakdown = calculate_missouri_tax_with_breakdown(mo_taxable_income, tax_year)
+        return {
+            "state": "Missouri",
+            "state_code": "MO",
+            "standard_deduction": mo_standard_deduction,
+            "taxable_income": mo_taxable_income,
+            "state_tax": state_tax,
+            "state_breakdown": state_breakdown,
+            "brackets": year_data["mo_brackets"],
+            "mental_health_tax": 0,
+            "city_tax": 0,
+            "city_name": None,
+        }
+    
+    elif filing_state == "CA":
+        ca_standard_deduction = year_data.get("ca_standard_deductions", {}).get(filing_status, 5695)
+        ca_taxable_income = max(0, agi - ca_standard_deduction)
+        state_tax, state_breakdown, mental_health_tax = calculate_california_tax_with_breakdown(
+            ca_taxable_income, filing_status, tax_year
+        )
+        return {
+            "state": "California",
+            "state_code": "CA",
+            "standard_deduction": ca_standard_deduction,
+            "taxable_income": ca_taxable_income,
+            "state_tax": state_tax,
+            "state_breakdown": state_breakdown,
+            "brackets": year_data.get("ca_brackets", {}).get(filing_status, []),
+            "mental_health_tax": mental_health_tax,
+            "city_tax": 0,  # California has no city income tax
+            "city_name": None,
+        }
+    
+    else:
+        # Default: no state tax calculation
+        return {
+            "state": "Unknown",
+            "state_code": filing_state,
+            "standard_deduction": 0,
+            "taxable_income": 0,
+            "state_tax": 0,
+            "state_breakdown": [],
+            "brackets": [],
+            "mental_health_tax": 0,
+            "city_tax": 0,
+            "city_name": None,
+        }
 
 
 def calculate_fica(wages, filing_status, tax_year):
@@ -588,20 +817,28 @@ def calculate_taxes(data, tax_year=None):
     # FICA on wages
     fica = calculate_fica(fica_wages, filing_status, tax_year)
     
-    # Missouri State Tax (with breakdown)
-    mo_standard_deduction = year_data["mo_standard_deductions"].get(filing_status, 15175)
-    mo_taxable_income = max(0, agi - mo_standard_deduction)
-    if filing_state == "MO":
-        mo_state_tax, mo_breakdown = calculate_missouri_tax_with_breakdown(mo_taxable_income, tax_year)
-    else:
-        mo_state_tax, mo_breakdown = 0, []
+    # State Tax (using unified state tax function)
+    state_tax_result = calculate_state_tax(agi, filing_status, filing_state, tax_year)
+    state_tax = state_tax_result["state_tax"]
+    state_standard_deduction = state_tax_result["standard_deduction"]
+    state_taxable_income = state_tax_result["taxable_income"]
+    state_breakdown = state_tax_result["state_breakdown"]
+    state_brackets = state_tax_result["brackets"]
+    mental_health_tax = state_tax_result.get("mental_health_tax", 0)
+    city_tax = state_tax_result.get("city_tax", 0)
+    
+    # Backward compatibility - keep mo_* variables for templates
+    mo_standard_deduction = state_standard_deduction
+    mo_taxable_income = state_taxable_income
+    mo_state_tax = state_tax
+    mo_breakdown = state_breakdown
     
     # Total taxes (federal + state + FICA)
-    total_taxes = total_federal_tax + fica["total_fica"] + mo_state_tax
+    total_taxes = total_federal_tax + fica["total_fica"] + state_tax
     
     # Per paycheck calculations
     federal_tax_per_pay = total_federal_tax / pay_periods
-    state_tax_per_pay = mo_state_tax / pay_periods
+    state_tax_per_pay = state_tax / pay_periods
     fica_per_pay = fica["total_fica"] / pay_periods
     total_tax_per_pay = total_taxes / pay_periods
     
@@ -616,7 +853,7 @@ def calculate_taxes(data, tax_year=None):
     
     tax_rate = (total_taxes / gross_income * 100) if gross_income > 0 else 0
     federal_rate = (total_federal_tax / gross_income * 100) if gross_income > 0 else 0
-    state_rate = (mo_state_tax / gross_income * 100) if gross_income > 0 else 0
+    state_rate = (state_tax / gross_income * 100) if gross_income > 0 else 0
     fica_rate = (fica["total_fica"] / gross_income * 100) if gross_income > 0 else 0
     
     # Tax brackets with breakdown for display
@@ -696,12 +933,21 @@ def calculate_taxes(data, tax_year=None):
         "federal_brackets": federal_brackets,
         "federal_breakdown": federal_breakdown,
         # State tax
-        "mo_standard_deduction": mo_standard_deduction,
-        "mo_taxable_income": mo_taxable_income,
-        "mo_state_tax": mo_state_tax,
+        "state_name": state_tax_result["state"],
+        "state_code": state_tax_result["state_code"],
+        "mo_standard_deduction": mo_standard_deduction,  # Backward compat
+        "mo_taxable_income": mo_taxable_income,  # Backward compat
+        "mo_state_tax": mo_state_tax,  # Backward compat
+        "state_standard_deduction": state_standard_deduction,
+        "state_taxable_income": state_taxable_income,
+        "state_tax": state_tax,
         "state_rate": state_rate,
-        "mo_brackets": year_data["mo_brackets"],
-        "mo_breakdown": mo_breakdown,
+        "mo_brackets": state_brackets,  # Now uses state-specific brackets
+        "mo_breakdown": mo_breakdown,  # Backward compat
+        "state_brackets": state_brackets,
+        "state_breakdown": state_breakdown,
+        "mental_health_tax": mental_health_tax,
+        "city_tax": city_tax,
         # FICA
         "social_security": fica["social_security"],
         "medicare": fica["medicare"],
