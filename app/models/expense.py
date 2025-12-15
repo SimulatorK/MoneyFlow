@@ -30,6 +30,24 @@ class SubCategory(Base):
     expenses = relationship("Expense", back_populates="subcategory")
 
 
+class Vendor(Base):
+    """
+    User-specific vendors/merchants for expense tracking.
+    
+    Examples: Amazon, Walmart, Target, Gas Station, etc.
+    """
+    __tablename__ = "vendors"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    name = Column(String(100), nullable=False)
+    notes = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    expenses = relationship("Expense", back_populates="vendor")
+
+
 class Expense(Base):
     """
     Individual expense entries.
@@ -43,6 +61,7 @@ class Expense(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     category_id = Column(Integer, ForeignKey("categories.id"), nullable=False)
     subcategory_id = Column(Integer, ForeignKey("subcategories.id"), nullable=True)
+    vendor_id = Column(Integer, ForeignKey("vendors.id"), nullable=True)
     
     amount = Column(Float, nullable=False)
     expense_date = Column(Date, nullable=False, default=date.today)
@@ -56,4 +75,5 @@ class Expense(Base):
     # Relationships
     category = relationship("Category", back_populates="expenses")
     subcategory = relationship("SubCategory", back_populates="expenses")
+    vendor = relationship("Vendor", back_populates="expenses")
 
