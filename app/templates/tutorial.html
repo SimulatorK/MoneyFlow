@@ -268,6 +268,35 @@
             border-top: 1px solid #e8eef8;
         }
         
+        .footer-left, .footer-right {
+            flex: 1;
+        }
+        
+        .footer-center {
+            flex: 1;
+            text-align: center;
+        }
+        
+        .footer-right {
+            text-align: right;
+        }
+        
+        .btn-skip {
+            background: none;
+            border: none;
+            color: #889ab0;
+            font-size: 0.9em;
+            cursor: pointer;
+            padding: 0.5em 1em;
+            transition: all 0.2s;
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+        
+        .btn-skip:hover {
+            color: var(--text-heading);
+        }
+        
         .btn {
             padding: 0.8em 2em;
             border-radius: 10px;
@@ -371,6 +400,25 @@
             .form-row { grid-template-columns: 1fr; }
             .feature-grid { grid-template-columns: 1fr; }
             .step-label { font-size: 0.65em; width: 50px; }
+            
+            .tutorial-footer {
+                flex-wrap: wrap;
+                gap: 0.8em;
+                padding: 1em;
+            }
+            
+            .footer-left, .footer-right {
+                flex: 0 0 auto;
+            }
+            
+            .footer-center {
+                flex: 0 0 100%;
+                order: 3;
+            }
+            
+            .btn-skip {
+                font-size: 0.85em;
+            }
         }
     </style>
 </head>
@@ -600,12 +648,21 @@
         
         <!-- Footer with Navigation -->
         <div class="tutorial-footer">
-            <button class="btn btn-secondary" id="backBtn" onclick="previousStep()" style="visibility: hidden;">
-                ← Back
-            </button>
-            <button class="btn btn-primary" id="nextBtn" onclick="nextStep()">
-                Save & Continue →
-            </button>
+            <div class="footer-left">
+                <button class="btn btn-secondary" id="backBtn" onclick="previousStep()" style="visibility: hidden;">
+                    ← Back
+                </button>
+            </div>
+            <div class="footer-center">
+                <button class="btn-skip" onclick="skipTutorial()">
+                    Skip Tutorial
+                </button>
+            </div>
+            <div class="footer-right">
+                <button class="btn btn-primary" id="nextBtn" onclick="nextStep()">
+                    Save & Continue →
+                </button>
+            </div>
         </div>
     </div>
     
@@ -829,6 +886,28 @@
             if (currentStep > 1) {
                 currentStep--;
                 updateProgress();
+            }
+        }
+        
+        async function skipTutorial() {
+            if (!confirm('Are you sure you want to skip the tutorial? You can always access these features from the main menu.')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/tutorial/skip', {
+                    method: 'POST'
+                });
+                
+                if (response.ok) {
+                    window.location.href = '/home';
+                } else {
+                    throw new Error('Failed to skip tutorial');
+                }
+            } catch (error) {
+                console.error('Error skipping tutorial:', error);
+                // Redirect anyway if there's an error
+                window.location.href = '/home';
             }
         }
         
