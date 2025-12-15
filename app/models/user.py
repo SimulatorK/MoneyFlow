@@ -11,4 +11,6 @@ class User(Base):
     profile_picture = Column(LargeBinary, nullable=True)  # Store image data
     profile_picture_type = Column(String, nullable=True)  # MIME type (image/jpeg, image/png, etc.)
     dark_mode = Column(Boolean, default=False)  # User preference for dark mode
+    tutorial_completed = Column(Boolean, default=False)  # Track if user completed onboarding tutorial
+    tutorial_step = Column(Integer, default=0)  # Current step in tutorial (0 = not started)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
