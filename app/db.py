@@ -5,6 +5,8 @@ from app.models.user import User
 from app.models.income_taxes import IncomeTaxes
 from app.models.expense import Category, SubCategory, Expense
 from app.models.budget import BudgetCategory, FixedCost, BudgetItem
+from app.models.mortgage import MortgageScenario
+from app.models.networth import Account, AccountBalance, AccountContribution, MonteCarloScenario
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///./masterbudget.db"
 engine = create_engine(
