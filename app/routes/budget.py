@@ -176,13 +176,28 @@ def get_expense_averages(db: Session, user_id: int, months: int = 3):
 
 
 def calculate_budget_summary(db: Session, user_id: int, income_data):
-    """Calculate complete budget summary."""
+    """Calculate complete budget summary including all income sources."""
     # Get income data
     if income_data:
         calculated = calculate_taxes(income_data)
-        gross_monthly = calculated["salary"] / 12 if calculated else 0
-        net_monthly = calculated["net_per_pay"] * calculated["pay_periods"] / 12 if calculated else 0
-        total_retirement_monthly = calculated["employee_contributions"] / 12 if calculated else 0
+        if calculated:
+            # Include ALL income sources for budgeting (taxable + non-taxable)
+            gross_taxable = calculated.get("gross_income", 0)  # All taxable income
+            gross_nontaxable = calculated.get("total_nontaxable_income", 0)  # Roth distributions, etc.
+            gross_monthly = (gross_taxable + gross_nontaxable) / 12
+            
+            # Net monthly = gross - taxes - pretax deductions - retirement contributions
+            total_taxes = calculated.get("total_taxes", 0)
+            pretax_deductions = calculated.get("pretax_deductions_annual", 0)
+            pretax_retirement = calculated.get("pretax_retirement", 0)
+            aftertax_retirement = calculated.get("aftertax_retirement", 0)
+            net_monthly = (gross_taxable + gross_nontaxable - total_taxes - pretax_deductions - pretax_retirement - aftertax_retirement) / 12
+            
+            total_retirement_monthly = calculated.get("employee_contributions", 0) / 12
+        else:
+            gross_monthly = 0
+            net_monthly = 0
+            total_retirement_monthly = 0
     else:
         gross_monthly = 0
         net_monthly = 0

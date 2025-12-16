@@ -72,14 +72,15 @@ def generate_sankey_data(summary, income_data, include_details=False):
         return []
     
     sankey_data = []
-    gross_monthly = summary.get("gross_monthly", 0)
     income_calc = summary.get("income", {}) or {}
     
-    # Calculate total income including non-taxable for budgeting
-    total_nontaxable = income_calc.get("total_nontaxable_income", 0) / 12 if income_calc else 0
-    total_all_income = gross_monthly + total_nontaxable
+    # gross_monthly from calculate_budget_summary now includes all income (taxable + non-taxable)
+    gross_monthly = summary.get("gross_monthly", 0)
     
-    if total_all_income <= 0:
+    # For direct calculations from income_data, we still need individual amounts
+    total_nontaxable_monthly = income_calc.get("total_nontaxable_income", 0) / 12 if income_calc else 0
+    
+    if gross_monthly <= 0:
         logger.warning("Total income is zero or negative")
         return []
     
@@ -140,7 +141,7 @@ def generate_sankey_data(summary, income_data, include_details=False):
             
             # Break down taxes (always show this level)
             federal = income_calc.get("total_federal_tax", 0) / 12
-            state = income_calc.get("state_tax", 0) or income_calc.get("mo_state_tax", 0) / 12
+            state = (income_calc.get("state_tax", 0) or income_calc.get("mo_state_tax", 0)) / 12
             fica = income_calc.get("total_fica", 0) / 12
             
             if federal > 0:
@@ -160,8 +161,8 @@ def generate_sankey_data(summary, income_data, include_details=False):
         if retirement > 0:
             sankey_data.append(["Total Income", "Retirement", round(retirement, 0)])
     
-    # Net income to categories (includes non-taxable income)
-    net_monthly = summary.get("net_monthly", 0) + total_nontaxable
+    # Net income to categories (already includes non-taxable from calculate_budget_summary)
+    net_monthly = summary.get("net_monthly", 0)
     if net_monthly > 0:
         sankey_data.append(["Total Income", "Net Income", round(net_monthly, 0)])
         

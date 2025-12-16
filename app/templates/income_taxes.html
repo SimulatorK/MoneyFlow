@@ -813,56 +813,6 @@
           </tbody>
         </table>
       </div>
-      
-      <!-- Monthly Cash Flow Summary -->
-      <div class="section" style="background:linear-gradient(135deg, rgba(40,167,69,0.05) 0%, rgba(56,117,232,0.05) 100%); border-radius:8px; padding:1em;">
-        <h4>💰 Monthly Cash Flow Summary</h4>
-        <table>
-          <tr>
-            <td>Total Monthly Income</td>
-            <td class="money" style="font-weight:600;">${{ "{:,.2f}".format((calculated.gross_income + calculated.total_nontaxable_income) / 12) }}</td>
-          </tr>
-          <tr style="color:#dc3545;">
-            <td style="padding-left:1em;">− Federal Tax</td>
-            <td class="money">−${{ "{:,.2f}".format(calculated.total_federal_tax / 12) }}</td>
-          </tr>
-          <tr style="color:#dc3545;">
-            <td style="padding-left:1em;">− State Tax ({{ calculated.state_code }})</td>
-            <td class="money">−${{ "{:,.2f}".format(calculated.state_tax / 12) }}</td>
-          </tr>
-          {% if calculated.total_fica > 0 %}
-          <tr style="color:#dc3545;">
-            <td style="padding-left:1em;">− FICA (SS + Medicare)</td>
-            <td class="money">−${{ "{:,.2f}".format(calculated.total_fica / 12) }}</td>
-          </tr>
-          {% endif %}
-          {% if calculated.pretax_deductions_annual > 0 %}
-          <tr style="color:#6c757d;">
-            <td style="padding-left:1em;">− Pretax Benefits (Health/Dental/Vision)</td>
-            <td class="money">−${{ "{:,.2f}".format(calculated.pretax_deductions_annual / 12) }}</td>
-          </tr>
-          {% endif %}
-          {% if calculated.pretax_retirement > 0 %}
-          <tr style="color:#6c757d;">
-            <td style="padding-left:1em;">− Traditional 401k/IRA</td>
-            <td class="money">−${{ "{:,.2f}".format(calculated.pretax_retirement / 12) }}</td>
-          </tr>
-          {% endif %}
-          {% if calculated.aftertax_retirement > 0 %}
-          <tr style="color:#6c757d;">
-            <td style="padding-left:1em;">− Roth 401k/IRA Contributions</td>
-            <td class="money">−${{ "{:,.2f}".format(calculated.aftertax_retirement / 12) }}</td>
-          </tr>
-          {% endif %}
-          <tr style="border-top:2px solid var(--accent); background:rgba(40,167,69,0.15);">
-            <td><b style="font-size:1.1em; color:#28a745;">NET MONTHLY INCOME</b></td>
-            <td class="money"><b style="font-size:1.1em; color:#28a745;">${{ "{:,.2f}".format(((calculated.gross_income + calculated.total_nontaxable_income) - calculated.total_taxes - calculated.pretax_deductions_annual - calculated.pretax_retirement - calculated.aftertax_retirement) / 12) }}</b></td>
-          </tr>
-        </table>
-        <p style="font-size:0.8em; color:var(--text-secondary); margin:0.8em 0 0 0; text-align:center;">
-          This is your spendable income after all taxes, benefits, and retirement contributions.
-        </p>
-      </div>
 
       <div class="section">
         <h4>Deductions &amp; AGI</h4>
@@ -1097,6 +1047,131 @@
           
           <tr style="border-top:3px solid #197a3a; background:rgba(40,167,69,0.15);"><td><b style="font-size:1.1em;">Net Take-Home Pay</b></td><td class="money" style="font-size:1.2em;"><b>${{ "{:,.2f}".format(calculated.net_per_pay) }}</b></td></tr>
         </table>
+      </div>
+
+      <!-- Monthly Cash Flow Summary (All Income Sources) -->
+      <div class="highlight" style="background:linear-gradient(135deg, rgba(40,167,69,0.12) 0%, rgba(56,117,232,0.12) 100%); border: 2px solid #28a745;">
+        <h4 style="margin-top:0; color:#28a745;">💰 Monthly Cash Flow Summary (All Sources)</h4>
+        <table>
+          <thead>
+            <tr style="background:rgba(0,0,0,0.05);">
+              <th style="text-align:left;">Income Source</th>
+              <th style="text-align:right;">Monthly</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Employment -->
+            {% if calculated.salary > 0 %}
+            <tr>
+              <td>💼 Employment (W-2)</td>
+              <td class="money">${{ "{:,.2f}".format(calculated.salary / 12) }}</td>
+            </tr>
+            {% endif %}
+            <!-- Non-Employment Taxable -->
+            {% if calculated.social_security_taxable > 0 %}
+            <tr>
+              <td style="padding-left:1em;">Social Security (85% taxable)</td>
+              <td class="money">${{ "{:,.2f}".format(calculated.social_security_taxable / 12) }}</td>
+            </tr>
+            {% endif %}
+            {% if calculated.pension_income > 0 %}
+            <tr>
+              <td style="padding-left:1em;">Pension</td>
+              <td class="money">${{ "{:,.2f}".format(calculated.pension_income / 12) }}</td>
+            </tr>
+            {% endif %}
+            {% if calculated.trad_ira_distribution > 0 %}
+            <tr>
+              <td style="padding-left:1em;">Traditional IRA</td>
+              <td class="money">${{ "{:,.2f}".format(calculated.trad_ira_distribution / 12) }}</td>
+            </tr>
+            {% endif %}
+            {% if calculated.trad_401k_distribution > 0 %}
+            <tr>
+              <td style="padding-left:1em;">Traditional 401k</td>
+              <td class="money">${{ "{:,.2f}".format(calculated.trad_401k_distribution / 12) }}</td>
+            </tr>
+            {% endif %}
+            {% if calculated.other_taxable_income > 0 %}
+            <tr>
+              <td style="padding-left:1em;">Other Taxable</td>
+              <td class="money">${{ "{:,.2f}".format(calculated.other_taxable_income / 12) }}</td>
+            </tr>
+            {% endif %}
+            <!-- Investment Income -->
+            {% if calculated.stcg or calculated.dividends or calculated.ltcg %}
+            <tr>
+              <td>📈 Investment Income</td>
+              <td class="money">${{ "{:,.2f}".format((calculated.stcg + calculated.dividends + calculated.ltcg) / 12) }}</td>
+            </tr>
+            {% endif %}
+            <!-- Non-Taxable -->
+            {% if calculated.total_nontaxable_income > 0 %}
+            <tr style="color:#28a745;">
+              <td>✅ Tax-Free Income</td>
+              <td class="money">${{ "{:,.2f}".format(calculated.total_nontaxable_income / 12) }}</td>
+            </tr>
+            {% endif %}
+            <tr style="border-top:2px solid var(--border-color); background:rgba(56,117,232,0.1);">
+              <td><b>Total Gross Monthly</b></td>
+              <td class="money"><b>${{ "{:,.2f}".format((calculated.gross_income + calculated.total_nontaxable_income) / 12) }}</b></td>
+            </tr>
+          </tbody>
+        </table>
+        
+        <table style="margin-top:1em;">
+          <thead>
+            <tr style="background:rgba(220,53,69,0.1);">
+              <th style="text-align:left; color:#dc3545;">Deductions</th>
+              <th style="text-align:right; color:#dc3545;">Monthly</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="color:#dc3545;">
+              <td style="padding-left:1em;">Federal Tax</td>
+              <td class="money">−${{ "{:,.2f}".format(calculated.total_federal_tax / 12) }}</td>
+            </tr>
+            <tr style="color:#dc3545;">
+              <td style="padding-left:1em;">State Tax ({{ calculated.state_code }})</td>
+              <td class="money">−${{ "{:,.2f}".format(calculated.state_tax / 12) }}</td>
+            </tr>
+            {% if calculated.total_fica > 0 %}
+            <tr style="color:#dc3545;">
+              <td style="padding-left:1em;">FICA (SS + Medicare)</td>
+              <td class="money">−${{ "{:,.2f}".format(calculated.total_fica / 12) }}</td>
+            </tr>
+            {% endif %}
+            <tr style="border-top:1px solid var(--border-color); color:#dc3545;">
+              <td><b>Total Taxes</b></td>
+              <td class="money"><b>−${{ "{:,.2f}".format(calculated.total_taxes / 12) }}</b></td>
+            </tr>
+            {% if calculated.pretax_deductions_annual > 0 %}
+            <tr style="color:#6c757d;">
+              <td style="padding-left:1em;">Pretax Benefits</td>
+              <td class="money">−${{ "{:,.2f}".format(calculated.pretax_deductions_annual / 12) }}</td>
+            </tr>
+            {% endif %}
+            {% if calculated.pretax_retirement > 0 %}
+            <tr style="color:#6c757d;">
+              <td style="padding-left:1em;">Traditional 401k/IRA</td>
+              <td class="money">−${{ "{:,.2f}".format(calculated.pretax_retirement / 12) }}</td>
+            </tr>
+            {% endif %}
+            {% if calculated.aftertax_retirement > 0 %}
+            <tr style="color:#6c757d;">
+              <td style="padding-left:1em;">Roth 401k/IRA</td>
+              <td class="money">−${{ "{:,.2f}".format(calculated.aftertax_retirement / 12) }}</td>
+            </tr>
+            {% endif %}
+            <tr style="border-top:3px solid #28a745; background:rgba(40,167,69,0.2);">
+              <td><b style="font-size:1.15em; color:#28a745;">NET MONTHLY INCOME</b></td>
+              <td class="money"><b style="font-size:1.15em; color:#28a745;">${{ "{:,.2f}".format(((calculated.gross_income + calculated.total_nontaxable_income) - calculated.total_taxes - calculated.pretax_deductions_annual - calculated.pretax_retirement - calculated.aftertax_retirement) / 12) }}</b></td>
+            </tr>
+          </tbody>
+        </table>
+        <p style="font-size:0.85em; color:var(--text-secondary); margin:1em 0 0 0; text-align:center;">
+          💡 This is your total spendable income from all sources after taxes and retirement contributions.
+        </p>
       </div>
 
       {% else %}
