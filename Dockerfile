@@ -9,7 +9,7 @@
 # =============================================================================
 
 # Stage 1: Build stage with Poetry
-FROM python:3.11-slim as builder
+FROM python:3.11-slim AS builder
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -34,7 +34,7 @@ COPY pyproject.toml poetry.lock* ./
 RUN poetry install --only main --no-root
 
 # Stage 2: Production stage
-FROM python:3.11-slim as production
+FROM python:3.11-slim AS production
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
