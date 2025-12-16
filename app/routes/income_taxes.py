@@ -117,22 +117,22 @@ CONTRIBUTION_LIMITS = {
         "401k_total": 70000,
         "ira": 7000,
         "ira_catchup": 1000,
-        "roth_ira_magi_single": 165000,
-        "roth_ira_magi_married": 246000,
+        "roth_ira_magi_single": 161000,  # Updated per IRS Rev Proc 2024-40
+        "roth_ira_magi_married": 240000,  # Updated per IRS Rev Proc 2024-40
         "hsa_individual": 4300,
         "hsa_family": 8550,
     },
     2026: {
-        "401k_employee": 24000,       # Projected (inflation adjusted)
+        "401k_employee": 24500,       # Confirmed per IRS announcement
         "401k_catchup": 7500,
         "401k_super_catchup": 11250,
-        "401k_total": 71000,
-        "ira": 7000,
+        "401k_total": 71000,  # Projected
+        "ira": 7500,  # Confirmed per IRS announcement
         "ira_catchup": 1000,
-        "roth_ira_magi_single": 169000,
-        "roth_ira_magi_married": 252000,
-        "hsa_individual": 4400,
-        "hsa_family": 8750,
+        "roth_ira_magi_single": 169000,  # Projected (inflation adjusted)
+        "roth_ira_magi_married": 252000,  # Projected (inflation adjusted)
+        "hsa_individual": 4400,  # Projected
+        "hsa_family": 8750,  # Projected
     },
 }
 
@@ -326,10 +326,10 @@ TAX_DATA = {
             ],
         },
         "standard_deductions": {
-            "married_filing_jointly": 30000,
-            "married_filing_separately": 15000,
-            "single": 15000,
-            "head_of_household": 22500,
+            "married_filing_jointly": 31500,
+            "married_filing_separately": 15750,
+            "single": 15750,
+            "head_of_household": 23625,
         },
         "ltcg_brackets": {
             "married_filing_jointly": [(96700, 0.0), (600050, 0.15), (float('inf'), 0.20)],
@@ -337,14 +337,14 @@ TAX_DATA = {
             "single": [(48350, 0.0), (533400, 0.15), (float('inf'), 0.20)],
             "head_of_household": [(64750, 0.0), (566700, 0.15), (float('inf'), 0.20)],
         },
-        "ss_wage_base": 174900,
+        "ss_wage_base": 176100,
         "amt_exemption": {
-            "married_filing_jointly": 137000, "married_filing_separately": 68500,
-            "single": 88100, "head_of_household": 88100,
+            "married_filing_jointly": 140200, "married_filing_separately": 70100,
+            "single": 90100, "head_of_household": 90100,
         },
         "amt_phaseout_start": {
-            "married_filing_jointly": 1252700, "married_filing_separately": 626350,
-            "single": 626350, "head_of_household": 626350,
+            "married_filing_jointly": 1000000, "married_filing_separately": 500000,
+            "single": 500000, "head_of_household": 500000,
         },
         "amt_rate_threshold": {
             "married_filing_jointly": 239100, "married_filing_separately": 119550,
@@ -355,8 +355,8 @@ TAX_DATA = {
             (6180, 0.035), (7416, 0.04), (8652, 0.045), (float('inf'), 0.048),
         ],
         "mo_standard_deductions": {
-            "married_filing_jointly": 30000, "married_filing_separately": 15000,
-            "single": 15000, "head_of_household": 22500,
+            "married_filing_jointly": 31500, "married_filing_separately": 15750,
+            "single": 15750, "head_of_household": 23625,
         },
         # California tax brackets (2025 - estimated based on inflation adjustments)
         "ca_brackets": {
@@ -407,10 +407,10 @@ TAX_DATA = {
             ],
         },
         "standard_deductions": {
-            "married_filing_jointly": 32200,
-            "married_filing_separately": 16100,
-            "single": 16100,
-            "head_of_household": 24200,
+            "married_filing_jointly": 32200,  # Projected (inflation adjusted)
+            "married_filing_separately": 16100,  # Projected
+            "single": 16100,  # Projected
+            "head_of_household": 24200,  # Projected
         },
         "ltcg_brackets": {
             "married_filing_jointly": [(96700, 0.0), (600050, 0.15), (float('inf'), 0.20)],
@@ -418,14 +418,14 @@ TAX_DATA = {
             "single": [(48350, 0.0), (533400, 0.15), (float('inf'), 0.20)],
             "head_of_household": [(64750, 0.0), (566700, 0.15), (float('inf'), 0.20)],
         },
-        "ss_wage_base": 176100,
+        "ss_wage_base": 176100,  # Projected (inflation adjusted)
         "amt_exemption": {
-            "married_filing_jointly": 137000, "married_filing_separately": 68500,
-            "single": 88100, "head_of_household": 88100,
+            "married_filing_jointly": 140200, "married_filing_separately": 70100,  # Projected
+            "single": 90100, "head_of_household": 90100,  # Projected
         },
         "amt_phaseout_start": {
-            "married_filing_jointly": 1218700, "married_filing_separately": 609350,
-            "single": 609350, "head_of_household": 609350,
+            "married_filing_jointly": 1000000, "married_filing_separately": 500000,  # Projected
+            "single": 500000, "head_of_household": 500000,  # Projected
         },
         "amt_rate_threshold": {
             "married_filing_jointly": 232600, "married_filing_separately": 116300,
@@ -436,8 +436,8 @@ TAX_DATA = {
             (6180, 0.035), (7416, 0.04), (8652, 0.045), (float('inf'), 0.048),
         ],
         "mo_standard_deductions": {
-            "married_filing_jointly": 32200, "married_filing_separately": 16100,
-            "single": 16100, "head_of_household": 24200,
+            "married_filing_jointly": 32200, "married_filing_separately": 16100,  # Projected
+            "single": 16100, "head_of_household": 24200,  # Projected
         },
         # California tax brackets (2026 - estimated based on inflation adjustments)
         "ca_brackets": {
