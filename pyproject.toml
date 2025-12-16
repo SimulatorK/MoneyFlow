@@ -1,5 +1,5 @@
 [project]
-name = "masterbudget"
+name = "moneyflow"
 version = "2.0.0"
 description = "MoneyFlow - Personal finance management with budgeting, expense tracking, tax calculations, investment projections, Monte Carlo simulations, and FIRE planning"
 authors = [

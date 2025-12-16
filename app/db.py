@@ -1,3 +1,4 @@
+import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from app.models import Base
@@ -8,7 +9,8 @@ from app.models.budget import BudgetCategory, FixedCost, BudgetItem
 from app.models.mortgage import MortgageScenario
 from app.models.networth import Account, AccountBalance, AccountContribution, MonteCarloScenario
 
-SQLALCHEMY_DATABASE_URL = "sqlite:///./masterbudget.db"
+# Database URL: configurable via environment variable, defaults to moneyflow.db
+SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./moneyflow.db")
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
 )

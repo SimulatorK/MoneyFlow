@@ -35,9 +35,11 @@ ENV/
 .cursor/
 
 # Database
-# *.db
-# *.sqlite
-# *.sqlite3
+*.db
+*.db.backup
+*.db.this
+*.sqlite
+*.sqlite3
 
 # Logs
 logs/

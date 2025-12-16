@@ -74,7 +74,7 @@ A comprehensive personal finance management application built with FastAPI, SQLA
 
 ```bash
 git clone https://github.com/SimulatorK/MoneyFlow
-cd MasterBudget
+cd MoneyFlow
 ```
 
 # Make sure pyenv is setup properly
@@ -153,7 +153,7 @@ poetry run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 Production mode:
 ```bash
-poetry run uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
+poetry run uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4 --reload
 ```
 
 ### 5. Access the Application
@@ -243,7 +243,7 @@ https://maximiliano-shipless-unliberally.ngrok-free.dev/home
 ## Project Structure
 
 ```
-MasterBudget/
+MoneyFlow/
 ├── alembic/                        # Database migrations
 │   ├── env.py                      # Alembic environment config
 │   ├── script.py.mako              # Migration template
@@ -296,7 +296,7 @@ MasterBudget/
 │   ├── test_expenses.py
 │   └── test_income_taxes.py
 ├── alembic.ini                     # Alembic configuration
-├── masterbudget.db                 # SQLite database (created on first run)
+├── moneyflow.db                    # SQLite database (created on first run)
 ├── poetry.lock                     # Locked dependencies
 ├── pyproject.toml                  # Project config & dependencies
 └── README.md                       # This file
@@ -306,7 +306,7 @@ MasterBudget/
 
 ### Database
 
-The application uses SQLite by default. The database file (`masterbudget.db`) is created automatically on first run in the project root.
+The application uses SQLite by default. The database file (`moneyflow.db`) is created automatically on first run in the project root. The database path can be customized via the `DATABASE_URL` environment variable.
 
 ### Logging
 
