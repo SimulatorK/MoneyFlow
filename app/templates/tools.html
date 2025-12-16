@@ -1329,6 +1329,29 @@
       
       <!-- FIRE Results -->
       <div id="fireResults" style="display: none;">
+        <!-- Current Portfolio Status -->
+        <div id="firePortfolioStatus" style="background: var(--bg-primary); border-radius: 10px; padding: 1em; margin-bottom: 1.5em; border: 1px solid var(--border-light);">
+          <h4 style="margin: 0 0 0.8em 0; color: var(--text-heading);">📂 Your Portfolio (from Net Worth Manager)</h4>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1em; font-size: 0.9em;">
+            <div>
+              <strong>Total Assets:</strong><br>
+              <span id="fireStatusAssets" style="color: #28a745; font-size: 1.1em;">$0</span>
+            </div>
+            <div>
+              <strong>Annual Contributions:</strong><br>
+              <span id="fireStatusContribs" style="color: var(--accent); font-size: 1.1em;">$0/year</span>
+            </div>
+            <div>
+              <strong>Portfolio Allocation:</strong><br>
+              <span id="fireStatusReturn" style="color: var(--text-heading); font-size: 1.1em;" title="Stocks / Bonds / Cash">-</span>
+            </div>
+            <div>
+              <strong>Accounts:</strong><br>
+              <span id="fireStatusAccounts" style="color: var(--text-secondary); font-size: 0.9em;">0 accounts tracked</span>
+            </div>
+          </div>
+        </div>
+        
         <!-- Key Metrics -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1em; margin-bottom: 1.5em;">
           <div style="background: linear-gradient(135deg, rgba(255,107,53,0.1), rgba(255,107,53,0.2)); padding: 1.2em; border-radius: 10px; text-align: center; border: 1px solid rgba(255,107,53,0.3);">
@@ -1400,6 +1423,9 @@
         <!-- FIRE Types Comparison -->
         <div style="background: var(--bg-primary); border-radius: 10px; padding: 1.2em; border: 1px solid var(--border-light);">
           <h4 style="margin: 0 0 1em 0; color: var(--text-heading);">📊 FIRE Approaches Comparison</h4>
+          <p style="font-size: 0.85em; color: var(--text-secondary); margin-bottom: 1em;">
+            Based on your current savings rate and portfolio, here's how long each FIRE approach would take.
+          </p>
           <div style="overflow-x: auto;">
             <table style="width: 100%; border-collapse: collapse; font-size: 0.9em;">
               <thead>
@@ -1407,7 +1433,7 @@
                   <th style="text-align: left; padding: 0.8em 0.5em; color: var(--text-heading);">FIRE Type</th>
                   <th style="text-align: right; padding: 0.8em 0.5em; color: var(--text-heading);">Annual Spending</th>
                   <th style="text-align: right; padding: 0.8em 0.5em; color: var(--text-heading);">FI Number</th>
-                  <th style="text-align: right; padding: 0.8em 0.5em; color: var(--text-heading);">Monthly Withdrawal</th>
+                  <th style="text-align: right; padding: 0.8em 0.5em; color: var(--text-heading);">Time to FI</th>
                 </tr>
               </thead>
               <tbody id="fireComparisonTable">
@@ -3405,11 +3431,23 @@
     // FIRE Planning Functions
     // ==========================================================================
     
+    let fireCalculationInProgress = false;
+    let lastFireResults = null;
+    
     function initFIRECalculator() {
       // Initialize with current net worth from the manager
       const currentNetWorth = {{ networth_summary.total_net_worth | default(0) }};
-      // Pre-populate based on net worth
+      const totalAssets = {{ networth_summary.total_assets | default(0) }};
+      
+      // Pre-populate withdrawal options
       updateWithdrawalOptions();
+      
+      // Show initial summary from current data
+      if (totalAssets > 0) {
+        const fiNumberDefault = 40000 / 0.04; // $40k expenses / 4% SWR = $1M
+        const progressPct = Math.min((totalAssets / fiNumberDefault) * 100, 100);
+        document.getElementById('fireCurrentProgress').textContent = progressPct.toFixed(1) + '%';
+      }
     }
     
     function updateFIREType() {
@@ -3465,115 +3503,158 @@
       }
     }
     
-    function calculateFIRE() {
-      // Get inputs
-      const currentAge = parseInt(document.getElementById('fireCurrentAge').value) || 30;
-      const targetAge = parseInt(document.getElementById('fireTargetAge').value) || 50;
-      const lifeExpectancy = parseInt(document.getElementById('fireLifeExpectancy').value) || 90;
-      const annualExpenses = parseFloat(document.getElementById('fireAnnualExpenses').value) || 50000;
-      const retirementExpenses = parseFloat(document.getElementById('fireRetirementExpenses').value) || 40000;
-      const socialSecurity = parseFloat(document.getElementById('fireSocialSecurity').value) || 0;
-      const inflationRate = parseFloat(document.getElementById('fireInflationRate').value) / 100 || 0.03;
-      const fireType = document.getElementById('fireType').value;
-      const withdrawalMethod = document.getElementById('fireWithdrawalMethod').value;
-      const swr = parseFloat(document.getElementById('fireSWR').value) / 100 || 0.04;
+    async function calculateFIRE() {
+      if (fireCalculationInProgress) return;
+      fireCalculationInProgress = true;
       
-      // Get current net worth from accounts
-      const currentNetWorth = {{ networth_summary.total_net_worth | default(0) }};
-      const totalAssets = {{ networth_summary.total_assets | default(0) }};
+      // Show loading state
+      const calcButton = document.querySelector('#fire-section .btn-calculate');
+      const originalText = calcButton.textContent;
+      calcButton.textContent = '⏳ Calculating...';
+      calcButton.disabled = true;
       
-      // Calculate FI Number based on withdrawal rate
-      let fiNumber;
-      let annualWithdrawal;
+      // Get all inputs
+      const requestData = {
+        current_age: parseInt(document.getElementById('fireCurrentAge').value) || 30,
+        target_retirement_age: parseInt(document.getElementById('fireTargetAge').value) || 50,
+        life_expectancy: parseInt(document.getElementById('fireLifeExpectancy').value) || 90,
+        annual_expenses: parseFloat(document.getElementById('fireAnnualExpenses').value) || 50000,
+        retirement_expenses: parseFloat(document.getElementById('fireRetirementExpenses').value) || 40000,
+        social_security_monthly: parseFloat(document.getElementById('fireSocialSecurity').value) || 0,
+        social_security_start_age: 67,
+        pension_monthly: 0,
+        pension_start_age: 65,
+        inflation_rate: parseFloat(document.getElementById('fireInflationRate').value) || 3.0,
+        fire_type: document.getElementById('fireType').value,
+        withdrawal_method: document.getElementById('fireWithdrawalMethod').value,
+        withdrawal_rate: parseFloat(document.getElementById('fireSWR').value) || 4.0,
+        upper_guardrail: parseFloat(document.getElementById('fireUpperGuardrail').value) || 5.0,
+        lower_guardrail: parseFloat(document.getElementById('fireLowerGuardrail').value) || 3.0,
+        guardrail_adjustment: parseFloat(document.getElementById('fireGuardrailAdjust').value) || 10.0,
+        withdrawal_floor: parseFloat(document.getElementById('fireFloor').value) || 30000,
+        withdrawal_ceiling: parseFloat(document.getElementById('fireCeiling').value) || 80000,
+        num_simulations: 1000,
+        include_monte_carlo: document.getElementById('fireIncludeInMonteCarlo').checked
+      };
       
-      if (withdrawalMethod === 'variable_pct') {
-        // VPW - use average withdrawal rate based on retirement length
-        const retirementYears = lifeExpectancy - targetAge;
-        const avgWithdrawalRate = 1 / (retirementYears * 0.7); // Conservative factor
-        fiNumber = retirementExpenses / avgWithdrawalRate;
-        annualWithdrawal = retirementExpenses;
-      } else {
-        // Fixed SWR or guardrails/floor-ceiling (use base SWR for FI number)
-        fiNumber = retirementExpenses / swr;
-        annualWithdrawal = fiNumber * swr;
-      }
-      
-      // Adjust FI number based on FIRE type
-      let adjustedFINumber = fiNumber;
-      switch(fireType) {
-        case 'lean':
-          adjustedFINumber = fiNumber * 0.8;
-          break;
-        case 'fat':
-          adjustedFINumber = fiNumber * 1.5;
-          break;
-        case 'coast':
-          // Coast FIRE: calculate what you need now to coast to regular retirement at 65
-          const coastYears = 65 - currentAge;
-          const growthRate = 0.07; // Assume 7% growth
-          adjustedFINumber = fiNumber / Math.pow(1 + growthRate, coastYears);
-          break;
-        case 'barista':
-          // Assume part-time income covers 30% of expenses
-          adjustedFINumber = fiNumber * 0.7;
-          break;
-      }
-      
-      // Calculate current progress
-      const progressPct = Math.min((totalAssets / adjustedFINumber) * 100, 100);
-      
-      // Calculate years to FI (simplified formula)
-      // Using compound growth formula: FV = PV(1+r)^n + PMT*((1+r)^n - 1)/r
-      const annualSavings = {{ networth_summary.accounts | selectattr('is_asset') | map(attribute='contribution') | selectattr('amount', 'defined') | map(attribute='amount') | sum | default(0) }} * 12;
-      const expectedReturn = 0.07; // 7% average return
-      
-      let yearsToFI;
-      if (totalAssets >= adjustedFINumber) {
-        yearsToFI = 0;
-      } else if (annualSavings <= 0) {
-        yearsToFI = Infinity;
-      } else {
-        // Solve for n: FI = Assets*(1+r)^n + Savings*((1+r)^n - 1)/r
-        // Numerical approximation
-        yearsToFI = 0;
-        let projectedValue = totalAssets;
-        while (projectedValue < adjustedFINumber && yearsToFI < 100) {
-          projectedValue = projectedValue * (1 + expectedReturn) + annualSavings;
-          yearsToFI++;
+      try {
+        const response = await fetch('/tools/fire/calculate', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(requestData)
+        });
+        
+        const data = await response.json();
+        
+        if (data.error) {
+          alert('FIRE Calculation Error: ' + data.error);
+          return;
         }
+        
+        lastFireResults = data;
+        
+        // Update UI with results
+        updateFIREResultsUI(data);
+        
+      } catch (err) {
+        console.error('FIRE calculation error:', err);
+        alert('Failed to calculate FIRE plan. Please try again.');
+      } finally {
+        fireCalculationInProgress = false;
+        calcButton.textContent = originalText;
+        calcButton.disabled = false;
       }
-      
-      const fiAge = currentAge + yearsToFI;
-      
-      // Update UI
+    }
+    
+    function updateFIREResultsUI(data) {
+      // Show results section
       document.getElementById('fireResults').style.display = 'block';
-      document.getElementById('fireFINumber').textContent = '$' + Math.round(adjustedFINumber).toLocaleString('en-US');
+      
+      // Portfolio status from API (now uses portfolio allocation from MC)
+      const status = data.current_status;
+      document.getElementById('fireStatusAssets').textContent = '$' + Math.round(status.total_assets).toLocaleString('en-US');
+      document.getElementById('fireStatusContribs').textContent = '$' + Math.round(status.annual_contributions).toLocaleString('en-US') + '/year';
+      
+      // Show portfolio allocation instead of expected return
+      const allocation = status.portfolio_allocation;
+      document.getElementById('fireStatusReturn').textContent = 
+        `${allocation.stocks}% / ${allocation.bonds}% / ${allocation.cash}%`;
+      document.getElementById('fireStatusReturn').title = 'Stocks / Bonds / Cash';
+      
+      // Show number of accounts
+      document.getElementById('fireStatusAccounts').textContent = status.num_accounts + ' accounts tracked';
+      
+      // Key metrics from Monte Carlo analysis
+      const fiNumber = data.fi_calculation.fi_number;
+      const progressPct = data.progress.progress_percentage;
+      
+      // Monte Carlo provides ranges - use median for main display
+      const timeToFI = data.time_to_fi;
+      const yearsToFI = timeToFI.years_to_fi?.median;
+      const fiAge = timeToFI.fi_age?.median;
+      const annualWithdrawal = data.withdrawal_strategy.annual_withdrawal;
+      
+      document.getElementById('fireFINumber').textContent = '$' + Math.round(fiNumber).toLocaleString('en-US');
       document.getElementById('fireCurrentProgress').textContent = progressPct.toFixed(1) + '%';
-      document.getElementById('fireYearsToFI').textContent = yearsToFI === Infinity ? '∞' : yearsToFI;
-      document.getElementById('fireFIAge').textContent = yearsToFI === Infinity ? 'Need to increase savings' : `FI at age ${fiAge}`;
+      
+      // Monte Carlo provides a range - show median with range
+      if (yearsToFI === null || yearsToFI >= 100) {
+        document.getElementById('fireYearsToFI').textContent = '∞';
+        document.getElementById('fireFIAge').textContent = 'Need to increase savings';
+      } else {
+        const yearsOptimistic = timeToFI.years_to_fi?.optimistic;
+        const yearsPessimistic = timeToFI.years_to_fi?.pessimistic;
+        document.getElementById('fireYearsToFI').textContent = Math.round(yearsToFI);
+        document.getElementById('fireFIAge').innerHTML = 
+          `FI at age <strong>${fiAge}</strong><br>` +
+          `<span style="font-size: 0.8em; color: var(--text-secondary);">` +
+          `(${Math.round(yearsOptimistic)}-${Math.round(yearsPessimistic)} years range)` +
+          `</span>`;
+      }
       document.getElementById('fireAnnualWithdrawal').textContent = '$' + Math.round(annualWithdrawal).toLocaleString('en-US');
+      
+      // Show FI probability and success rate
+      const fiProbability = timeToFI.fi_probability || 0;
+      const successRate = timeToFI.success_rate || 0;
       
       // Progress bar
       document.getElementById('fireProgressBar').style.width = progressPct + '%';
       document.getElementById('fireProgressText').textContent = progressPct.toFixed(0) + '%';
-      document.getElementById('fireProgressMid').textContent = '$' + Math.round(adjustedFINumber / 2).toLocaleString('en-US');
-      document.getElementById('fireProgressEnd').textContent = '$' + Math.round(adjustedFINumber).toLocaleString('en-US');
+      document.getElementById('fireProgressMid').textContent = '$' + Math.round(fiNumber / 2).toLocaleString('en-US');
+      document.getElementById('fireProgressEnd').textContent = '$' + Math.round(fiNumber).toLocaleString('en-US');
       
       // Withdrawal strategy details
-      updateWithdrawalDetails(withdrawalMethod, swr, retirementExpenses, adjustedFINumber);
+      updateWithdrawalDetails(
+        data.withdrawal_strategy.method,
+        data.fi_calculation.withdrawal_rate / 100,
+        data.withdrawal_strategy.annual_withdrawal,
+        fiNumber,
+        data.withdrawal_strategy.social_security_annual,
+        data.withdrawal_strategy.pension_annual
+      );
       
-      // FIRE types comparison table
-      updateFIREComparison(annualExpenses, retirementExpenses, swr);
+      // FIRE types comparison table from API
+      updateFIREComparisonFromAPI(data.fire_types_comparison);
       
-      // Run Monte Carlo if enabled
-      if (document.getElementById('fireIncludeInMonteCarlo').checked) {
-        runFIREMonteCarlo(adjustedFINumber, yearsToFI, lifeExpectancy - targetAge, withdrawalMethod, swr);
+      // Monte Carlo results - pass full data for context
+      if (data.monte_carlo && data.time_to_fi) {
+        updateFIREMonteCarloUI(data);
       }
     }
     
-    function updateWithdrawalDetails(method, swr, expenses, fiNumber) {
+    function updateWithdrawalDetails(method, swr, expenses, fiNumber, ssAnnual, pensionAnnual) {
       const detailsDiv = document.getElementById('fireWithdrawalDetails');
       let html = '';
+      
+      // Show other income if any
+      const otherIncomeHtml = (ssAnnual > 0 || pensionAnnual > 0) ? `
+        <div style="margin-top: 1em; padding: 0.8em; background: rgba(40,167,69,0.1); border-radius: 6px; border: 1px solid rgba(40,167,69,0.3);">
+          <strong style="color: #28a745;">💰 Other Retirement Income:</strong>
+          ${ssAnnual > 0 ? `<br>Social Security: $${Math.round(ssAnnual).toLocaleString()}/year ($${Math.round(ssAnnual/12).toLocaleString()}/month)` : ''}
+          ${pensionAnnual > 0 ? `<br>Pension: $${Math.round(pensionAnnual).toLocaleString()}/year` : ''}
+          <br><span style="color: var(--text-secondary); font-size: 0.9em;">This reduces the amount needed from your portfolio.</span>
+        </div>
+      ` : '';
       
       switch(method) {
         case 'fixed_swr':
@@ -3584,14 +3665,15 @@
                 <span style="color: var(--text-secondary);">Withdraw ${(swr * 100).toFixed(1)}% of initial portfolio annually, adjusted for inflation.</span>
               </div>
               <div>
-                <strong>Annual Withdrawal:</strong> $${Math.round(fiNumber * swr).toLocaleString()}<br>
-                <strong>Monthly:</strong> $${Math.round(fiNumber * swr / 12).toLocaleString()}
+                <strong>Annual Withdrawal:</strong> $${Math.round(expenses).toLocaleString()}<br>
+                <strong>Monthly:</strong> $${Math.round(expenses / 12).toLocaleString()}
               </div>
               <div>
                 <strong>Historical Success:</strong> ~95% for 30 years<br>
                 <span style="color: var(--text-secondary);">Based on 4% rule studies</span>
               </div>
             </div>
+            ${otherIncomeHtml}
           `;
           break;
           
@@ -3613,6 +3695,7 @@
                 <span style="color: var(--text-secondary);">Adapts automatically to market conditions</span>
               </div>
             </div>
+            ${otherIncomeHtml}
           `;
           break;
           
@@ -3643,6 +3726,7 @@
                 <li>Otherwise, maintain previous spending + inflation adjustment</li>
               </ul>
             </div>
+            ${otherIncomeHtml}
           `;
           break;
           
@@ -3667,6 +3751,7 @@
             <div style="margin-top: 1em; padding: 0.8em; background: var(--bg-card); border-radius: 6px;">
               <strong>How it works:</strong> Use ${(swr * 100).toFixed(1)}% of current portfolio, but never less than $${floor.toLocaleString()} or more than $${ceiling.toLocaleString()}.
             </div>
+            ${otherIncomeHtml}
           `;
           break;
       }
@@ -3674,89 +3759,119 @@
       detailsDiv.innerHTML = html;
     }
     
-    function updateFIREComparison(currentExpenses, retirementExpenses, swr) {
+    function updateFIREComparisonFromAPI(comparison) {
       const tableBody = document.getElementById('fireComparisonTable');
       
-      const types = [
-        { name: 'Lean FIRE', icon: '🥗', spending: currentExpenses * 0.6 },
-        { name: 'Regular FIRE', icon: '🏠', spending: retirementExpenses },
-        { name: 'Fat FIRE', icon: '🎉', spending: currentExpenses * 1.5 },
-        { name: 'Coast FIRE', icon: '⛵', spending: retirementExpenses * 0.7 },
-        { name: 'Barista FIRE', icon: '☕', spending: retirementExpenses * 0.7 },
-      ];
-      
-      tableBody.innerHTML = types.map(t => {
-        const fi = t.spending / swr;
-        const monthly = t.spending / 12;
+      tableBody.innerHTML = comparison.map(t => {
+        const yearsDisplay = (t.years_to_fi === null || t.years_to_fi >= 100) ? '∞' : Math.round(t.years_to_fi);
+        const fiAgeDisplay = (t.fi_age === null || t.fi_age >= 100) ? '-' : t.fi_age;
+        const successRate = t.success_rate || 0;
+        const successColor = successRate >= 80 ? '#28a745' : successRate >= 50 ? '#ffc107' : '#dc3545';
+        
         return `
           <tr style="border-bottom: 1px solid var(--border-light);">
             <td style="padding: 0.8em 0.5em;">${t.icon} ${t.name}</td>
-            <td style="text-align: right; padding: 0.8em 0.5em;">$${Math.round(t.spending).toLocaleString()}</td>
-            <td style="text-align: right; padding: 0.8em 0.5em; font-weight: 600;">$${Math.round(fi).toLocaleString()}</td>
-            <td style="text-align: right; padding: 0.8em 0.5em;">$${Math.round(monthly).toLocaleString()}</td>
+            <td style="text-align: right; padding: 0.8em 0.5em;">$${Math.round(t.annual_spending).toLocaleString()}</td>
+            <td style="text-align: right; padding: 0.8em 0.5em; font-weight: 600;">$${Math.round(t.fi_number).toLocaleString()}</td>
+            <td style="text-align: right; padding: 0.8em 0.5em;">
+              ${yearsDisplay} yrs (age ${fiAgeDisplay})
+              <br><span style="font-size: 0.8em; color: ${successColor};">${successRate.toFixed(0)}% success</span>
+            </td>
           </tr>
         `;
       }).join('');
     }
     
-    async function runFIREMonteCarlo(fiNumber, yearsToFI, retirementYears, withdrawalMethod, swr) {
+    function updateFIREMonteCarloUI(data) {
       const resultsDiv = document.getElementById('fireMCResults');
       resultsDiv.style.display = 'block';
       
-      document.getElementById('fireMCSuccessRate').textContent = 'Running...';
-      document.getElementById('fireMCMedianEnd').textContent = '-';
-      document.getElementById('fireMCWorstCase').textContent = '-';
+      // Get Monte Carlo data from the response
+      const mc = data.monte_carlo;
+      const timeToFI = data.time_to_fi;
       
-      // Get withdrawal parameters
-      const params = {
-        years: retirementYears,
-        num_simulations: 1000,
-        show_todays_dollars: true,
-        include_withdrawals: true,
-        withdrawal_method: withdrawalMethod,
-        withdrawal_rate: swr,
-        annual_withdrawal: fiNumber * swr,
-      };
-      
-      // Add method-specific params
-      if (withdrawalMethod === 'guardrails') {
-        params.upper_guardrail = parseFloat(document.getElementById('fireUpperGuardrail').value) / 100 || 0.05;
-        params.lower_guardrail = parseFloat(document.getElementById('fireLowerGuardrail').value) / 100 || 0.03;
-        params.guardrail_adjustment = parseFloat(document.getElementById('fireGuardrailAdjust').value) / 100 || 0.10;
-      } else if (withdrawalMethod === 'floor_ceiling') {
-        params.withdrawal_floor = parseFloat(document.getElementById('fireFloor').value) || 30000;
-        params.withdrawal_ceiling = parseFloat(document.getElementById('fireCeiling').value) || 80000;
+      if (!mc || !mc.final_portfolio) {
+        resultsDiv.innerHTML = '<p>Monte Carlo simulation data not available.</p>';
+        return;
       }
       
-      try {
-        const response = await fetch('/tools/montecarlo/run', {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify(params)
-        });
-        
-        const data = await response.json();
-        
-        if (data.error) {
-          document.getElementById('fireMCSuccessRate').textContent = 'Error';
-          return;
-        }
-        
-        // Calculate success rate (portfolios that didn't run out)
-        const successRate = data.fire_success_rate ?? 
-          ((data.percentiles.p10 > 0 ? 90 : data.percentiles.p25 > 0 ? 75 : 50) + '%');
-        
-        document.getElementById('fireMCSuccessRate').textContent = 
-          typeof successRate === 'number' ? successRate.toFixed(1) + '%' : successRate;
-        document.getElementById('fireMCMedianEnd').textContent = 
-          '$' + Math.round(data.percentiles.p50).toLocaleString('en-US');
-        document.getElementById('fireMCWorstCase').textContent = 
-          '$' + Math.round(data.percentiles.p10).toLocaleString('en-US');
-          
-      } catch (err) {
-        console.error('FIRE Monte Carlo error:', err);
-        document.getElementById('fireMCSuccessRate').textContent = 'Error';
+      // Success rate
+      const successRate = mc.success_rate || 0;
+      const fiProbability = mc.fi_probability || 0;
+      const successColor = successRate >= 90 ? '#28a745' : successRate >= 75 ? '#ffc107' : '#dc3545';
+      document.getElementById('fireMCSuccessRate').textContent = successRate.toFixed(1) + '%';
+      document.getElementById('fireMCSuccessRate').style.color = successColor;
+      
+      // Median ending balance (at life expectancy)
+      document.getElementById('fireMCMedianEnd').textContent = 
+        '$' + Math.round(mc.final_portfolio.p50).toLocaleString('en-US');
+      
+      // Worst case (p10)
+      const p10Value = mc.final_portfolio.p10;
+      document.getElementById('fireMCWorstCase').textContent = 
+        p10Value > 0 ? '$' + Math.round(p10Value).toLocaleString('en-US') : '$0 (depleted)';
+      document.getElementById('fireMCWorstCase').style.color = p10Value > 0 ? 'var(--text-heading)' : '#dc3545';
+      
+      // Add additional statistics section
+      let additionalStats = document.getElementById('fireMCAdditionalStats');
+      if (!additionalStats) {
+        additionalStats = document.createElement('div');
+        additionalStats.id = 'fireMCAdditionalStats';
+        additionalStats.style.cssText = 'margin-top: 1em; padding: 1em; background: var(--bg-card); border-radius: 8px;';
+        resultsDiv.appendChild(additionalStats);
       }
+      
+      // Build success by retirement age table if available
+      let successByAgeHTML = '';
+      if (timeToFI.success_by_retirement_age && timeToFI.success_by_retirement_age.length > 0) {
+        successByAgeHTML = `
+          <div style="margin-top: 1em;">
+            <h5 style="margin: 0 0 0.8em 0; color: var(--text-heading);">📅 Success Probability by Retirement Age</h5>
+            <div style="display: flex; flex-wrap: wrap; gap: 0.5em;">
+              ${timeToFI.success_by_retirement_age.map(item => {
+                const bgColor = item.success_probability >= 80 ? 'rgba(40,167,69,0.2)' : 
+                               item.success_probability >= 50 ? 'rgba(255,193,7,0.2)' : 'rgba(220,53,69,0.2)';
+                const borderColor = item.success_probability >= 80 ? '#28a745' : 
+                                   item.success_probability >= 50 ? '#ffc107' : '#dc3545';
+                return `
+                  <div style="background: ${bgColor}; border: 1px solid ${borderColor}; border-radius: 8px; 
+                              padding: 0.5em 1em; text-align: center; min-width: 80px;">
+                    <div style="font-weight: 600;">Age ${item.retirement_age}</div>
+                    <div style="font-size: 1.2em; font-weight: 700; color: ${borderColor};">${item.success_probability}%</div>
+                    <div style="font-size: 0.75em; color: var(--text-secondary);">${item.recommendation}</div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        `;
+      }
+      
+      additionalStats.innerHTML = `
+        <h5 style="margin: 0 0 0.8em 0; color: var(--text-heading);">📊 Monte Carlo Analysis Details</h5>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1em; font-size: 0.9em;">
+          <div>
+            <strong>Simulations Run:</strong> ${timeToFI.simulations_run || 1000}<br>
+            <strong>FI Probability:</strong> <span style="color: ${fiProbability >= 80 ? '#28a745' : '#ffc107'};">${fiProbability.toFixed(1)}%</span>
+          </div>
+          <div>
+            <strong>Years to FI Range:</strong><br>
+            Optimistic: ${Math.round(timeToFI.years_to_fi?.optimistic || 0)} years<br>
+            Median: ${Math.round(timeToFI.years_to_fi?.median || 0)} years<br>
+            Pessimistic: ${Math.round(timeToFI.years_to_fi?.pessimistic || 0)} years
+          </div>
+          <div>
+            <strong>Portfolio Survival:</strong> ${successRate.toFixed(1)}%<br>
+            <span style="color: var(--text-secondary);">Lasting through age ${data.profile.life_expectancy}</span>
+          </div>
+          <div>
+            <strong>Final Balance Range:</strong><br>
+            <span style="color: #dc3545;">p10:</span> $${Math.round(mc.final_portfolio.p10).toLocaleString()}<br>
+            <span style="color: #28a745;">p90:</span> $${Math.round(mc.final_portfolio.p90).toLocaleString()}
+          </div>
+        </div>
+        ${successByAgeHTML}
+      `;
     }
   </script>
 </body>

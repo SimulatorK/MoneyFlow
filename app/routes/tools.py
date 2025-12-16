@@ -2315,6 +2315,1194 @@ async def export_networth_csv(request: Request, db: Session = Depends(get_db)):
 
 
 # =============================================================================
+# FIRE Planning Calculator
+# =============================================================================
+
+class FIRERequest(BaseModel):
+    """
+    Request model for FIRE (Financial Independence, Retire Early) calculations.
+    
+    This comprehensive model captures all inputs needed to calculate:
+    - FI Number (target portfolio value)
+    - Years to FI based on actual account data
+    - Monte Carlo success rates for both accumulation and withdrawal phases
+    - Multiple FIRE approach comparisons
+    """
+    # Personal profile
+    current_age: int = 30
+    target_retirement_age: int = 50
+    life_expectancy: int = 90
+    
+    # Expense inputs
+    annual_expenses: float = 50000
+    retirement_expenses: float = 40000  # Often lower than pre-retirement
+    
+    # Other income sources
+    social_security_monthly: float = 0  # Expected SS at 67
+    social_security_start_age: int = 67
+    pension_monthly: float = 0
+    pension_start_age: int = 65
+    
+    # Assumptions
+    inflation_rate: float = 3.0  # As percentage
+    
+    # FIRE type and withdrawal strategy
+    fire_type: str = "regular"  # regular, lean, fat, coast, barista
+    withdrawal_method: str = "fixed_swr"
+    withdrawal_rate: float = 4.0  # As percentage
+    
+    # Withdrawal strategy parameters
+    upper_guardrail: float = 5.0
+    lower_guardrail: float = 3.0
+    guardrail_adjustment: float = 10.0
+    withdrawal_floor: float = 30000
+    withdrawal_ceiling: float = 80000
+    
+    # Barista FIRE - part-time income
+    part_time_income: float = 0
+    part_time_years: int = 10
+    
+    # Monte Carlo settings
+    num_simulations: int = 1000
+    include_monte_carlo: bool = True
+
+
+def calculate_fi_number(
+    retirement_expenses: float,
+    withdrawal_rate: float,
+    fire_type: str,
+    current_age: int,
+    life_expectancy: int,
+    target_retirement_age: int,
+    inflation_rate: float,
+    social_security_annual: float = 0,
+    pension_annual: float = 0
+) -> dict:
+    """
+    Calculate the FI (Financial Independence) number based on FIRE type and withdrawal strategy.
+    
+    The FI number represents the portfolio value needed to sustain retirement withdrawals
+    indefinitely (or until life expectancy for some methods).
+    
+    Args:
+        retirement_expenses: Annual expenses in retirement
+        withdrawal_rate: Safe withdrawal rate as decimal (e.g., 0.04)
+        fire_type: Type of FIRE strategy (regular, lean, fat, coast, barista)
+        current_age: Current age
+        life_expectancy: Expected lifespan
+        target_retirement_age: Age to retire
+        inflation_rate: Expected annual inflation as decimal
+        social_security_annual: Annual Social Security income
+        pension_annual: Annual pension income
+        
+    Returns:
+        Dictionary with FI number and calculation details
+    """
+    # Calculate income from other sources (reduces portfolio needs)
+    # These typically don't start until specific ages, so calculate effective value
+    other_income = social_security_annual + pension_annual
+    
+    # Portfolio must cover expenses NOT covered by other income
+    expenses_from_portfolio = max(0, retirement_expenses - other_income)
+    
+    # Base FI number using traditional formula
+    if withdrawal_rate > 0:
+        base_fi_number = expenses_from_portfolio / withdrawal_rate
+    else:
+        base_fi_number = expenses_from_portfolio * 25  # Fallback to 4% rule
+    
+    # Adjust based on FIRE type
+    years_to_retirement = target_retirement_age - current_age
+    retirement_years = life_expectancy - target_retirement_age
+    
+    fi_details = {
+        "base_fi_number": base_fi_number,
+        "adjustment_factor": 1.0,
+        "adjusted_fi_number": base_fi_number,
+        "fire_type": fire_type,
+        "withdrawal_rate": withdrawal_rate * 100,
+        "expenses_from_portfolio": expenses_from_portfolio,
+        "other_income_annual": other_income,
+    }
+    
+    if fire_type == "lean":
+        # Lean FIRE - minimal expenses, typically 60-70% of regular
+        fi_details["adjustment_factor"] = 0.7
+        fi_details["adjusted_fi_number"] = base_fi_number * 0.7
+        fi_details["description"] = "Minimal lifestyle - requires strict budgeting"
+        
+    elif fire_type == "fat":
+        # Fat FIRE - comfortable/luxury lifestyle, typically 150-200% of regular
+        fi_details["adjustment_factor"] = 1.5
+        fi_details["adjusted_fi_number"] = base_fi_number * 1.5
+        fi_details["description"] = "Comfortable lifestyle with room for luxuries"
+        
+    elif fire_type == "coast":
+        # Coast FIRE - save enough now that it will grow to FI number by traditional retirement
+        # Calculate what you need NOW to coast to full FI by age 65
+        coast_target_age = 65
+        coast_years = coast_target_age - current_age
+        expected_growth = 0.07  # Assume 7% real growth
+        
+        if coast_years > 0:
+            # PV = FV / (1 + r)^n
+            coast_fi_number = base_fi_number / ((1 + expected_growth) ** coast_years)
+            fi_details["adjusted_fi_number"] = coast_fi_number
+            fi_details["adjustment_factor"] = coast_fi_number / base_fi_number if base_fi_number > 0 else 0
+            fi_details["coast_target_age"] = coast_target_age
+            fi_details["coast_years"] = coast_years
+        fi_details["description"] = f"Save enough to let it grow to full FI by age {coast_target_age}"
+        
+    elif fire_type == "barista":
+        # Barista FIRE - part-time work covers some expenses, need smaller portfolio
+        fi_details["adjustment_factor"] = 0.7
+        fi_details["adjusted_fi_number"] = base_fi_number * 0.7
+        fi_details["description"] = "Part-time work covers 30% of expenses"
+        
+    else:  # regular
+        fi_details["adjusted_fi_number"] = base_fi_number
+        fi_details["description"] = "Traditional FIRE - full financial independence"
+    
+    return fi_details
+
+
+def run_monte_carlo_fi_analysis(
+    accounts_data: List[dict],
+    fi_number: float,
+    retirement_expenses: float,
+    current_age: int,
+    life_expectancy: int,
+    withdrawal_rate: float = 0.04,
+    withdrawal_method: str = "fixed_swr",
+    num_simulations: int = 500,
+    social_security_annual: float = 0,
+    ss_start_age: int = 67,
+    pension_annual: float = 0,
+    pension_start_age: int = 65,
+    upper_guardrail: float = 0.05,
+    lower_guardrail: float = 0.03,
+    guardrail_adjustment: float = 0.10,
+    withdrawal_floor: float = 0,
+    withdrawal_ceiling: float = 0
+) -> dict:
+    """
+    Run Monte Carlo simulation to find when FI is achieved and project through life expectancy.
+    
+    This function:
+    1. Simulates portfolio growth using historical returns based on actual portfolio allocations
+    2. Identifies the year when portfolio reaches FI number (can sustain withdrawals)
+    3. Projects through life expectancy to calculate success rates
+    
+    Returns comprehensive FIRE analysis including:
+    - Expected years to FI (median from simulations)
+    - Probability of reaching FI at various ages
+    - Success rate for different retirement ages
+    - Portfolio projection paths
+    """
+    # Get historical returns
+    stock_returns = np.array(HISTORICAL_RETURNS["stocks"])
+    bond_returns = np.array(HISTORICAL_RETURNS["bonds"])
+    cash_returns = np.array(HISTORICAL_RETURNS["cash"])
+    inflation_rates = np.array(HISTORICAL_INFLATION)
+    num_historical_years = len(stock_returns)
+    
+    total_years = life_expectancy - current_age
+    
+    # Calculate weighted average portfolio allocation from accounts
+    total_assets = sum(acc["current_balance"] for acc in accounts_data if acc["is_asset"])
+    if total_assets > 0:
+        avg_stocks_pct = sum(
+            acc["current_balance"] * acc.get("stocks_pct", 80) / 100
+            for acc in accounts_data if acc["is_asset"]
+        ) / total_assets
+        avg_bonds_pct = sum(
+            acc["current_balance"] * acc.get("bonds_pct", 15) / 100
+            for acc in accounts_data if acc["is_asset"]
+        ) / total_assets
+        avg_cash_pct = sum(
+            acc["current_balance"] * acc.get("cash_pct", 5) / 100
+            for acc in accounts_data if acc["is_asset"]
+        ) / total_assets
+    else:
+        avg_stocks_pct, avg_bonds_pct, avg_cash_pct = 0.80, 0.15, 0.05
+    
+    # Results tracking
+    all_fi_years = []  # Year when FI was reached in each simulation
+    all_success = []  # Did the portfolio last through life expectancy?
+    all_paths = []  # Portfolio value paths
+    all_fi_ages = []  # Age when FI was reached
+    
+    # Initial portfolio value
+    initial_value = sum(
+        acc["current_balance"] if acc["is_asset"] else -acc["current_balance"]
+        for acc in accounts_data
+    )
+    
+    # Annual contributions (only during accumulation)
+    total_annual_contributions = sum(
+        acc.get("contribution_monthly", 0) * 12
+        for acc in accounts_data if acc.get("is_asset", False)
+    )
+    
+    for sim in range(num_simulations):
+        # Initialize simulation
+        portfolio_value = initial_value
+        sim_path = [portfolio_value]
+        cumulative_inflation = 1.0
+        fi_reached = False
+        fi_year = None
+        sim_succeeded = True
+        
+        # Block bootstrap for sequential years
+        block_size = min(total_years, 10)
+        year_idx = 0
+        
+        while year_idx < total_years:
+            max_start = num_historical_years - block_size
+            block_start = random.randint(0, max(0, max_start))
+            
+            for block_year in range(block_size):
+                if year_idx >= total_years:
+                    break
+                
+                hist_idx = (block_start + block_year) % num_historical_years
+                yr_stock = stock_returns[hist_idx]
+                yr_bond = bond_returns[hist_idx]
+                yr_cash = cash_returns[hist_idx]
+                
+                inf_idx = min(hist_idx, len(inflation_rates) - 1)
+                yr_inflation = inflation_rates[inf_idx]
+                cumulative_inflation *= (1 + yr_inflation)
+                
+                current_year_age = current_age + year_idx
+                
+                # Check if FI has been reached (portfolio >= FI number)
+                if not fi_reached and portfolio_value >= fi_number * cumulative_inflation:
+                    fi_reached = True
+                    fi_year = year_idx
+                
+                # Apply returns using weighted portfolio allocation
+                # During accumulation, use account-specific allocations
+                # After FI, use average allocation
+                if not fi_reached:
+                    # Accumulation phase - grow portfolio and add contributions
+                    for acc in accounts_data:
+                        if acc["is_asset"]:
+                            acc_stocks = acc.get("stocks_pct", 80) / 100
+                            acc_bonds = acc.get("bonds_pct", 15) / 100
+                            acc_cash = acc.get("cash_pct", 5) / 100
+                            
+                            portfolio_return = (
+                                acc_stocks * yr_stock +
+                                acc_bonds * yr_bond +
+                                acc_cash * yr_cash
+                            )
+                            
+                            # Apply return
+                            acc_value = acc["current_balance"] * ((1 + portfolio_return) ** (year_idx + 1))
+                            # Add contributions for this year
+                            if year_idx > 0:
+                                # Future value of contributions
+                                contrib_fv = acc.get("contribution_monthly", 0) * 12 * (
+                                    ((1 + portfolio_return) ** year_idx - 1) / portfolio_return if portfolio_return != 0 else year_idx
+                                )
+                            else:
+                                contrib_fv = acc.get("contribution_monthly", 0) * 12
+                    
+                    # Simplified: Apply weighted return to total portfolio
+                    portfolio_return = (
+                        avg_stocks_pct * yr_stock +
+                        avg_bonds_pct * yr_bond +
+                        avg_cash_pct * yr_cash
+                    )
+                    portfolio_value *= (1 + portfolio_return)
+                    portfolio_value += total_annual_contributions
+                    
+                else:
+                    # Withdrawal phase - apply returns then withdraw
+                    portfolio_return = (
+                        avg_stocks_pct * yr_stock +
+                        avg_bonds_pct * yr_bond +
+                        avg_cash_pct * yr_cash
+                    )
+                    portfolio_value *= (1 + portfolio_return)
+                    
+                    # Calculate other income for this year
+                    other_income = 0
+                    if ss_start_age > 0 and current_year_age >= ss_start_age:
+                        other_income += social_security_annual * cumulative_inflation
+                    if pension_start_age > 0 and current_year_age >= pension_start_age:
+                        other_income += pension_annual * cumulative_inflation
+                    
+                    # Calculate withdrawal
+                    year_withdrawal = 0
+                    expenses_needed = retirement_expenses * cumulative_inflation - other_income
+                    expenses_needed = max(0, expenses_needed)
+                    
+                    if withdrawal_method == "fixed_swr":
+                        year_withdrawal = expenses_needed
+                        
+                    elif withdrawal_method == "variable_pct":
+                        remaining_years = max(1, life_expectancy - current_year_age)
+                        vpw_rate = 1 / remaining_years
+                        year_withdrawal = min(portfolio_value * vpw_rate, expenses_needed * 1.5)
+                        
+                    elif withdrawal_method == "guardrails":
+                        base_rate = expenses_needed / portfolio_value if portfolio_value > 0 else 0
+                        if base_rate > upper_guardrail:
+                            year_withdrawal = expenses_needed * (1 - guardrail_adjustment)
+                        elif base_rate < lower_guardrail:
+                            year_withdrawal = expenses_needed * (1 + guardrail_adjustment)
+                        else:
+                            year_withdrawal = expenses_needed
+                            
+                    elif withdrawal_method == "floor_ceiling":
+                        adj_floor = withdrawal_floor * cumulative_inflation if withdrawal_floor > 0 else 0
+                        adj_ceiling = withdrawal_ceiling * cumulative_inflation if withdrawal_ceiling > 0 else float('inf')
+                        year_withdrawal = max(adj_floor, min(expenses_needed, adj_ceiling))
+                    
+                    portfolio_value -= max(0, year_withdrawal)
+                
+                # Check for depletion
+                if portfolio_value <= 0:
+                    sim_succeeded = False
+                    portfolio_value = 0
+                
+                sim_path.append(portfolio_value)
+                year_idx += 1
+            
+            if portfolio_value <= 0:
+                break
+        
+        all_fi_years.append(fi_year if fi_year is not None else total_years)
+        all_fi_ages.append(current_age + (fi_year if fi_year is not None else total_years))
+        all_success.append(sim_succeeded)
+        all_paths.append(sim_path)
+    
+    # Calculate statistics
+    fi_years_arr = np.array(all_fi_years)
+    fi_ages_arr = np.array(all_fi_ages)
+    
+    # Percentage of simulations where FI was reached
+    fi_reached_count = sum(1 for y in all_fi_years if y < total_years)
+    fi_probability = (fi_reached_count / num_simulations) * 100
+    
+    # Success rate (portfolio lasted through life expectancy)
+    success_rate = (sum(all_success) / num_simulations) * 100
+    
+    # Percentile paths
+    max_path_len = max(len(p) for p in all_paths)
+    paths_arr = np.array([p + [p[-1]] * (max_path_len - len(p)) for p in all_paths])
+    
+    # Calculate FI year percentiles (only for simulations that reached FI)
+    fi_reached_years = [y for y in all_fi_years if y < total_years]
+    if fi_reached_years:
+        fi_years_percentiles = {
+            "p10": float(np.percentile(fi_reached_years, 10)),
+            "p25": float(np.percentile(fi_reached_years, 25)),
+            "p50": float(np.percentile(fi_reached_years, 50)),
+            "p75": float(np.percentile(fi_reached_years, 75)),
+            "p90": float(np.percentile(fi_reached_years, 90)),
+        }
+    else:
+        fi_years_percentiles = {"p10": None, "p25": None, "p50": None, "p75": None, "p90": None}
+    
+    return {
+        "fi_probability": float(fi_probability),
+        "success_rate": float(success_rate),
+        "simulations_run": num_simulations,
+        "initial_value": float(initial_value),
+        "fi_number": float(fi_number),
+        "annual_contributions": float(total_annual_contributions),
+        "portfolio_allocation": {
+            "stocks": round(avg_stocks_pct * 100, 1),
+            "bonds": round(avg_bonds_pct * 100, 1),
+            "cash": round(avg_cash_pct * 100, 1),
+        },
+        "years_to_fi": {
+            "median": float(np.percentile(fi_years_arr, 50)),
+            "optimistic": float(np.percentile(fi_years_arr, 25)),
+            "pessimistic": float(np.percentile(fi_years_arr, 75)),
+            "percentiles": fi_years_percentiles,
+        },
+        "fi_age": {
+            "median": int(current_age + np.percentile(fi_years_arr, 50)),
+            "optimistic": int(current_age + np.percentile(fi_years_arr, 25)),
+            "pessimistic": int(current_age + np.percentile(fi_years_arr, 75)),
+        },
+        "final_portfolio": {
+            "p10": float(np.percentile([p[-1] for p in all_paths], 10)),
+            "p25": float(np.percentile([p[-1] for p in all_paths], 25)),
+            "p50": float(np.percentile([p[-1] for p in all_paths], 50)),
+            "p75": float(np.percentile([p[-1] for p in all_paths], 75)),
+            "p90": float(np.percentile([p[-1] for p in all_paths], 90)),
+        },
+        "projection_paths": {
+            "p10": [float(np.percentile(paths_arr[:, y], 10)) for y in range(min(total_years + 1, paths_arr.shape[1]))],
+            "p25": [float(np.percentile(paths_arr[:, y], 25)) for y in range(min(total_years + 1, paths_arr.shape[1]))],
+            "p50": [float(np.percentile(paths_arr[:, y], 50)) for y in range(min(total_years + 1, paths_arr.shape[1]))],
+            "p75": [float(np.percentile(paths_arr[:, y], 75)) for y in range(min(total_years + 1, paths_arr.shape[1]))],
+            "p90": [float(np.percentile(paths_arr[:, y], 90)) for y in range(min(total_years + 1, paths_arr.shape[1]))],
+        },
+        "success_by_retirement_age": calculate_success_by_age(
+            all_paths, all_fi_years, current_age, life_expectancy,
+            retirement_expenses, withdrawal_rate, social_security_annual, ss_start_age
+        )
+    }
+
+
+def calculate_success_by_age(
+    all_paths: List[List[float]],
+    all_fi_years: List[int],
+    current_age: int,
+    life_expectancy: int,
+    retirement_expenses: float,
+    withdrawal_rate: float,
+    social_security_annual: float,
+    ss_start_age: int
+) -> List[dict]:
+    """
+    Calculate success rates for retiring at different ages.
+    
+    Returns a list of success rates for each potential retirement age.
+    """
+    results = []
+    num_sims = len(all_paths)
+    
+    # Check success rates for retirement ages from current_age+5 to life_expectancy-10
+    for retire_age in range(current_age + 5, min(life_expectancy - 10, 80), 5):
+        year_idx = retire_age - current_age
+        
+        # Count simulations where portfolio value at this age could support withdrawals
+        success_count = 0
+        for sim_idx, path in enumerate(all_paths):
+            if year_idx < len(path):
+                portfolio_at_age = path[year_idx]
+                # Simple check: can this portfolio support the withdrawal rate?
+                retirement_years = life_expectancy - retire_age
+                # Rough success criteria: portfolio > required annual withdrawal * years
+                if portfolio_at_age > retirement_expenses * retirement_years * 0.6:
+                    success_count += 1
+        
+        success_rate = (success_count / num_sims) * 100 if num_sims > 0 else 0
+        
+        results.append({
+            "retirement_age": retire_age,
+            "years_from_now": retire_age - current_age,
+            "success_probability": round(success_rate, 1),
+            "recommendation": "Likely" if success_rate >= 80 else "Possible" if success_rate >= 50 else "Risky"
+        })
+    
+    return results
+
+
+def calculate_years_to_fi(
+    current_net_worth: float,
+    annual_contributions: float,
+    fi_number: float,
+    expected_return: float = 0.07,
+    inflation_rate: float = 0.03
+) -> dict:
+    """
+    Calculate years until reaching FI number using iterative projection.
+    
+    DEPRECATED: Use run_monte_carlo_fi_analysis for more accurate results.
+    This function is kept for backwards compatibility and quick estimates.
+    """
+    if current_net_worth >= fi_number:
+        return {
+            "years_to_fi": 0,
+            "fi_achieved": True,
+            "final_value": current_net_worth,
+            "total_contributions": 0,
+            "investment_gains": 0,
+            "projection_path": [current_net_worth]
+        }
+    
+    if annual_contributions <= 0 and expected_return <= 0:
+        return {
+            "years_to_fi": float('inf'),
+            "fi_achieved": False,
+            "final_value": current_net_worth,
+            "total_contributions": 0,
+            "investment_gains": 0,
+            "projection_path": [current_net_worth],
+            "message": "Need positive contributions or returns to reach FI"
+        }
+    
+    # Real return (inflation-adjusted) for calculating years
+    real_return = (1 + expected_return) / (1 + inflation_rate) - 1
+    
+    years = 0
+    portfolio = current_net_worth
+    path = [portfolio]
+    total_contributions = 0
+    max_years = 100  # Safety limit
+    
+    while portfolio < fi_number and years < max_years:
+        # Apply return
+        portfolio *= (1 + real_return)
+        # Add contributions
+        portfolio += annual_contributions
+        total_contributions += annual_contributions
+        years += 1
+        path.append(portfolio)
+    
+    investment_gains = portfolio - current_net_worth - total_contributions
+    
+    return {
+        "years_to_fi": years if years < max_years else float('inf'),
+        "fi_achieved": portfolio >= fi_number,
+        "fi_age": years,  # Will be added to current age by caller
+        "final_value": portfolio,
+        "total_contributions": total_contributions,
+        "investment_gains": investment_gains,
+        "projection_path": path,
+        "real_return_used": real_return * 100
+    }
+
+
+def run_fire_monte_carlo(
+    accounts_data: List[dict],
+    years_accumulation: int,
+    years_retirement: int,
+    withdrawal_rate: float,
+    withdrawal_method: str,
+    annual_withdrawal: float,
+    num_simulations: int = 1000,
+    upper_guardrail: float = 0.05,
+    lower_guardrail: float = 0.03,
+    guardrail_adjustment: float = 0.10,
+    withdrawal_floor: float = 0,
+    withdrawal_ceiling: float = 0,
+    social_security_annual: float = 0,
+    ss_start_year: int = 0,
+    pension_annual: float = 0,
+    pension_start_year: int = 0
+) -> dict:
+    """
+    Run Monte Carlo simulation for full FIRE journey: accumulation + withdrawal phases.
+    
+    This simulates:
+    1. Accumulation phase: years of saving/investing before retirement
+    2. Withdrawal phase: years of drawing down portfolio in retirement
+    
+    Args:
+        accounts_data: List of account data with balances and allocations
+        years_accumulation: Years until retirement
+        years_retirement: Years in retirement (life_expectancy - retirement_age)
+        withdrawal_rate: Safe withdrawal rate as decimal
+        withdrawal_method: Withdrawal strategy
+        annual_withdrawal: Initial annual withdrawal amount
+        num_simulations: Number of simulations to run
+        Other params: Strategy-specific parameters
+        
+    Returns:
+        Dictionary with comprehensive simulation results
+    """
+    # Get historical data
+    stock_returns = np.array(HISTORICAL_RETURNS["stocks"])
+    bond_returns = np.array(HISTORICAL_RETURNS["bonds"])
+    cash_returns = np.array(HISTORICAL_RETURNS["cash"])
+    inflation_rates = np.array(HISTORICAL_INFLATION)
+    num_historical_years = len(stock_returns)
+    
+    total_years = years_accumulation + years_retirement
+    
+    # Results tracking
+    all_final_values = []
+    all_fi_values = []  # Value at retirement
+    all_success = []
+    all_years_lasted = []
+    all_paths = []
+    
+    # Initial portfolio value
+    initial_value = sum(
+        acc["current_balance"] if acc["is_asset"] else -acc["current_balance"]
+        for acc in accounts_data
+    )
+    
+    # Annual contributions
+    total_annual_contributions = sum(
+        acc.get("contribution_monthly", 0) * 12
+        for acc in accounts_data if acc.get("is_asset", False)
+    )
+    
+    for sim in range(num_simulations):
+        # Initialize account balances
+        sim_accounts = {}
+        for acc in accounts_data:
+            sim_accounts[acc["id"]] = {
+                "balance": acc["current_balance"],
+                "is_asset": acc["is_asset"],
+                "contribution_monthly": acc.get("contribution_monthly", 0),
+                "stocks_pct": acc.get("stocks_pct", 80) / 100,
+                "bonds_pct": acc.get("bonds_pct", 15) / 100,
+                "cash_pct": acc.get("cash_pct", 5) / 100,
+                "interest_rate": acc.get("interest_rate", 0) / 100 / 12,
+            }
+        
+        portfolio_value = initial_value
+        sim_path = [portfolio_value]
+        cumulative_inflation = 1.0
+        sim_succeeded = True
+        years_lasted = total_years
+        fi_value = 0
+        
+        # Use block bootstrap for sequential years
+        block_size = min(total_years, 10)
+        year_idx = 0
+        
+        while year_idx < total_years:
+            max_start = num_historical_years - block_size
+            block_start = random.randint(0, max(0, max_start))
+            
+            for block_year in range(block_size):
+                if year_idx >= total_years:
+                    break
+                
+                hist_idx = (block_start + block_year) % num_historical_years
+                yr_stock = stock_returns[hist_idx]
+                yr_bond = bond_returns[hist_idx]
+                yr_cash = cash_returns[hist_idx]
+                
+                inf_idx = min(hist_idx, len(inflation_rates) - 1)
+                yr_inflation = inflation_rates[inf_idx]
+                cumulative_inflation *= (1 + yr_inflation)
+                
+                # Phase determination
+                is_accumulation = year_idx < years_accumulation
+                
+                # Update all accounts
+                for acc_id, acc in sim_accounts.items():
+                    if acc["is_asset"]:
+                        # Apply portfolio return
+                        portfolio_return = (
+                            acc["stocks_pct"] * yr_stock +
+                            acc["bonds_pct"] * yr_bond +
+                            acc["cash_pct"] * yr_cash
+                        )
+                        acc["balance"] *= (1 + portfolio_return)
+                        
+                        # Only add contributions during accumulation
+                        if is_accumulation:
+                            acc["balance"] += acc["contribution_monthly"] * 12
+                    else:
+                        # Liability
+                        for month in range(12):
+                            acc["balance"] *= (1 + acc["interest_rate"])
+                            acc["balance"] = max(0, acc["balance"] - acc["contribution_monthly"])
+                
+                # Calculate net worth
+                portfolio_value = sum(
+                    acc["balance"] if acc["is_asset"] else -acc["balance"]
+                    for acc in sim_accounts.values()
+                )
+                
+                # Record FI value (at end of accumulation)
+                if year_idx == years_accumulation - 1:
+                    fi_value = portfolio_value
+                
+                # Apply withdrawals during retirement
+                if not is_accumulation and portfolio_value > 0:
+                    # Calculate other income for this year
+                    retirement_year = year_idx - years_accumulation
+                    other_income = 0
+                    if ss_start_year > 0 and retirement_year >= ss_start_year:
+                        other_income += social_security_annual * cumulative_inflation
+                    if pension_start_year > 0 and retirement_year >= pension_start_year:
+                        other_income += pension_annual * cumulative_inflation
+                    
+                    # Calculate withdrawal based on method
+                    year_withdrawal = 0
+                    
+                    if withdrawal_method == "fixed_swr":
+                        year_withdrawal = annual_withdrawal * cumulative_inflation - other_income
+                        
+                    elif withdrawal_method == "variable_pct":
+                        remaining_years = max(1, years_retirement - retirement_year)
+                        vpw_rate = 1 / remaining_years
+                        year_withdrawal = portfolio_value * vpw_rate - other_income
+                        
+                    elif withdrawal_method == "guardrails":
+                        base_withdrawal = annual_withdrawal * cumulative_inflation
+                        current_rate = base_withdrawal / portfolio_value if portfolio_value > 0 else 0
+                        
+                        if current_rate > upper_guardrail:
+                            year_withdrawal = base_withdrawal * (1 - guardrail_adjustment)
+                        elif current_rate < lower_guardrail:
+                            year_withdrawal = base_withdrawal * (1 + guardrail_adjustment)
+                        else:
+                            year_withdrawal = base_withdrawal
+                        year_withdrawal -= other_income
+                        
+                    elif withdrawal_method == "floor_ceiling":
+                        base_withdrawal = portfolio_value * withdrawal_rate
+                        adj_floor = withdrawal_floor * cumulative_inflation
+                        adj_ceiling = withdrawal_ceiling * cumulative_inflation
+                        year_withdrawal = max(adj_floor, min(base_withdrawal, adj_ceiling)) - other_income
+                    
+                    year_withdrawal = max(0, year_withdrawal)  # Can't withdraw negative
+                    
+                    # Distribute withdrawal across accounts proportionally
+                    total_assets = sum(acc["balance"] for acc in sim_accounts.values() if acc["is_asset"])
+                    if total_assets > 0 and year_withdrawal > 0:
+                        for acc_id, acc in sim_accounts.items():
+                            if acc["is_asset"]:
+                                acc_share = acc["balance"] / total_assets
+                                withdrawal_from_acc = min(acc["balance"], year_withdrawal * acc_share)
+                                acc["balance"] -= withdrawal_from_acc
+                    
+                    # Recalculate after withdrawal
+                    portfolio_value = sum(
+                        acc["balance"] if acc["is_asset"] else -acc["balance"]
+                        for acc in sim_accounts.values()
+                    )
+                
+                # Check for portfolio depletion
+                if portfolio_value <= 0:
+                    sim_succeeded = False
+                    years_lasted = year_idx
+                    portfolio_value = 0
+                    break
+                
+                sim_path.append(portfolio_value)
+                year_idx += 1
+            
+            if portfolio_value <= 0:
+                break
+        
+        all_final_values.append(portfolio_value)
+        all_fi_values.append(fi_value)
+        all_success.append(sim_succeeded)
+        all_years_lasted.append(years_lasted)
+        all_paths.append(sim_path)
+    
+    # Calculate statistics
+    final_values_arr = np.array(all_final_values)
+    fi_values_arr = np.array(all_fi_values)
+    years_lasted_arr = np.array(all_years_lasted)
+    
+    success_count = sum(all_success)
+    success_rate = (success_count / num_simulations) * 100
+    
+    # Percentile paths for visualization
+    paths_arr = np.array([p + [p[-1]] * (total_years + 1 - len(p)) for p in all_paths])
+    
+    return {
+        "success_rate": float(success_rate),
+        "success_count": int(success_count),
+        "failure_count": int(num_simulations - success_count),
+        "initial_value": float(initial_value),
+        "annual_contributions": float(total_annual_contributions),
+        "years_accumulation": years_accumulation,
+        "years_retirement": years_retirement,
+        "total_years": total_years,
+        "fi_value_percentiles": {
+            "p10": float(np.percentile(fi_values_arr, 10)),
+            "p25": float(np.percentile(fi_values_arr, 25)),
+            "p50": float(np.percentile(fi_values_arr, 50)),
+            "p75": float(np.percentile(fi_values_arr, 75)),
+            "p90": float(np.percentile(fi_values_arr, 90)),
+        },
+        "final_value_percentiles": {
+            "p10": float(np.percentile(final_values_arr, 10)),
+            "p25": float(np.percentile(final_values_arr, 25)),
+            "p50": float(np.percentile(final_values_arr, 50)),
+            "p75": float(np.percentile(final_values_arr, 75)),
+            "p90": float(np.percentile(final_values_arr, 90)),
+            "mean": float(np.mean(final_values_arr)),
+        },
+        "years_lasted_percentiles": {
+            "p10": float(np.percentile(years_lasted_arr, 10)),
+            "p25": float(np.percentile(years_lasted_arr, 25)),
+            "p50": float(np.percentile(years_lasted_arr, 50)),
+            "min": float(np.min(years_lasted_arr)),
+        },
+        "paths": {
+            "p10": [float(np.percentile(paths_arr[:, y], 10)) for y in range(min(total_years + 1, paths_arr.shape[1]))],
+            "p25": [float(np.percentile(paths_arr[:, y], 25)) for y in range(min(total_years + 1, paths_arr.shape[1]))],
+            "p50": [float(np.percentile(paths_arr[:, y], 50)) for y in range(min(total_years + 1, paths_arr.shape[1]))],
+            "p75": [float(np.percentile(paths_arr[:, y], 75)) for y in range(min(total_years + 1, paths_arr.shape[1]))],
+            "p90": [float(np.percentile(paths_arr[:, y], 90)) for y in range(min(total_years + 1, paths_arr.shape[1]))],
+        }
+    }
+
+
+@router.post("/tools/fire/calculate")
+async def calculate_fire_plan(
+    request: Request,
+    body: FIRERequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Calculate comprehensive FIRE (Financial Independence, Retire Early) plan.
+    
+    This endpoint:
+    1. Retrieves current net worth and account data from the user's portfolio
+    2. Calculates the FI number based on FIRE type and withdrawal strategy
+    3. Projects years to FI using actual contribution rates and portfolio allocations
+    4. Runs Monte Carlo simulations for both accumulation and withdrawal phases
+    5. Compares different FIRE approaches
+    
+    Returns detailed metrics including:
+    - FI Number and progress
+    - Years to FI with projection path
+    - Monte Carlo success rates
+    - FIRE type comparisons
+    - Withdrawal strategy details
+    """
+    user = get_current_user(request, db)
+    if not user:
+        return JSONResponse({"error": "Not authenticated"}, status_code=401)
+    
+    # Get user's accounts
+    accounts = db.query(Account).filter(
+        Account.user_id == user.id,
+        Account.is_active == True
+    ).all()
+    
+    # Build accounts data with latest balances and contribution settings
+    accounts_data = []
+    total_assets = 0
+    total_liabilities = 0
+    total_monthly_contributions = 0
+    
+    # Calculate weighted average expected return
+    weighted_return_sum = 0
+    total_asset_value = 0
+    
+    for acc in accounts:
+        # Get latest balance
+        latest_bal = db.query(AccountBalance).filter(
+            AccountBalance.account_id == acc.id
+        ).order_by(AccountBalance.balance_date.desc()).first()
+        
+        current_balance = latest_bal.balance if latest_bal else 0
+        
+        # Get contribution settings
+        contrib = db.query(AccountContribution).filter(
+            AccountContribution.account_id == acc.id
+        ).first()
+        
+        # Calculate monthly contribution
+        contrib_amount = 0
+        expected_return = 7.0
+        stocks_pct = 80
+        bonds_pct = 15
+        cash_pct = 5
+        interest_rate = 0
+        
+        if contrib:
+            raw_amount = contrib.amount if contrib.amount is not None else 0
+            freq = contrib.frequency or "monthly"
+            
+            # Convert to monthly
+            freq_multiplier = {
+                "annually": 1/12, "quarterly": 1/3, "monthly": 1,
+                "semi-monthly": 2, "bi-weekly": 2.17, "weekly": 4.33
+            }.get(freq, 1)
+            
+            contrib_amount = raw_amount * freq_multiplier
+            
+            if contrib.expected_return is not None:
+                expected_return = contrib.expected_return
+            if contrib.stocks_pct is not None:
+                stocks_pct = contrib.stocks_pct
+            if contrib.bonds_pct is not None:
+                bonds_pct = contrib.bonds_pct
+            if contrib.cash_pct is not None:
+                cash_pct = contrib.cash_pct
+            if contrib.interest_rate is not None:
+                interest_rate = contrib.interest_rate
+        
+        if acc.is_asset:
+            total_assets += current_balance
+            total_monthly_contributions += contrib_amount
+            weighted_return_sum += current_balance * expected_return / 100
+            total_asset_value += current_balance
+        else:
+            total_liabilities += current_balance
+        
+        accounts_data.append({
+            "id": acc.id,
+            "name": acc.name,
+            "account_type": acc.account_type,
+            "is_asset": acc.is_asset,
+            "current_balance": current_balance,
+            "contribution_monthly": contrib_amount,
+            "expected_return": expected_return,
+            "stocks_pct": stocks_pct,
+            "bonds_pct": bonds_pct,
+            "cash_pct": cash_pct,
+            "interest_rate": interest_rate
+        })
+    
+    current_net_worth = total_assets - total_liabilities
+    annual_contributions = total_monthly_contributions * 12
+    
+    # Convert inputs
+    inflation_rate = body.inflation_rate / 100
+    withdrawal_rate = body.withdrawal_rate / 100
+    
+    # Social Security and pension (annual amounts)
+    social_security_annual = body.social_security_monthly * 12
+    pension_annual = body.pension_monthly * 12
+    
+    # Calculate FI Number based on withdrawal strategy
+    fi_result = calculate_fi_number(
+        retirement_expenses=body.retirement_expenses,
+        withdrawal_rate=withdrawal_rate,
+        fire_type=body.fire_type,
+        current_age=body.current_age,
+        life_expectancy=body.life_expectancy,
+        target_retirement_age=body.target_retirement_age,
+        inflation_rate=inflation_rate,
+        social_security_annual=social_security_annual,
+        pension_annual=pension_annual
+    )
+    
+    fi_number = fi_result["adjusted_fi_number"]
+    
+    # Calculate progress
+    progress_pct = min((total_assets / fi_number) * 100, 100) if fi_number > 0 else 0
+    
+    # =========================================================================
+    # Run Monte Carlo analysis for FIRE projections
+    # Uses actual portfolio allocations and historical returns
+    # =========================================================================
+    mc_fi_analysis = None
+    if len(accounts_data) > 0:
+        mc_fi_analysis = run_monte_carlo_fi_analysis(
+            accounts_data=accounts_data,
+            fi_number=fi_number,
+            retirement_expenses=body.retirement_expenses,
+            current_age=body.current_age,
+            life_expectancy=body.life_expectancy,
+            withdrawal_rate=withdrawal_rate,
+            withdrawal_method=body.withdrawal_method,
+            num_simulations=body.num_simulations,
+            social_security_annual=social_security_annual,
+            ss_start_age=body.social_security_start_age,
+            pension_annual=pension_annual,
+            pension_start_age=body.pension_start_age,
+            upper_guardrail=body.upper_guardrail / 100,
+            lower_guardrail=body.lower_guardrail / 100,
+            guardrail_adjustment=body.guardrail_adjustment / 100,
+            withdrawal_floor=body.withdrawal_floor,
+            withdrawal_ceiling=body.withdrawal_ceiling
+        )
+    
+    # Extract years to FI from Monte Carlo results
+    if mc_fi_analysis:
+        years_to_fi_median = mc_fi_analysis["years_to_fi"]["median"]
+        years_to_fi_optimistic = mc_fi_analysis["years_to_fi"]["optimistic"]
+        years_to_fi_pessimistic = mc_fi_analysis["years_to_fi"]["pessimistic"]
+        fi_age_median = mc_fi_analysis["fi_age"]["median"]
+        fi_age_optimistic = mc_fi_analysis["fi_age"]["optimistic"]
+        fi_age_pessimistic = mc_fi_analysis["fi_age"]["pessimistic"]
+        fi_probability = mc_fi_analysis["fi_probability"]
+        success_rate = mc_fi_analysis["success_rate"]
+    else:
+        # Fallback to simple calculation if no accounts
+        years_to_fi_median = None
+        years_to_fi_optimistic = None
+        years_to_fi_pessimistic = None
+        fi_age_median = None
+        fi_age_optimistic = None
+        fi_age_pessimistic = None
+        fi_probability = 0
+        success_rate = 0
+    
+    # FIRE types comparison (run simplified MC for each type)
+    fire_types_comparison = []
+    swr = withdrawal_rate if withdrawal_rate > 0 else 0.04
+    
+    fire_types = [
+        {"type": "lean", "name": "Lean FIRE", "icon": "🥗", "expense_mult": 0.6},
+        {"type": "regular", "name": "Regular FIRE", "icon": "🏠", "expense_mult": 1.0},
+        {"type": "fat", "name": "Fat FIRE", "icon": "🎉", "expense_mult": 1.5},
+        {"type": "coast", "name": "Coast FIRE", "icon": "⛵", "expense_mult": 0.7},
+        {"type": "barista", "name": "Barista FIRE", "icon": "☕", "expense_mult": 0.7},
+    ]
+    
+    for ft in fire_types:
+        expenses = body.retirement_expenses * ft["expense_mult"]
+        type_fi = calculate_fi_number(
+            retirement_expenses=expenses,
+            withdrawal_rate=swr,
+            fire_type=ft["type"],
+            current_age=body.current_age,
+            life_expectancy=body.life_expectancy,
+            target_retirement_age=body.target_retirement_age,
+            inflation_rate=inflation_rate,
+            social_security_annual=social_security_annual,
+            pension_annual=pension_annual
+        )
+        
+        # Run quick Monte Carlo for this FIRE type (fewer simulations for speed)
+        type_mc = None
+        if len(accounts_data) > 0:
+            type_mc = run_monte_carlo_fi_analysis(
+                accounts_data=accounts_data,
+                fi_number=type_fi["adjusted_fi_number"],
+                retirement_expenses=expenses,
+                current_age=body.current_age,
+                life_expectancy=body.life_expectancy,
+                withdrawal_rate=swr,
+                withdrawal_method=body.withdrawal_method,
+                num_simulations=200,  # Fewer simulations for comparison
+                social_security_annual=social_security_annual,
+                ss_start_age=body.social_security_start_age,
+                pension_annual=pension_annual,
+                pension_start_age=body.pension_start_age
+            )
+        
+        fire_types_comparison.append({
+            "type": ft["type"],
+            "name": ft["name"],
+            "icon": ft["icon"],
+            "annual_spending": expenses,
+            "fi_number": type_fi["adjusted_fi_number"],
+            "monthly_withdrawal": expenses / 12,
+            "years_to_fi": type_mc["years_to_fi"]["median"] if type_mc else None,
+            "fi_age": type_mc["fi_age"]["median"] if type_mc else None,
+            "success_rate": type_mc["success_rate"] if type_mc else 0,
+            "fi_probability": type_mc["fi_probability"] if type_mc else 0
+        })
+    
+    # Build response
+    response = {
+        "success": True,
+        "profile": {
+            "current_age": body.current_age,
+            "target_retirement_age": body.target_retirement_age,
+            "life_expectancy": body.life_expectancy,
+            "retirement_years": body.life_expectancy - body.target_retirement_age
+        },
+        "current_status": {
+            "total_assets": total_assets,
+            "total_liabilities": total_liabilities,
+            "net_worth": current_net_worth,
+            "annual_contributions": annual_contributions,
+            "monthly_contributions": total_monthly_contributions,
+            "portfolio_allocation": mc_fi_analysis["portfolio_allocation"] if mc_fi_analysis else {"stocks": 80, "bonds": 15, "cash": 5},
+            "num_accounts": len(accounts_data)
+        },
+        "fi_calculation": {
+            "fi_number": fi_number,
+            "base_fi_number": fi_result["base_fi_number"],
+            "fire_type": body.fire_type,
+            "withdrawal_rate": withdrawal_rate * 100,
+            "expenses_from_portfolio": fi_result["expenses_from_portfolio"],
+            "other_income_annual": fi_result["other_income_annual"],
+            "description": fi_result.get("description", "")
+        },
+        "progress": {
+            "current_value": total_assets,
+            "fi_number": fi_number,
+            "progress_percentage": progress_pct,
+            "remaining_amount": max(0, fi_number - total_assets)
+        },
+        "time_to_fi": {
+            "method": "monte_carlo",
+            "simulations_run": mc_fi_analysis["simulations_run"] if mc_fi_analysis else 0,
+            "years_to_fi": {
+                "median": years_to_fi_median,
+                "optimistic": years_to_fi_optimistic,  # 25th percentile (faster)
+                "pessimistic": years_to_fi_pessimistic,  # 75th percentile (slower)
+            },
+            "fi_age": {
+                "median": fi_age_median,
+                "optimistic": fi_age_optimistic,
+                "pessimistic": fi_age_pessimistic,
+            },
+            "fi_probability": fi_probability,  # % of simulations that reached FI
+            "success_rate": success_rate,  # % where portfolio lasted through life expectancy
+            "projection_paths": mc_fi_analysis["projection_paths"] if mc_fi_analysis else None,
+            "success_by_retirement_age": mc_fi_analysis["success_by_retirement_age"] if mc_fi_analysis else []
+        },
+        "withdrawal_strategy": {
+            "method": body.withdrawal_method,
+            "annual_withdrawal": body.retirement_expenses,
+            "monthly_withdrawal": body.retirement_expenses / 12,
+            "social_security_annual": social_security_annual,
+            "pension_annual": pension_annual
+        },
+        "fire_types_comparison": fire_types_comparison,
+        "monte_carlo": {
+            "final_portfolio": mc_fi_analysis["final_portfolio"] if mc_fi_analysis else None,
+            "success_rate": success_rate,
+            "fi_probability": fi_probability,
+        }
+    }
+    
+    logger.info(f"FIRE MC analysis for user {user.username}: FI Number=${fi_number:,.0f}, "
+                f"Median Years to FI={years_to_fi_median}, Success Rate={success_rate:.1f}%")
+    
+    return JSONResponse(response)
+
+
+@router.get("/tools/fire/summary")
+async def get_fire_summary(
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    """
+    Get a quick FIRE summary based on current net worth and default assumptions.
+    
+    This is a lightweight endpoint for displaying basic FIRE metrics on the dashboard
+    without requiring all the input parameters of a full calculation.
+    """
+    user = get_current_user(request, db)
+    if not user:
+        return JSONResponse({"error": "Not authenticated"}, status_code=401)
+    
+    # Get total assets and contributions
+    accounts = db.query(Account).filter(
+        Account.user_id == user.id,
+        Account.is_active == True,
+        Account.is_asset == True
+    ).all()
+    
+    total_assets = 0
+    total_monthly_contributions = 0
+    
+    for acc in accounts:
+        latest_bal = db.query(AccountBalance).filter(
+            AccountBalance.account_id == acc.id
+        ).order_by(AccountBalance.balance_date.desc()).first()
+        
+        if latest_bal:
+            total_assets += latest_bal.balance
+        
+        contrib = db.query(AccountContribution).filter(
+            AccountContribution.account_id == acc.id
+        ).first()
+        
+        if contrib and contrib.amount:
+            freq_multiplier = {"annually": 1/12, "quarterly": 1/3, "monthly": 1}.get(
+                contrib.frequency or "monthly", 1
+            )
+            total_monthly_contributions += contrib.amount * freq_multiplier
+    
+    # Default assumptions
+    default_retirement_expenses = 50000  # $50k/year
+    default_swr = 0.04  # 4%
+    
+    fi_number = default_retirement_expenses / default_swr
+    progress_pct = min((total_assets / fi_number) * 100, 100) if fi_number > 0 else 0
+    
+    return JSONResponse({
+        "total_assets": total_assets,
+        "annual_contributions": total_monthly_contributions * 12,
+        "fi_number_default": fi_number,
+        "progress_percentage": progress_pct,
+        "has_accounts": len(accounts) > 0
+    })
+
+
+# =============================================================================
 # About Page
 # =============================================================================
 
