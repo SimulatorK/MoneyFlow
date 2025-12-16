@@ -2546,8 +2546,8 @@ def run_monte_carlo_fi_analysis(
     
     for sim in range(num_simulations):
         # Initialize simulation
-        portfolio_value = initial_value
-        sim_path = [portfolio_value]
+        portfolio_value = initial_value  # Nominal value
+        sim_path_real = [portfolio_value]  # Real values (today's dollars)
         cumulative_inflation = 1.0
         fi_reached = False
         fi_year = None
@@ -2576,47 +2576,23 @@ def run_monte_carlo_fi_analysis(
                 
                 current_year_age = current_age + year_idx
                 
-                # Check if FI has been reached (portfolio >= FI number)
-                if not fi_reached and portfolio_value >= fi_number * cumulative_inflation:
+                # Check if FI has been reached (real portfolio value >= FI number in today's dollars)
+                real_portfolio_value = portfolio_value / cumulative_inflation
+                if not fi_reached and real_portfolio_value >= fi_number:
                     fi_reached = True
                     fi_year = year_idx
                 
                 # Apply returns using weighted portfolio allocation
-                # During accumulation, use account-specific allocations
-                # After FI, use average allocation
                 if not fi_reached:
                     # Accumulation phase - grow portfolio and add contributions
-                    for acc in accounts_data:
-                        if acc["is_asset"]:
-                            acc_stocks = acc.get("stocks_pct", 80) / 100
-                            acc_bonds = acc.get("bonds_pct", 15) / 100
-                            acc_cash = acc.get("cash_pct", 5) / 100
-                            
-                            portfolio_return = (
-                                acc_stocks * yr_stock +
-                                acc_bonds * yr_bond +
-                                acc_cash * yr_cash
-                            )
-                            
-                            # Apply return
-                            acc_value = acc["current_balance"] * ((1 + portfolio_return) ** (year_idx + 1))
-                            # Add contributions for this year
-                            if year_idx > 0:
-                                # Future value of contributions
-                                contrib_fv = acc.get("contribution_monthly", 0) * 12 * (
-                                    ((1 + portfolio_return) ** year_idx - 1) / portfolio_return if portfolio_return != 0 else year_idx
-                                )
-                            else:
-                                contrib_fv = acc.get("contribution_monthly", 0) * 12
-                    
-                    # Simplified: Apply weighted return to total portfolio
                     portfolio_return = (
                         avg_stocks_pct * yr_stock +
                         avg_bonds_pct * yr_bond +
                         avg_cash_pct * yr_cash
                     )
                     portfolio_value *= (1 + portfolio_return)
-                    portfolio_value += total_annual_contributions
+                    # Contributions grow with inflation (in real terms they stay constant)
+                    portfolio_value += total_annual_contributions * cumulative_inflation
                     
                 else:
                     # Withdrawal phase - apply returns then withdraw
@@ -2627,14 +2603,14 @@ def run_monte_carlo_fi_analysis(
                     )
                     portfolio_value *= (1 + portfolio_return)
                     
-                    # Calculate other income for this year
+                    # Calculate other income for this year (inflation-adjusted)
                     other_income = 0
                     if ss_start_age > 0 and current_year_age >= ss_start_age:
                         other_income += social_security_annual * cumulative_inflation
                     if pension_start_age > 0 and current_year_age >= pension_start_age:
                         other_income += pension_annual * cumulative_inflation
                     
-                    # Calculate withdrawal
+                    # Calculate withdrawal (in nominal terms)
                     year_withdrawal = 0
                     expenses_needed = retirement_expenses * cumulative_inflation - other_income
                     expenses_needed = max(0, expenses_needed)
@@ -2668,7 +2644,9 @@ def run_monte_carlo_fi_analysis(
                     sim_succeeded = False
                     portfolio_value = 0
                 
-                sim_path.append(portfolio_value)
+                # Store real (today's dollars) value for path
+                real_value = portfolio_value / cumulative_inflation if portfolio_value > 0 else 0
+                sim_path_real.append(real_value)
                 year_idx += 1
             
             if portfolio_value <= 0:
@@ -2677,7 +2655,7 @@ def run_monte_carlo_fi_analysis(
         all_fi_years.append(fi_year if fi_year is not None else total_years)
         all_fi_ages.append(current_age + (fi_year if fi_year is not None else total_years))
         all_success.append(sim_succeeded)
-        all_paths.append(sim_path)
+        all_paths.append(sim_path_real)  # Store real (inflation-adjusted) paths
     
     # Calculate statistics
     fi_years_arr = np.array(all_fi_years)

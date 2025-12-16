@@ -1137,14 +1137,14 @@
     <!-- FIRE Planning Section -->
     <div id="fire-section" class="calculator-card" style="display: none;">
       <h2>🔥 FIRE Planning</h2>
-      <p class="subtitle">Plan your path to Financial Independence and Retire Early with multiple FIRE approaches and withdrawal strategies.</p>
+      <p class="subtitle">Plan your path to Financial Independence using Monte Carlo simulations with historical market data.</p>
       
       <!-- FIRE Overview -->
       <div style="background: rgba(255,107,53,0.1); border-radius: 10px; padding: 1em; margin-bottom: 1.5em; border: 1px solid rgba(255,107,53,0.3);">
         <h4 style="margin: 0 0 0.5em 0; color: #ff6b35; font-size: 0.95em;">🔥 What is FIRE?</h4>
         <p style="margin: 0; font-size: 0.85em; color: var(--text-secondary);">
-          <strong>F</strong>inancial <strong>I</strong>ndependence, <strong>R</strong>etire <strong>E</strong>arly - the goal is to save enough that your investments can support your living expenses indefinitely, 
-          giving you the freedom to work optionally. Your <strong>FI Number</strong> is typically 25× your annual expenses (based on the 4% safe withdrawal rate).
+          <strong>F</strong>inancial <strong>I</strong>ndependence, <strong>R</strong>etire <strong>E</strong>arly - the goal is to save enough that your investments can support your living expenses indefinitely.
+          All amounts are in <strong>today's dollars</strong> - inflation is modeled using historical data in the Monte Carlo simulation.
         </p>
       </div>
       
@@ -1158,48 +1158,8 @@
             <input type="number" id="fireCurrentAge" value="30" min="18" max="80" style="width: 100%;">
           </div>
           <div class="form-group">
-            <label>Target Retirement Age</label>
-            <input type="number" id="fireTargetAge" value="50" min="25" max="90" style="width: 100%;">
-          </div>
-          <div class="form-group">
             <label>Life Expectancy</label>
             <input type="number" id="fireLifeExpectancy" value="90" min="60" max="110" style="width: 100%;">
-          </div>
-        </div>
-        
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1em; margin-bottom: 1.5em;">
-          <div class="form-group">
-            <label>Annual Expenses (Current)</label>
-            <div style="position: relative;">
-              <span style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-secondary);">$</span>
-              <input type="number" id="fireAnnualExpenses" value="50000" min="0" style="width: 100%; padding-left: 25px;">
-            </div>
-          </div>
-          <div class="form-group">
-            <label>Expected Expenses in Retirement</label>
-            <div style="position: relative;">
-              <span style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-secondary);">$</span>
-              <input type="number" id="fireRetirementExpenses" value="40000" min="0" style="width: 100%; padding-left: 25px;">
-            </div>
-            <small style="color: var(--text-secondary);">Often 80% of pre-retirement</small>
-          </div>
-          <div class="form-group">
-            <label>Social Security (Monthly, at 67)</label>
-            <div style="position: relative;">
-              <span style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-secondary);">$</span>
-              <input type="number" id="fireSocialSecurity" value="2000" min="0" style="width: 100%; padding-left: 25px;">
-            </div>
-            <small style="color: var(--text-secondary);">0 if not planning to receive</small>
-          </div>
-        </div>
-        
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1em;">
-          <div class="form-group">
-            <label>Inflation Rate Assumption</label>
-            <div style="position: relative;">
-              <input type="number" id="fireInflationRate" value="3.0" min="0" max="10" step="0.1" style="width: 100%; padding-right: 25px;">
-              <span style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--text-secondary);">%</span>
-            </div>
           </div>
           <div class="form-group">
             <label>FIRE Type</label>
@@ -1210,6 +1170,31 @@
               <option value="coast">Coast FIRE (stop saving, coast to retirement)</option>
               <option value="barista">Barista FIRE (part-time work + investments)</option>
             </select>
+          </div>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1em;">
+          <div class="form-group">
+            <label>Annual Expenses <small style="color: var(--text-secondary);">(today's $)</small></label>
+            <div style="position: relative;">
+              <span style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-secondary);">$</span>
+              <input type="number" id="fireAnnualExpenses" value="50000" min="0" style="width: 100%; padding-left: 25px;">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Retirement Expenses <small style="color: var(--text-secondary);">(today's $)</small></label>
+            <div style="position: relative;">
+              <span style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-secondary);">$</span>
+              <input type="number" id="fireRetirementExpenses" value="40000" min="0" style="width: 100%; padding-left: 25px;">
+            </div>
+            <small style="color: var(--text-secondary);">Often 80% of pre-retirement</small>
+          </div>
+          <div class="form-group">
+            <label>Social Security <small style="color: var(--text-secondary);">(monthly at 67, today's $)</small></label>
+            <div style="position: relative;">
+              <span style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-secondary);">$</span>
+              <input type="number" id="fireSocialSecurity" value="2000" min="0" style="width: 100%; padding-left: 25px;">
+            </div>
           </div>
         </div>
       </div>
@@ -1242,9 +1227,6 @@
         <!-- Dynamic Withdrawal Options (hidden by default) -->
         <div id="guardrailsOptions" style="display: none; margin-top: 1em; padding: 1em; background: rgba(56,117,232,0.05); border-radius: 8px;">
           <h5 style="margin: 0 0 0.8em 0; color: var(--text-heading);">Guardrails Strategy Options</h5>
-          <p style="font-size: 0.85em; color: var(--text-secondary); margin-bottom: 1em;">
-            Increase withdrawals after good years, decrease after bad years within set boundaries.
-          </p>
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1em;">
             <div class="form-group">
               <label>Upper Guardrail</label>
@@ -1252,7 +1234,6 @@
                 <input type="number" id="fireUpperGuardrail" value="5.0" min="1" max="10" step="0.1" style="width: 100%; padding-right: 25px;">
                 <span style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--text-secondary);">%</span>
               </div>
-              <small style="color: #28a745;">Max increase after good year</small>
             </div>
             <div class="form-group">
               <label>Lower Guardrail</label>
@@ -1260,7 +1241,6 @@
                 <input type="number" id="fireLowerGuardrail" value="3.0" min="1" max="10" step="0.1" style="width: 100%; padding-right: 25px;">
                 <span style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--text-secondary);">%</span>
               </div>
-              <small style="color: #dc3545;">Min decrease after bad year</small>
             </div>
             <div class="form-group">
               <label>Adjustment %</label>
@@ -1268,16 +1248,12 @@
                 <input type="number" id="fireGuardrailAdjust" value="10" min="1" max="25" step="1" style="width: 100%; padding-right: 25px;">
                 <span style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--text-secondary);">%</span>
               </div>
-              <small style="color: var(--text-secondary);">How much to adjust</small>
             </div>
           </div>
         </div>
         
         <div id="floorCeilingOptions" style="display: none; margin-top: 1em; padding: 1em; background: rgba(56,117,232,0.05); border-radius: 8px;">
-          <h5 style="margin: 0 0 0.8em 0; color: var(--text-heading);">Floor & Ceiling Options</h5>
-          <p style="font-size: 0.85em; color: var(--text-secondary); margin-bottom: 1em;">
-            Set minimum and maximum annual withdrawal amounts regardless of portfolio value.
-          </p>
+          <h5 style="margin: 0 0 0.8em 0; color: var(--text-heading);">Floor & Ceiling Options <small>(today's $)</small></h5>
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1em;">
             <div class="form-group">
               <label>Floor (Minimum Annual)</label>
@@ -1299,33 +1275,14 @@
         <div id="vpwOptions" style="display: none; margin-top: 1em; padding: 1em; background: rgba(56,117,232,0.05); border-radius: 8px;">
           <h5 style="margin: 0 0 0.8em 0; color: var(--text-heading);">Variable Percentage Withdrawal (VPW)</h5>
           <p style="font-size: 0.85em; color: var(--text-secondary); margin-bottom: 0;">
-            Withdraws a percentage based on remaining life expectancy and portfolio value. Automatically adjusts each year - higher withdrawals as you age.
+            Withdraws a percentage based on remaining life expectancy. Higher withdrawals as you age.
             <br><strong>Formula:</strong> Withdrawal = Portfolio Value × (1 ÷ Remaining Years)
           </p>
         </div>
       </div>
       
-      <!-- Include in Simulations -->
-      <div style="background: var(--bg-primary); border-radius: 10px; padding: 1.2em; margin-bottom: 1.5em; border: 1px solid var(--border-light);">
-        <h4 style="margin: 0 0 1em 0; color: var(--text-heading);">🔗 Simulation Integration</h4>
-        <p style="font-size: 0.9em; color: var(--text-secondary); margin-bottom: 1em;">
-          Include withdrawal phase in your projections and Monte Carlo simulations.
-        </p>
-        
-        <div style="display: flex; flex-wrap: wrap; gap: 1.5em;">
-          <label style="display: flex; align-items: center; gap: 0.5em; cursor: pointer;">
-            <input type="checkbox" id="fireIncludeInProjections" checked>
-            <span>Include in Investment Projections</span>
-          </label>
-          <label style="display: flex; align-items: center; gap: 0.5em; cursor: pointer;">
-            <input type="checkbox" id="fireIncludeInMonteCarlo" checked>
-            <span>Include in Monte Carlo Simulation</span>
-          </label>
-        </div>
-      </div>
-      
       <!-- Calculate Button -->
-      <button class="btn-calculate" onclick="calculateFIRE()" style="margin-bottom: 1.5em;">🔥 Calculate FIRE Plan</button>
+      <button class="btn-calculate" onclick="calculateFIRE()" style="margin-bottom: 1.5em;">🔥 Run Monte Carlo FIRE Analysis</button>
       
       <!-- FIRE Results -->
       <div id="fireResults" style="display: none;">
@@ -1398,25 +1355,97 @@
           </div>
         </div>
         
-        <!-- Monte Carlo Success Rate (if enabled) -->
-        <div id="fireMCResults" style="display: none; background: linear-gradient(135deg, rgba(56,117,232,0.05), rgba(56,117,232,0.15)); border-radius: 10px; padding: 1.2em; margin-bottom: 1.5em; border: 1px solid rgba(56,117,232,0.3);">
-          <h4 style="margin: 0 0 1em 0; color: var(--accent);">🎲 Monte Carlo Success Rate</h4>
-          <p style="font-size: 0.9em; color: var(--text-secondary); margin-bottom: 1em;">
-            Probability that your portfolio will last through retirement based on historical market simulations.
+        <!-- Scenario Analysis -->
+        <div id="fireMCResults" style="display: none; background: var(--bg-primary); border-radius: 10px; padding: 1.2em; margin-bottom: 1.5em; border: 1px solid var(--border-light);">
+          <h4 style="margin: 0 0 0.5em 0; color: var(--text-heading);">📊 Scenario Analysis</h4>
+          <p style="font-size: 0.85em; color: var(--text-secondary); margin-bottom: 1em;">
+            Based on <span id="fireSimCount">1000</span> Monte Carlo simulations using historical market data (1928-2023).
+            All values shown in today's dollars.
           </p>
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1em;">
-            <div style="text-align: center; padding: 1em; background: var(--bg-card); border-radius: 8px;">
-              <div style="font-size: 0.85em; color: var(--text-secondary);">Success Rate</div>
+          
+          <!-- Scenario Cards -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1em; margin-bottom: 1.5em;">
+            <!-- Very Poor Scenario (p10) -->
+            <div style="background: linear-gradient(135deg, rgba(220,53,69,0.1), rgba(220,53,69,0.2)); padding: 1.2em; border-radius: 10px; border: 1px solid rgba(220,53,69,0.3);">
+              <div style="display: flex; align-items: center; gap: 0.5em; margin-bottom: 0.8em;">
+                <span style="font-size: 1.5em;">⚠️</span>
+                <div>
+                  <div style="font-weight: 600; color: #dc3545;">Very Poor Scenario</div>
+                  <div style="font-size: 0.75em; color: var(--text-secondary);">Bottom 10% of simulations</div>
+                </div>
+              </div>
+              <div style="margin-bottom: 0.5em;">
+                <div style="font-size: 0.85em; color: var(--text-secondary);">Ending Balance (today's $)</div>
+                <div id="fireScenarioPoor" style="font-size: 1.4em; font-weight: 700; color: #dc3545;">-</div>
+              </div>
+              <div>
+                <div style="font-size: 0.85em; color: var(--text-secondary);">Years to FI</div>
+                <div id="fireScenarioPoorYears" style="font-size: 1.1em; font-weight: 600; color: var(--text-heading);">-</div>
+              </div>
+            </div>
+            
+            <!-- Below Average Scenario (p25) -->
+            <div style="background: linear-gradient(135deg, rgba(255,193,7,0.1), rgba(255,193,7,0.2)); padding: 1.2em; border-radius: 10px; border: 1px solid rgba(255,193,7,0.3);">
+              <div style="display: flex; align-items: center; gap: 0.5em; margin-bottom: 0.8em;">
+                <span style="font-size: 1.5em;">📉</span>
+                <div>
+                  <div style="font-weight: 600; color: #d39e00;">Below Average</div>
+                  <div style="font-size: 0.75em; color: var(--text-secondary);">Bottom 25% of simulations</div>
+                </div>
+              </div>
+              <div style="margin-bottom: 0.5em;">
+                <div style="font-size: 0.85em; color: var(--text-secondary);">Ending Balance (today's $)</div>
+                <div id="fireScenarioBelowAvg" style="font-size: 1.4em; font-weight: 700; color: #d39e00;">-</div>
+              </div>
+              <div>
+                <div style="font-size: 0.85em; color: var(--text-secondary);">Years to FI</div>
+                <div id="fireScenarioBelowAvgYears" style="font-size: 1.1em; font-weight: 600; color: var(--text-heading);">-</div>
+              </div>
+            </div>
+            
+            <!-- Average Scenario (p50) -->
+            <div style="background: linear-gradient(135deg, rgba(40,167,69,0.1), rgba(40,167,69,0.2)); padding: 1.2em; border-radius: 10px; border: 1px solid rgba(40,167,69,0.3);">
+              <div style="display: flex; align-items: center; gap: 0.5em; margin-bottom: 0.8em;">
+                <span style="font-size: 1.5em;">📈</span>
+                <div>
+                  <div style="font-weight: 600; color: #28a745;">Average Scenario</div>
+                  <div style="font-size: 0.75em; color: var(--text-secondary);">Median (50th percentile)</div>
+                </div>
+              </div>
+              <div style="margin-bottom: 0.5em;">
+                <div style="font-size: 0.85em; color: var(--text-secondary);">Ending Balance (today's $)</div>
+                <div id="fireScenarioAvg" style="font-size: 1.4em; font-weight: 700; color: #28a745;">-</div>
+              </div>
+              <div>
+                <div style="font-size: 0.85em; color: var(--text-secondary);">Years to FI</div>
+                <div id="fireScenarioAvgYears" style="font-size: 1.1em; font-weight: 600; color: var(--text-heading);">-</div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Success Rate Summary -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1em; margin-bottom: 1.5em;">
+            <div style="background: var(--bg-card); padding: 1em; border-radius: 8px; text-align: center;">
+              <div style="font-size: 0.85em; color: var(--text-secondary);">Portfolio Survival Rate</div>
               <div id="fireMCSuccessRate" style="font-size: 2em; font-weight: 700; color: #28a745;">-</div>
+              <div style="font-size: 0.75em; color: var(--text-secondary);">Lasting through life expectancy</div>
             </div>
-            <div style="text-align: center; padding: 1em; background: var(--bg-card); border-radius: 8px;">
-              <div style="font-size: 0.85em; color: var(--text-secondary);">Median Ending Balance</div>
-              <div id="fireMCMedianEnd" style="font-size: 1.5em; font-weight: 600; color: var(--text-heading);">-</div>
+            <div style="background: var(--bg-card); padding: 1em; border-radius: 8px; text-align: center;">
+              <div style="font-size: 0.85em; color: var(--text-secondary);">FI Achievement Rate</div>
+              <div id="fireFIProbability" style="font-size: 2em; font-weight: 700; color: var(--accent);">-</div>
+              <div style="font-size: 0.75em; color: var(--text-secondary);">Simulations reaching FI number</div>
             </div>
-            <div style="text-align: center; padding: 1em; background: var(--bg-card); border-radius: 8px;">
-              <div style="font-size: 0.85em; color: var(--text-secondary);">Worst Case (p10)</div>
-              <div id="fireMCWorstCase" style="font-size: 1.5em; font-weight: 600; color: #dc3545;">-</div>
-            </div>
+          </div>
+          
+          <!-- Net Worth Projection Chart -->
+          <div style="background: var(--bg-card); border-radius: 10px; padding: 1em; margin-bottom: 1em;">
+            <h5 style="margin: 0 0 1em 0; color: var(--text-heading);">📈 Net Worth Projection (Today's Dollars)</h5>
+            <canvas id="fireProjectionChart" height="250"></canvas>
+          </div>
+          
+          <!-- Success by Age -->
+          <div id="fireSuccessByAge" style="margin-top: 1em;">
+            <!-- Populated by JavaScript -->
           </div>
         </div>
         
@@ -3503,6 +3532,8 @@
       }
     }
     
+    let fireProjectionChart = null;  // Chart.js instance for FIRE projection
+    
     async function calculateFIRE() {
       if (fireCalculationInProgress) return;
       fireCalculationInProgress = true;
@@ -3510,13 +3541,13 @@
       // Show loading state
       const calcButton = document.querySelector('#fire-section .btn-calculate');
       const originalText = calcButton.textContent;
-      calcButton.textContent = '⏳ Calculating...';
+      calcButton.textContent = '⏳ Running simulations...';
       calcButton.disabled = true;
       
-      // Get all inputs
+      // Get all inputs (all in today's dollars - inflation handled by historical data)
       const requestData = {
         current_age: parseInt(document.getElementById('fireCurrentAge').value) || 30,
-        target_retirement_age: parseInt(document.getElementById('fireTargetAge').value) || 50,
+        target_retirement_age: 65,  // Not used as input, MC finds optimal retirement age
         life_expectancy: parseInt(document.getElementById('fireLifeExpectancy').value) || 90,
         annual_expenses: parseFloat(document.getElementById('fireAnnualExpenses').value) || 50000,
         retirement_expenses: parseFloat(document.getElementById('fireRetirementExpenses').value) || 40000,
@@ -3524,7 +3555,7 @@
         social_security_start_age: 67,
         pension_monthly: 0,
         pension_start_age: 65,
-        inflation_rate: parseFloat(document.getElementById('fireInflationRate').value) || 3.0,
+        inflation_rate: 3.0,  // Used internally, actual inflation from historical data in MC
         fire_type: document.getElementById('fireType').value,
         withdrawal_method: document.getElementById('fireWithdrawalMethod').value,
         withdrawal_rate: parseFloat(document.getElementById('fireSWR').value) || 4.0,
@@ -3534,7 +3565,7 @@
         withdrawal_floor: parseFloat(document.getElementById('fireFloor').value) || 30000,
         withdrawal_ceiling: parseFloat(document.getElementById('fireCeiling').value) || 80000,
         num_simulations: 1000,
-        include_monte_carlo: document.getElementById('fireIncludeInMonteCarlo').checked
+        include_monte_carlo: true  // Always run MC for FIRE planning
       };
       
       try {
@@ -3795,83 +3826,217 @@
         return;
       }
       
-      // Success rate
+      // Update simulation count
+      document.getElementById('fireSimCount').textContent = timeToFI.simulations_run || 1000;
+      
+      // Update scenario cards
+      // Very Poor Scenario (p10)
+      const poorEnd = mc.final_portfolio.p10;
+      document.getElementById('fireScenarioPoor').textContent = 
+        poorEnd > 0 ? '$' + Math.round(poorEnd).toLocaleString('en-US') : '$0 (depleted)';
+      document.getElementById('fireScenarioPoorYears').textContent = 
+        Math.round(timeToFI.years_to_fi?.percentiles?.p90 || timeToFI.years_to_fi?.pessimistic || 0) + ' years';
+      
+      // Below Average Scenario (p25)
+      const belowAvgEnd = mc.final_portfolio.p25;
+      document.getElementById('fireScenarioBelowAvg').textContent = 
+        '$' + Math.round(belowAvgEnd).toLocaleString('en-US');
+      document.getElementById('fireScenarioBelowAvgYears').textContent = 
+        Math.round(timeToFI.years_to_fi?.percentiles?.p75 || timeToFI.years_to_fi?.pessimistic || 0) + ' years';
+      
+      // Average Scenario (p50)
+      document.getElementById('fireScenarioAvg').textContent = 
+        '$' + Math.round(mc.final_portfolio.p50).toLocaleString('en-US');
+      document.getElementById('fireScenarioAvgYears').textContent = 
+        Math.round(timeToFI.years_to_fi?.median || 0) + ' years';
+      
+      // Success rates
       const successRate = mc.success_rate || 0;
       const fiProbability = mc.fi_probability || 0;
       const successColor = successRate >= 90 ? '#28a745' : successRate >= 75 ? '#ffc107' : '#dc3545';
+      const fiColor = fiProbability >= 90 ? '#28a745' : fiProbability >= 75 ? '#ffc107' : '#dc3545';
+      
       document.getElementById('fireMCSuccessRate').textContent = successRate.toFixed(1) + '%';
       document.getElementById('fireMCSuccessRate').style.color = successColor;
+      document.getElementById('fireFIProbability').textContent = fiProbability.toFixed(1) + '%';
+      document.getElementById('fireFIProbability').style.color = fiColor;
       
-      // Median ending balance (at life expectancy)
-      document.getElementById('fireMCMedianEnd').textContent = 
-        '$' + Math.round(mc.final_portfolio.p50).toLocaleString('en-US');
+      // Create projection chart
+      createFIREProjectionChart(data);
       
-      // Worst case (p10)
-      const p10Value = mc.final_portfolio.p10;
-      document.getElementById('fireMCWorstCase').textContent = 
-        p10Value > 0 ? '$' + Math.round(p10Value).toLocaleString('en-US') : '$0 (depleted)';
-      document.getElementById('fireMCWorstCase').style.color = p10Value > 0 ? 'var(--text-heading)' : '#dc3545';
-      
-      // Add additional statistics section
-      let additionalStats = document.getElementById('fireMCAdditionalStats');
-      if (!additionalStats) {
-        additionalStats = document.createElement('div');
-        additionalStats.id = 'fireMCAdditionalStats';
-        additionalStats.style.cssText = 'margin-top: 1em; padding: 1em; background: var(--bg-card); border-radius: 8px;';
-        resultsDiv.appendChild(additionalStats);
-      }
-      
-      // Build success by retirement age table if available
-      let successByAgeHTML = '';
+      // Build success by retirement age section
+      const successByAgeDiv = document.getElementById('fireSuccessByAge');
       if (timeToFI.success_by_retirement_age && timeToFI.success_by_retirement_age.length > 0) {
-        successByAgeHTML = `
-          <div style="margin-top: 1em;">
-            <h5 style="margin: 0 0 0.8em 0; color: var(--text-heading);">📅 Success Probability by Retirement Age</h5>
-            <div style="display: flex; flex-wrap: wrap; gap: 0.5em;">
-              ${timeToFI.success_by_retirement_age.map(item => {
-                const bgColor = item.success_probability >= 80 ? 'rgba(40,167,69,0.2)' : 
-                               item.success_probability >= 50 ? 'rgba(255,193,7,0.2)' : 'rgba(220,53,69,0.2)';
-                const borderColor = item.success_probability >= 80 ? '#28a745' : 
-                                   item.success_probability >= 50 ? '#ffc107' : '#dc3545';
-                return `
-                  <div style="background: ${bgColor}; border: 1px solid ${borderColor}; border-radius: 8px; 
-                              padding: 0.5em 1em; text-align: center; min-width: 80px;">
-                    <div style="font-weight: 600;">Age ${item.retirement_age}</div>
-                    <div style="font-size: 1.2em; font-weight: 700; color: ${borderColor};">${item.success_probability}%</div>
-                    <div style="font-size: 0.75em; color: var(--text-secondary);">${item.recommendation}</div>
-                  </div>
-                `;
-              }).join('')}
-            </div>
+        successByAgeDiv.innerHTML = `
+          <h5 style="margin: 0 0 0.8em 0; color: var(--text-heading);">📅 Retirement Feasibility by Age</h5>
+          <div style="display: flex; flex-wrap: wrap; gap: 0.5em;">
+            ${timeToFI.success_by_retirement_age.map(item => {
+              const bgColor = item.success_probability >= 80 ? 'rgba(40,167,69,0.2)' : 
+                             item.success_probability >= 50 ? 'rgba(255,193,7,0.2)' : 'rgba(220,53,69,0.2)';
+              const borderColor = item.success_probability >= 80 ? '#28a745' : 
+                                 item.success_probability >= 50 ? '#ffc107' : '#dc3545';
+              return `
+                <div style="background: ${bgColor}; border: 1px solid ${borderColor}; border-radius: 8px; 
+                            padding: 0.5em 1em; text-align: center; min-width: 80px;">
+                  <div style="font-weight: 600;">Age ${item.retirement_age}</div>
+                  <div style="font-size: 1.2em; font-weight: 700; color: ${borderColor};">${item.success_probability}%</div>
+                  <div style="font-size: 0.75em; color: var(--text-secondary);">${item.recommendation}</div>
+                </div>
+              `;
+            }).join('')}
           </div>
         `;
+      } else {
+        successByAgeDiv.innerHTML = '';
+      }
+    }
+    
+    function createFIREProjectionChart(data) {
+      const canvas = document.getElementById('fireProjectionChart');
+      if (!canvas) return;
+      
+      const ctx = canvas.getContext('2d');
+      const timeToFI = data.time_to_fi;
+      const paths = timeToFI.projection_paths;
+      
+      if (!paths || !paths.p50) {
+        return;
       }
       
-      additionalStats.innerHTML = `
-        <h5 style="margin: 0 0 0.8em 0; color: var(--text-heading);">📊 Monte Carlo Analysis Details</h5>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1em; font-size: 0.9em;">
-          <div>
-            <strong>Simulations Run:</strong> ${timeToFI.simulations_run || 1000}<br>
-            <strong>FI Probability:</strong> <span style="color: ${fiProbability >= 80 ? '#28a745' : '#ffc107'};">${fiProbability.toFixed(1)}%</span>
-          </div>
-          <div>
-            <strong>Years to FI Range:</strong><br>
-            Optimistic: ${Math.round(timeToFI.years_to_fi?.optimistic || 0)} years<br>
-            Median: ${Math.round(timeToFI.years_to_fi?.median || 0)} years<br>
-            Pessimistic: ${Math.round(timeToFI.years_to_fi?.pessimistic || 0)} years
-          </div>
-          <div>
-            <strong>Portfolio Survival:</strong> ${successRate.toFixed(1)}%<br>
-            <span style="color: var(--text-secondary);">Lasting through age ${data.profile.life_expectancy}</span>
-          </div>
-          <div>
-            <strong>Final Balance Range:</strong><br>
-            <span style="color: #dc3545;">p10:</span> $${Math.round(mc.final_portfolio.p10).toLocaleString()}<br>
-            <span style="color: #28a745;">p90:</span> $${Math.round(mc.final_portfolio.p90).toLocaleString()}
-          </div>
-        </div>
-        ${successByAgeHTML}
-      `;
+      const currentAge = data.profile.current_age;
+      const lifeExpectancy = data.profile.life_expectancy;
+      const totalYears = lifeExpectancy - currentAge;
+      
+      // Create labels (ages)
+      const labels = [];
+      for (let i = 0; i <= Math.min(totalYears, paths.p50.length - 1); i++) {
+        labels.push(currentAge + i);
+      }
+      
+      // Destroy existing chart if it exists
+      if (fireProjectionChart) {
+        fireProjectionChart.destroy();
+      }
+      
+      // Create new chart
+      fireProjectionChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'Very Poor (p10)',
+              data: paths.p10.slice(0, labels.length),
+              borderColor: 'rgba(220, 53, 69, 0.8)',
+              backgroundColor: 'rgba(220, 53, 69, 0.1)',
+              borderWidth: 2,
+              fill: false,
+              tension: 0.3,
+              pointRadius: 0,
+              pointHoverRadius: 4
+            },
+            {
+              label: 'Below Average (p25)',
+              data: paths.p25.slice(0, labels.length),
+              borderColor: 'rgba(255, 193, 7, 0.8)',
+              backgroundColor: 'rgba(255, 193, 7, 0.1)',
+              borderWidth: 2,
+              fill: false,
+              tension: 0.3,
+              pointRadius: 0,
+              pointHoverRadius: 4
+            },
+            {
+              label: 'Average (p50)',
+              data: paths.p50.slice(0, labels.length),
+              borderColor: 'rgba(40, 167, 69, 0.8)',
+              backgroundColor: 'rgba(40, 167, 69, 0.1)',
+              borderWidth: 3,
+              fill: false,
+              tension: 0.3,
+              pointRadius: 0,
+              pointHoverRadius: 4
+            },
+            {
+              label: 'FI Number',
+              data: Array(labels.length).fill(data.fi_calculation.fi_number),
+              borderColor: 'rgba(111, 66, 193, 0.8)',
+              backgroundColor: 'transparent',
+              borderWidth: 2,
+              borderDash: [10, 5],
+              fill: false,
+              pointRadius: 0,
+              pointHoverRadius: 0
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: {
+            mode: 'index',
+            intersect: false
+          },
+          plugins: {
+            legend: {
+              display: true,
+              position: 'bottom',
+              labels: {
+                color: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary'),
+                usePointStyle: true,
+                padding: 15
+              }
+            },
+            tooltip: {
+              callbacks: {
+                title: function(context) {
+                  return 'Age ' + context[0].label;
+                },
+                label: function(context) {
+                  return context.dataset.label + ': $' + Math.round(context.raw).toLocaleString();
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              title: {
+                display: true,
+                text: 'Age',
+                color: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary')
+              },
+              grid: {
+                color: getComputedStyle(document.documentElement).getPropertyValue('--border-light')
+              },
+              ticks: {
+                color: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary'),
+                maxTicksLimit: 10
+              }
+            },
+            y: {
+              title: {
+                display: true,
+                text: 'Portfolio Value (Today\'s $)',
+                color: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary')
+              },
+              grid: {
+                color: getComputedStyle(document.documentElement).getPropertyValue('--border-light')
+              },
+              ticks: {
+                color: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary'),
+                callback: function(value) {
+                  if (value >= 1000000) {
+                    return '$' + (value / 1000000).toFixed(1) + 'M';
+                  } else if (value >= 1000) {
+                    return '$' + (value / 1000).toFixed(0) + 'K';
+                  }
+                  return '$' + value;
+                }
+              }
+            }
+          }
+        }
+      });
     }
   </script>
 </body>
