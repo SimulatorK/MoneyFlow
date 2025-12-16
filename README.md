@@ -153,7 +153,7 @@ poetry run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 Production mode:
 ```bash
-poetry run uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4 --reload
+poetry run uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
 ```
 
 ### 5. Access the Application

@@ -13,9 +13,16 @@ class IncomeTaxes(Base):
     filing_status = Column(String, default="married_filing_jointly")
     filing_state = Column(String, default="MO")  # State for state income tax
     
-    # Base income
+    # Base income (employment)
     base_salary = Column(Float, default=0)
     pay_frequency = Column(String)
+    
+    # Non-employment income (annual) - Subject to income tax but NOT FICA
+    social_security_income = Column(Float, default=0)      # Social Security benefits
+    pension_income = Column(Float, default=0)              # Pension/annuity income
+    traditional_ira_distribution = Column(Float, default=0) # Traditional IRA withdrawals
+    traditional_401k_distribution = Column(Float, default=0) # Traditional 401k withdrawals
+    other_taxable_income = Column(Float, default=0)        # Other taxable income (rental, etc.)
     
     # Optional investment income (annual)
     short_term_cap_gains = Column(Float, default=0)

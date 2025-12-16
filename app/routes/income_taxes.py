@@ -85,6 +85,61 @@ CONTRIBS = [
     ("employer_401k", "Employer 401k (match/based on salary)")
 ]
 
+# ==================== CONTRIBUTION LIMITS BY YEAR ====================
+# IRS retirement contribution limits by tax year
+CONTRIBUTION_LIMITS = {
+    2023: {
+        "401k_employee": 22500,       # Employee elective deferral limit
+        "401k_catchup": 7500,         # Age 50+ catch-up contribution
+        "401k_total": 66000,          # Total annual additions (employee + employer + after-tax)
+        "ira": 6500,                  # Traditional + Roth IRA combined
+        "ira_catchup": 1000,          # Age 50+ IRA catch-up
+        "roth_ira_magi_single": 153000,      # Roth IRA MAGI phase-out start (single)
+        "roth_ira_magi_married": 228000,     # Roth IRA MAGI phase-out start (MFJ)
+        "hsa_individual": 3850,       # HSA individual limit
+        "hsa_family": 7750,           # HSA family limit
+    },
+    2024: {
+        "401k_employee": 23000,
+        "401k_catchup": 7500,
+        "401k_total": 69000,
+        "ira": 7000,
+        "ira_catchup": 1000,
+        "roth_ira_magi_single": 161000,
+        "roth_ira_magi_married": 240000,
+        "hsa_individual": 4150,
+        "hsa_family": 8300,
+    },
+    2025: {
+        "401k_employee": 23500,
+        "401k_catchup": 7500,
+        "401k_super_catchup": 11250,  # New super catch-up for ages 60-63 (SECURE 2.0)
+        "401k_total": 70000,
+        "ira": 7000,
+        "ira_catchup": 1000,
+        "roth_ira_magi_single": 165000,
+        "roth_ira_magi_married": 246000,
+        "hsa_individual": 4300,
+        "hsa_family": 8550,
+    },
+    2026: {
+        "401k_employee": 24000,       # Projected (inflation adjusted)
+        "401k_catchup": 7500,
+        "401k_super_catchup": 11250,
+        "401k_total": 71000,
+        "ira": 7000,
+        "ira_catchup": 1000,
+        "roth_ira_magi_single": 169000,
+        "roth_ira_magi_married": 252000,
+        "hsa_individual": 4400,
+        "hsa_family": 8750,
+    },
+}
+
+def get_contribution_limits(tax_year):
+    """Get contribution limits for a specific year, defaulting to 2025 if not found."""
+    return CONTRIBUTION_LIMITS.get(tax_year, CONTRIBUTION_LIMITS[2025])
+
 # ==================== TAX DATA BY YEAR ====================
 # All tax brackets, deductions, and limits organized by year
 
@@ -674,7 +729,7 @@ def calculate_amt(amti, filing_status, tax_year):
 
 def calculate_taxes(data, tax_year=None):
     """Perform full tax calculation and return a dict of results."""
-    if not data or not data.base_salary:
+    if not data:
         return None
     
     if tax_year is None:
@@ -684,9 +739,23 @@ def calculate_taxes(data, tax_year=None):
     
     filing_status = data.filing_status or "married_filing_jointly"
     filing_state = data.filing_state or "MO"
-    salary = data.base_salary or 0
-    pay_frequency = data.pay_frequency or "bi-weekly"
-    pay_periods = PAY_PERIODS_PER_YEAR.get(pay_frequency, 26)
+    salary = data.base_salary or 0  # Can be 0 for retirees
+    pay_frequency = data.pay_frequency or "monthly"
+    pay_periods = PAY_PERIODS_PER_YEAR.get(pay_frequency, 12)
+    
+    # Non-employment income (taxable but NOT subject to FICA)
+    social_security = data.social_security_income or 0
+    pension = data.pension_income or 0
+    trad_ira_dist = data.traditional_ira_distribution or 0
+    trad_401k_dist = data.traditional_401k_distribution or 0
+    other_taxable = data.other_taxable_income or 0
+    
+    # Calculate taxable portion of Social Security (simplified - up to 85% can be taxable)
+    # Full calculation depends on "combined income" but we'll use 85% as worst-case estimate
+    ss_taxable = social_security * 0.85
+    
+    # Total non-employment income (subject to income tax, not FICA)
+    non_employment_income = ss_taxable + pension + trad_ira_dist + trad_401k_dist + other_taxable
     
     # Investment income
     stcg = data.short_term_cap_gains or 0
@@ -727,14 +796,15 @@ def calculate_taxes(data, tax_year=None):
     # Total including employer
     total_retirement_with_employer = employee_contributions + employer_401k
     
-    # Gross income (salary + investment income)
-    gross_income = salary + stcg + dividends + ltcg
+    # Gross income (salary + non-employment + investment income)
+    gross_income = salary + non_employment_income + stcg + dividends + ltcg
     
     # Wages for FICA (salary only, minus pretax deductions like health)
-    fica_wages = salary - pretax_deductions_annual
+    # Non-employment income is NOT subject to FICA
+    fica_wages = max(0, salary - pretax_deductions_annual)
     
     # AGI = Gross income - traditional 401k/IRA (pretax deductions don't reduce AGI, they reduce W-2)
-    agi = salary + stcg + dividends + ltcg - pretax_retirement
+    agi = salary + non_employment_income + stcg + dividends + ltcg - pretax_retirement
     
     # MAGI (for most purposes, same as AGI)
     magi = agi
@@ -769,7 +839,7 @@ def calculate_taxes(data, tax_year=None):
     agi_after_above_line = agi - above_the_line_deductions
     
     # Taxable ordinary income (excluding LTCG which is taxed separately)
-    ordinary_income = salary + stcg + dividends - pretax_deductions_annual - pretax_retirement - above_the_line_deductions
+    ordinary_income = salary + non_employment_income + stcg + dividends - pretax_deductions_annual - pretax_retirement - above_the_line_deductions
     taxable_ordinary = max(0, ordinary_income - deduction_used)
     
     # Regular Federal income tax on ordinary income (with breakdown)
@@ -866,6 +936,15 @@ def calculate_taxes(data, tax_year=None):
         "pay_periods": pay_periods,
         "gross_income": gross_income,
         "salary": salary,
+        # Non-employment income
+        "social_security_income": social_security,
+        "social_security_taxable": ss_taxable,
+        "pension_income": pension,
+        "trad_ira_distribution": trad_ira_dist,
+        "trad_401k_distribution": trad_401k_dist,
+        "other_taxable_income": other_taxable,
+        "non_employment_income": non_employment_income,
+        # Investment income
         "stcg": stcg,
         "dividends": dividends,
         "ltcg": ltcg,
@@ -987,6 +1066,9 @@ def income_taxes_get(request: Request, db: Session = Depends(get_db), tax_year: 
     calculated = calculate_taxes(data, selected_year) if data else None
     profile_picture_b64, profile_picture_type = get_profile_picture_data(user)
     
+    # Get contribution limits for the selected year
+    contrib_limits = get_contribution_limits(selected_year)
+    
     return templates.TemplateResponse("income_taxes.html", {
         "request": request,
         "title": "Income & Taxes",
@@ -997,6 +1079,7 @@ def income_taxes_get(request: Request, db: Session = Depends(get_db), tax_year: 
         "tax_years": TAX_YEARS,
         "selected_tax_year": selected_year,
         "contribs": CONTRIBS,
+        "contrib_limits": contrib_limits,
         "data": data,
         "calculated": calculated,
         "getattr": getattr,
@@ -1014,8 +1097,15 @@ def income_taxes_post(
     tax_year: int = Form(2025),
     filing_status: str = Form("married_filing_jointly"),
     filing_state: str = Form("MO"),
-    base_salary: float = Form(...),
-    pay_frequency: str = Form(...),
+    base_salary: float = Form(0.0),
+    pay_frequency: str = Form("monthly"),
+    # Non-employment income
+    social_security_income: float = Form(0.0),
+    pension_income: float = Form(0.0),
+    traditional_ira_distribution: float = Form(0.0),
+    traditional_401k_distribution: float = Form(0.0),
+    other_taxable_income: float = Form(0.0),
+    # Investment income
     short_term_cap_gains: float = Form(0.0),
     dividends_interest: float = Form(0.0),
     long_term_cap_gains: float = Form(0.0),
@@ -1069,6 +1159,13 @@ def income_taxes_post(
     row.filing_state = filing_state
     row.base_salary = base_salary
     row.pay_frequency = pay_frequency
+    # Non-employment income
+    row.social_security_income = social_security_income
+    row.pension_income = pension_income
+    row.traditional_ira_distribution = traditional_ira_distribution
+    row.traditional_401k_distribution = traditional_401k_distribution
+    row.other_taxable_income = other_taxable_income
+    # Investment income
     row.short_term_cap_gains = short_term_cap_gains
     row.dividends_interest = dividends_interest
     row.long_term_cap_gains = long_term_cap_gains

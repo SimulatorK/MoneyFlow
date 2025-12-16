@@ -167,6 +167,87 @@
         .contrib-grid select { width: 3.5em; padding: 0.4em; }
         .contrib-grid input[type="number"] { width: 7em; }
         
+        /* Contribution limit info */
+        .contrib-limit-row {
+            grid-column: 1 / -1;
+            display: flex;
+            align-items: center;
+            gap: 0.5em;
+            font-size: 0.8em;
+            color: var(--text-secondary);
+            padding: 0.3em 0 0.5em 0;
+            border-bottom: 1px solid var(--border-light);
+            margin-bottom: 0.5em;
+        }
+        .contrib-limit-row:last-of-type {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+        
+        /* Info tooltip */
+        .info-tooltip {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 16px;
+            height: 16px;
+            background: var(--accent);
+            color: #fff;
+            border-radius: 50%;
+            font-size: 0.7em;
+            font-weight: 700;
+            cursor: help;
+        }
+        .info-tooltip:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: calc(100% + 8px);
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1a1d24;
+            color: #fff;
+            padding: 0.6em 0.9em;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 400;
+            white-space: nowrap;
+            z-index: 100;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+            max-width: 280px;
+            white-space: normal;
+            text-align: left;
+            line-height: 1.4;
+        }
+        .info-tooltip:hover::before {
+            content: '';
+            position: absolute;
+            bottom: calc(100% + 2px);
+            left: 50%;
+            transform: translateX(-50%);
+            border: 6px solid transparent;
+            border-top-color: #1a1d24;
+            z-index: 100;
+        }
+        
+        /* Limit tag */
+        .limit-tag {
+            display: inline-block;
+            background: rgba(56,117,232,0.12);
+            color: var(--accent);
+            padding: 0.2em 0.6em;
+            border-radius: 4px;
+            font-size: 0.85em;
+            font-weight: 500;
+        }
+        .limit-tag.warning {
+            background: rgba(255,193,7,0.15);
+            color: #a68200;
+        }
+        [data-theme="dark"] .limit-tag.warning {
+            color: #ffc107;
+        }
+        
         .save-btn { 
             margin-top: 0.8em; font-size: 1.1em; padding: 0.6em 2em; 
             border-radius: 6px; background: var(--accent); color: #fff; 
@@ -333,14 +414,44 @@
         <legend>Employment Income</legend>
         <div class="form-grid">
           <label>Base Salary (annual $)
-            <input type="number" step="0.01" name="base_salary" min="0" required value="{{ data.base_salary if data else '' }}">
+            <span class="info-tooltip" data-tooltip="Annual W-2 wages from employment. Enter $0 if retired or no earned income.">i</span>
+            <input type="number" step="0.01" name="base_salary" min="0" value="{{ data.base_salary if data and data.base_salary else 0 }}">
           </label>
           <label>Pay Frequency
-            <select name="pay_frequency" required>
+            <select name="pay_frequency">
               {% for freq in pay_frequencies %}
-                <option value="{{ freq }}"{% if data and data.pay_frequency==freq %} selected{% endif %}>{{ freq.title() }}</option>
+                <option value="{{ freq }}"{% if data and data.pay_frequency==freq %} selected{% elif not data and freq == 'bi-weekly' %} selected{% endif %}>{{ freq.title() }}</option>
               {% endfor %}
             </select>
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Non-Employment Income (Annual) <span class="info-tooltip" data-tooltip="Income subject to federal/state tax but NOT FICA taxes. Common for retirees.">i</span></legend>
+        <p style="font-size:0.85em; color:var(--text-secondary); margin:0 0 0.8em 0;">Retirement distributions and other taxable income not subject to Social Security/Medicare taxes.</p>
+        <div class="form-grid-3">
+          <label>Social Security Benefits
+            <span class="info-tooltip" data-tooltip="Up to 85% may be taxable depending on your total income. We estimate 85% as worst case.">i</span>
+            <input type="number" step="0.01" name="social_security_income" min="0" value="{{ data.social_security_income if data and data.social_security_income else 0 }}">
+          </label>
+          <label>Pension Income
+            <span class="info-tooltip" data-tooltip="Annual pension or annuity payments. Typically fully taxable as ordinary income.">i</span>
+            <input type="number" step="0.01" name="pension_income" min="0" value="{{ data.pension_income if data and data.pension_income else 0 }}">
+          </label>
+          <label>Trad. IRA Distributions
+            <span class="info-tooltip" data-tooltip="Withdrawals from Traditional IRA. Fully taxable as ordinary income. RMDs start at age 73.">i</span>
+            <input type="number" step="0.01" name="traditional_ira_distribution" min="0" value="{{ data.traditional_ira_distribution if data and data.traditional_ira_distribution else 0 }}">
+          </label>
+        </div>
+        <div class="form-grid-3" style="margin-top:1em;">
+          <label>Trad. 401k Distributions
+            <span class="info-tooltip" data-tooltip="Withdrawals from Traditional 401k. Fully taxable as ordinary income.">i</span>
+            <input type="number" step="0.01" name="traditional_401k_distribution" min="0" value="{{ data.traditional_401k_distribution if data and data.traditional_401k_distribution else 0 }}">
+          </label>
+          <label>Other Taxable Income
+            <span class="info-tooltip" data-tooltip="Rental income, royalties, self-employment, alimony received (pre-2019), etc.">i</span>
+            <input type="number" step="0.01" name="other_taxable_income" min="0" value="{{ data.other_taxable_income if data and data.other_taxable_income else 0 }}">
           </label>
         </div>
       </fieldset>
@@ -392,16 +503,100 @@
       </fieldset>
 
       <fieldset>
-        <legend>Retirement Contributions (Annual)</legend>
-        <div class="contrib-grid">
-          {% for key, label in contribs %}
-            <span class="contrib-label">{{ label }}</span>
-            <select name="{{ key }}_type">
-              <option value="$"{% if data and getattr(data, key + '_type', '$') == '$' %} selected{% endif %}>$</option>
-              <option value="%"{% if data and getattr(data, key + '_type', '$') == '%' %} selected{% endif %}>%</option>
+        <legend>Retirement Contributions (Annual) <span class="info-tooltip" data-tooltip="IRS limits for {{ selected_tax_year }}. Limits are per person unless noted. Combined Roth+Trad 401k cannot exceed employee limit.">i</span></legend>
+        
+        <!-- 401k Section -->
+        <div style="margin-bottom:1em;">
+          <h4 style="margin:0 0 0.5em 0; font-size:0.95em; color:var(--text-heading);">
+            401(k) Contributions
+            <span class="limit-tag">{{ selected_tax_year }} Limit: ${{ "{:,}".format(contrib_limits['401k_employee']) }}</span>
+          </h4>
+          <div class="contrib-grid">
+            <span class="contrib-label">Traditional 401k <span class="info-tooltip" data-tooltip="Pre-tax contributions reduce taxable income. Tax-deferred growth. Taxed on withdrawal.">i</span></span>
+            <select name="traditional_401k_type">
+              <option value="$"{% if data and getattr(data, 'traditional_401k_type', '$') == '$' %} selected{% endif %}>$</option>
+              <option value="%"{% if data and getattr(data, 'traditional_401k_type', '$') == '%' %} selected{% endif %}>%</option>
             </select>
-            <input type="number" step="0.01" min="0" name="{{ key }}" value="{{ data[key] if data and data[key] is not none else 0 }}">
-          {% endfor %}
+            <input type="number" step="0.01" min="0" name="traditional_401k" value="{{ data.traditional_401k if data and data.traditional_401k is not none else 0 }}">
+            
+            <span class="contrib-label">Roth 401k <span class="info-tooltip" data-tooltip="After-tax contributions. Tax-free growth and withdrawals in retirement.">i</span></span>
+            <select name="roth_401k_type">
+              <option value="$"{% if data and getattr(data, 'roth_401k_type', '$') == '$' %} selected{% endif %}>$</option>
+              <option value="%"{% if data and getattr(data, 'roth_401k_type', '$') == '%' %} selected{% endif %}>%</option>
+            </select>
+            <input type="number" step="0.01" min="0" name="roth_401k" value="{{ data.roth_401k if data and data.roth_401k is not none else 0 }}">
+            
+            <div class="contrib-limit-row">
+              <span class="info-tooltip" data-tooltip="Trad + Roth 401k combined cannot exceed ${{ "{:,}".format(contrib_limits['401k_employee']) }}. Age 50+ can add ${{ "{:,}".format(contrib_limits['401k_catchup']) }} catch-up.{% if contrib_limits.get('401k_super_catchup') %} Ages 60-63 can add ${{ "{:,}".format(contrib_limits['401k_super_catchup']) }} (SECURE 2.0).{% endif %}">i</span>
+              <span>Employee limit: <b>${{ "{:,}".format(contrib_limits['401k_employee']) }}</b> | Catch-up (50+): <b>+${{ "{:,}".format(contrib_limits['401k_catchup']) }}</b>{% if contrib_limits.get('401k_super_catchup') %} | Super catch-up (60-63): <b>+${{ "{:,}".format(contrib_limits['401k_super_catchup']) }}</b>{% endif %}</span>
+            </div>
+            
+            <span class="contrib-label">After-Tax 401k <span class="info-tooltip" data-tooltip="Mega backdoor Roth contributions. Part of total annual additions limit. Can be converted to Roth.">i</span></span>
+            <select name="after_tax_401k_type">
+              <option value="$"{% if data and getattr(data, 'after_tax_401k_type', '$') == '$' %} selected{% endif %}>$</option>
+              <option value="%"{% if data and getattr(data, 'after_tax_401k_type', '$') == '%' %} selected{% endif %}>%</option>
+            </select>
+            <input type="number" step="0.01" min="0" name="after_tax_401k" value="{{ data.after_tax_401k if data and data.after_tax_401k is not none else 0 }}">
+            
+            <span class="contrib-label">Employer 401k Match <span class="info-tooltip" data-tooltip="Employer contributions (match, profit sharing). Not counted against employee limit.">i</span></span>
+            <select name="employer_401k_type">
+              <option value="$"{% if data and getattr(data, 'employer_401k_type', '$') == '$' %} selected{% endif %}>$</option>
+              <option value="%"{% if data and getattr(data, 'employer_401k_type', '$') == '%' %} selected{% endif %}>%</option>
+            </select>
+            <input type="number" step="0.01" min="0" name="employer_401k" value="{{ data.employer_401k if data and data.employer_401k is not none else 0 }}">
+            
+            <div class="contrib-limit-row">
+              <span class="info-tooltip" data-tooltip="Total of all 401k contributions (employee + employer + after-tax) cannot exceed ${{ "{:,}".format(contrib_limits['401k_total']) }} per year.">i</span>
+              <span>Total annual additions limit (all sources): <b>${{ "{:,}".format(contrib_limits['401k_total']) }}</b></span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- IRA Section -->
+        <div>
+          <h4 style="margin:0 0 0.5em 0; font-size:0.95em; color:var(--text-heading);">
+            IRA Contributions
+            <span class="limit-tag">{{ selected_tax_year }} Limit: ${{ "{:,}".format(contrib_limits['ira']) }}</span>
+          </h4>
+          <div class="contrib-grid">
+            <span class="contrib-label">Traditional IRA <span class="info-tooltip" data-tooltip="Pre-tax if deductible. Deductibility phases out at higher incomes if covered by workplace plan.">i</span></span>
+            <select name="traditional_ira_type">
+              <option value="$"{% if data and getattr(data, 'traditional_ira_type', '$') == '$' %} selected{% endif %}>$</option>
+              <option value="%"{% if data and getattr(data, 'traditional_ira_type', '$') == '%' %} selected{% endif %}>%</option>
+            </select>
+            <input type="number" step="0.01" min="0" name="traditional_ira" value="{{ data.traditional_ira if data and data.traditional_ira is not none else 0 }}">
+            
+            <span class="contrib-label">Roth IRA <span class="info-tooltip" data-tooltip="After-tax. Tax-free growth/withdrawals. Income limits apply: Single MAGI under ${{ "{:,}".format(contrib_limits['roth_ira_magi_single']) }}, MFJ under ${{ "{:,}".format(contrib_limits['roth_ira_magi_married']) }}.">i</span></span>
+            <select name="roth_ira_type">
+              <option value="$"{% if data and getattr(data, 'roth_ira_type', '$') == '$' %} selected{% endif %}>$</option>
+              <option value="%"{% if data and getattr(data, 'roth_ira_type', '$') == '%' %} selected{% endif %}>%</option>
+            </select>
+            <input type="number" step="0.01" min="0" name="roth_ira" value="{{ data.roth_ira if data and data.roth_ira is not none else 0 }}">
+            
+            <div class="contrib-limit-row">
+              <span class="info-tooltip" data-tooltip="Trad + Roth IRA combined limit is ${{ "{:,}".format(contrib_limits['ira']) }} per person. Catch-up for 50+ is +${{ "{:,}".format(contrib_limits['ira_catchup']) }}.">i</span>
+              <span>IRA limit (per person): <b>${{ "{:,}".format(contrib_limits['ira']) }}</b> | Catch-up (50+): <b>+${{ "{:,}".format(contrib_limits['ira_catchup']) }}</b></span>
+            </div>
+            
+            <span class="contrib-label">Spousal Traditional IRA <span class="info-tooltip" data-tooltip="Non-working spouse can contribute based on working spouse's income. Same limits apply.">i</span></span>
+            <select name="spousal_ira_type">
+              <option value="$"{% if data and getattr(data, 'spousal_ira_type', '$') == '$' %} selected{% endif %}>$</option>
+              <option value="%"{% if data and getattr(data, 'spousal_ira_type', '$') == '%' %} selected{% endif %}>%</option>
+            </select>
+            <input type="number" step="0.01" min="0" name="spousal_ira" value="{{ data.spousal_ira if data and data.spousal_ira is not none else 0 }}">
+            
+            <span class="contrib-label">Spousal Roth IRA <span class="info-tooltip" data-tooltip="Non-working spouse Roth IRA. Same income limits and contribution limits as regular Roth IRA.">i</span></span>
+            <select name="spousal_roth_ira_type">
+              <option value="$"{% if data and getattr(data, 'spousal_roth_ira_type', '$') == '$' %} selected{% endif %}>$</option>
+              <option value="%"{% if data and getattr(data, 'spousal_roth_ira_type', '$') == '%' %} selected{% endif %}>%</option>
+            </select>
+            <input type="number" step="0.01" min="0" name="spousal_roth_ira" value="{{ data.spousal_roth_ira if data and data.spousal_roth_ira is not none else 0 }}">
+            
+            <div class="contrib-limit-row">
+              <span class="info-tooltip" data-tooltip="Roth IRA income limits for {{ selected_tax_year }}: Single/HOH MAGI starts phasing out at ${{ "{:,}".format(contrib_limits['roth_ira_magi_single']) }}. MFJ at ${{ "{:,}".format(contrib_limits['roth_ira_magi_married']) }}.">i</span>
+              <span>Roth IRA income limits: Single <b>${{ "{:,}".format(contrib_limits['roth_ira_magi_single']) }}</b> | MFJ <b>${{ "{:,}".format(contrib_limits['roth_ira_magi_married']) }}</b></span>
+            </div>
+          </div>
         </div>
       </fieldset>
       
@@ -462,7 +657,27 @@
       <div class="section">
         <h4>Income</h4>
         <table>
-          <tr><td>Gross Salary</td><td class="money">${{ "{:,.2f}".format(calculated.salary) }}</td></tr>
+          {% if calculated.salary > 0 %}
+          <tr><td>Employment Income (W-2)</td><td class="money">${{ "{:,.2f}".format(calculated.salary) }}</td></tr>
+          {% endif %}
+          {% if calculated.non_employment_income > 0 %}
+          <tr style="background:rgba(255,193,7,0.08);"><td colspan="2" style="font-weight:600; color:#a68200; padding-top:0.5em;">Non-Employment Income (No FICA)</td></tr>
+          {% if calculated.social_security_income > 0 %}
+          <tr><td style="padding-left:1em;">Social Security ({{ "{:,.2f}".format(calculated.social_security_income) }} × 85%)</td><td class="money">${{ "{:,.2f}".format(calculated.social_security_taxable) }}</td></tr>
+          {% endif %}
+          {% if calculated.pension_income > 0 %}
+          <tr><td style="padding-left:1em;">Pension Income</td><td class="money">${{ "{:,.2f}".format(calculated.pension_income) }}</td></tr>
+          {% endif %}
+          {% if calculated.trad_ira_distribution > 0 %}
+          <tr><td style="padding-left:1em;">Traditional IRA Distributions</td><td class="money">${{ "{:,.2f}".format(calculated.trad_ira_distribution) }}</td></tr>
+          {% endif %}
+          {% if calculated.trad_401k_distribution > 0 %}
+          <tr><td style="padding-left:1em;">Traditional 401k Distributions</td><td class="money">${{ "{:,.2f}".format(calculated.trad_401k_distribution) }}</td></tr>
+          {% endif %}
+          {% if calculated.other_taxable_income > 0 %}
+          <tr><td style="padding-left:1em;">Other Taxable Income</td><td class="money">${{ "{:,.2f}".format(calculated.other_taxable_income) }}</td></tr>
+          {% endif %}
+          {% endif %}
           {% if calculated.stcg %}<tr><td>Short-Term Cap Gains</td><td class="money">${{ "{:,.2f}".format(calculated.stcg) }}</td></tr>{% endif %}
           {% if calculated.dividends %}<tr><td>Dividends &amp; Interest</td><td class="money">${{ "{:,.2f}".format(calculated.dividends) }}</td></tr>{% endif %}
           {% if calculated.ltcg %}<tr><td>Long-Term Cap Gains</td><td class="money">${{ "{:,.2f}".format(calculated.ltcg) }}</td></tr>{% endif %}
@@ -643,13 +858,20 @@
       </div>
 
       <div class="section">
-        <h4>FICA Taxes</h4>
+        <h4>FICA Taxes (Employment Income Only)</h4>
+        {% if calculated.salary > 0 %}
         <table>
           <tr><td>Social Security (6.2%, max ${{ "{:,.0f}".format(calculated.ss_wage_base) }})</td><td class="tax">${{ "{:,.2f}".format(calculated.social_security) }}</td></tr>
           <tr><td>Medicare (1.45%)</td><td class="tax">${{ "{:,.2f}".format(calculated.medicare) }}</td></tr>
           {% if calculated.additional_medicare %}<tr><td>Additional Medicare (0.9%)</td><td class="tax">${{ "{:,.2f}".format(calculated.additional_medicare) }}</td></tr>{% endif %}
           <tr style="border-top:1px solid var(--border-color);"><td><b>Total FICA</b></td><td class="tax"><b>${{ "{:,.2f}".format(calculated.total_fica) }}</b> ({{ "%.1f"|format(calculated.fica_rate) }}%)</td></tr>
         </table>
+        {% else %}
+        <div style="background: rgba(40,167,69,0.1); padding: 0.8em; border-radius: 8px; font-size: 0.9em;">
+          <b style="color:#28a745;">✓ No FICA Taxes</b>
+          <p style="margin:0.3em 0 0 0; color: var(--text-secondary);">Non-employment income (Social Security, pension, IRA/401k distributions) is not subject to FICA taxes.</p>
+        </div>
+        {% endif %}
       </div>
 
       <div class="highlight">
