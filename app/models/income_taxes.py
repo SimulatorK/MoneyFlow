@@ -24,6 +24,11 @@ class IncomeTaxes(Base):
     traditional_401k_distribution = Column(Float, default=0) # Traditional 401k withdrawals
     other_taxable_income = Column(Float, default=0)        # Other taxable income (rental, etc.)
     
+    # Non-taxable income (annual) - For budgeting only, NOT subject to any tax
+    roth_ira_distribution = Column(Float, default=0)       # Roth IRA withdrawals (tax-free)
+    roth_401k_distribution = Column(Float, default=0)      # Roth 401k withdrawals (tax-free)
+    other_nontaxable_income = Column(Float, default=0)     # Other non-taxable (gifts, HSA, etc.)
+    
     # Optional investment income (annual)
     short_term_cap_gains = Column(Float, default=0)
     dividends_interest = Column(Float, default=0)

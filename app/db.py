@@ -8,6 +8,9 @@ from app.models.expense import Category, SubCategory, Expense, Vendor
 from app.models.budget import BudgetCategory, FixedCost, BudgetItem
 from app.models.mortgage import MortgageScenario
 from app.models.networth import Account, AccountBalance, AccountContribution, MonteCarloScenario
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Database URL: configurable via environment variable, defaults to moneyflow.db
 SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./moneyflow.db")

@@ -73,25 +73,74 @@ def generate_sankey_data(summary, income_data, include_details=False):
     
     sankey_data = []
     gross_monthly = summary.get("gross_monthly", 0)
+    income_calc = summary.get("income", {}) or {}
     
-    if gross_monthly <= 0:
-        logger.warning("Gross monthly income is zero or negative")
+    # Calculate total income including non-taxable for budgeting
+    total_nontaxable = income_calc.get("total_nontaxable_income", 0) / 12 if income_calc else 0
+    total_all_income = gross_monthly + total_nontaxable
+    
+    if total_all_income <= 0:
+        logger.warning("Total income is zero or negative")
         return []
     
-    # Income sources to Gross Income
-    sankey_data.append(["Salary", "Gross Income", round(gross_monthly, 0)])
+    # Income sources to Total Income
+    # Employment income
+    salary_monthly = (income_data.base_salary or 0) / 12
+    if salary_monthly > 0:
+        sankey_data.append(["Employment", "Total Income", round(salary_monthly, 0)])
     
-    # Gross Income breakdown
-    income_calc = summary.get("income", {}) or {}
+    # Non-employment taxable income (Social Security, Pension, Traditional IRA/401k distributions)
+    ss_monthly = (income_data.social_security_income or 0) / 12
+    pension_monthly = (income_data.pension_income or 0) / 12
+    trad_ira_monthly = (income_data.traditional_ira_distribution or 0) / 12
+    trad_401k_monthly = (income_data.traditional_401k_distribution or 0) / 12
+    other_taxable_monthly = (income_data.other_taxable_income or 0) / 12
+    
+    if ss_monthly > 0:
+        sankey_data.append(["Social Security", "Total Income", round(ss_monthly, 0)])
+    if pension_monthly > 0:
+        sankey_data.append(["Pension", "Total Income", round(pension_monthly, 0)])
+    if trad_ira_monthly > 0:
+        sankey_data.append(["Trad. IRA Dist.", "Total Income", round(trad_ira_monthly, 0)])
+    if trad_401k_monthly > 0:
+        sankey_data.append(["Trad. 401k Dist.", "Total Income", round(trad_401k_monthly, 0)])
+    if other_taxable_monthly > 0:
+        sankey_data.append(["Other Taxable", "Total Income", round(other_taxable_monthly, 0)])
+    
+    # Investment income
+    stcg_monthly = (income_data.short_term_cap_gains or 0) / 12
+    dividends_monthly = (income_data.dividends_interest or 0) / 12
+    ltcg_monthly = (income_data.long_term_cap_gains or 0) / 12
+    
+    if stcg_monthly > 0:
+        sankey_data.append(["Short-Term Gains", "Total Income", round(stcg_monthly, 0)])
+    if dividends_monthly > 0:
+        sankey_data.append(["Dividends", "Total Income", round(dividends_monthly, 0)])
+    if ltcg_monthly > 0:
+        sankey_data.append(["Long-Term Gains", "Total Income", round(ltcg_monthly, 0)])
+    
+    # Non-taxable income (Roth distributions, etc.)
+    roth_ira_monthly = (income_data.roth_ira_distribution or 0) / 12 if hasattr(income_data, 'roth_ira_distribution') else 0
+    roth_401k_monthly = (income_data.roth_401k_distribution or 0) / 12 if hasattr(income_data, 'roth_401k_distribution') else 0
+    other_nontaxable_monthly = (income_data.other_nontaxable_income or 0) / 12 if hasattr(income_data, 'other_nontaxable_income') else 0
+    
+    if roth_ira_monthly > 0:
+        sankey_data.append(["Roth IRA Dist.", "Total Income", round(roth_ira_monthly, 0)])
+    if roth_401k_monthly > 0:
+        sankey_data.append(["Roth 401k Dist.", "Total Income", round(roth_401k_monthly, 0)])
+    if other_nontaxable_monthly > 0:
+        sankey_data.append(["Other Tax-Free", "Total Income", round(other_nontaxable_monthly, 0)])
+    
+    # Total Income breakdown
     if income_calc:
         # Taxes
         total_taxes = income_calc.get("total_taxes", 0) / 12
         if total_taxes > 0:
-            sankey_data.append(["Gross Income", "Taxes", round(total_taxes, 0)])
+            sankey_data.append(["Total Income", "Taxes", round(total_taxes, 0)])
             
             # Break down taxes (always show this level)
             federal = income_calc.get("total_federal_tax", 0) / 12
-            state = income_calc.get("mo_state_tax", 0) / 12
+            state = income_calc.get("state_tax", 0) or income_calc.get("mo_state_tax", 0) / 12
             fica = income_calc.get("total_fica", 0) / 12
             
             if federal > 0:
@@ -104,17 +153,17 @@ def generate_sankey_data(summary, income_data, include_details=False):
         # Pretax deductions
         pretax_deductions = income_calc.get("pretax_deductions_annual", 0) / 12
         if pretax_deductions > 0:
-            sankey_data.append(["Gross Income", "Pretax Benefits", round(pretax_deductions, 0)])
+            sankey_data.append(["Total Income", "Pretax Benefits", round(pretax_deductions, 0)])
         
         # Retirement contributions
         retirement = summary.get("total_retirement_monthly", 0)
         if retirement > 0:
-            sankey_data.append(["Gross Income", "Retirement", round(retirement, 0)])
+            sankey_data.append(["Total Income", "Retirement", round(retirement, 0)])
     
-    # Net income to categories
-    net_monthly = summary.get("net_monthly", 0)
+    # Net income to categories (includes non-taxable income)
+    net_monthly = summary.get("net_monthly", 0) + total_nontaxable
     if net_monthly > 0:
-        sankey_data.append(["Gross Income", "Net Income", round(net_monthly, 0)])
+        sankey_data.append(["Total Income", "Net Income", round(net_monthly, 0)])
         
         # Fixed costs by type
         fixed_by_type = summary.get("fixed_costs_by_type", {})

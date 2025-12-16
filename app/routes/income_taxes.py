@@ -757,6 +757,12 @@ def calculate_taxes(data, tax_year=None):
     # Total non-employment income (subject to income tax, not FICA)
     non_employment_income = ss_taxable + pension + trad_ira_dist + trad_401k_dist + other_taxable
     
+    # Non-taxable income (for budgeting only - does NOT affect taxes)
+    roth_ira_dist = data.roth_ira_distribution or 0
+    roth_401k_dist = data.roth_401k_distribution or 0
+    other_nontaxable = data.other_nontaxable_income or 0
+    total_nontaxable_income = roth_ira_dist + roth_401k_dist + other_nontaxable
+    
     # Investment income
     stcg = data.short_term_cap_gains or 0
     dividends = data.dividends_interest or 0
@@ -944,6 +950,11 @@ def calculate_taxes(data, tax_year=None):
         "trad_401k_distribution": trad_401k_dist,
         "other_taxable_income": other_taxable,
         "non_employment_income": non_employment_income,
+        # Non-taxable income (budgeting only)
+        "roth_ira_distribution": roth_ira_dist,
+        "roth_401k_distribution": roth_401k_dist,
+        "other_nontaxable_income": other_nontaxable,
+        "total_nontaxable_income": total_nontaxable_income,
         # Investment income
         "stcg": stcg,
         "dividends": dividends,
@@ -1099,12 +1110,16 @@ def income_taxes_post(
     filing_state: str = Form("MO"),
     base_salary: float = Form(0.0),
     pay_frequency: str = Form("monthly"),
-    # Non-employment income
+    # Non-employment income (taxable)
     social_security_income: float = Form(0.0),
     pension_income: float = Form(0.0),
     traditional_ira_distribution: float = Form(0.0),
     traditional_401k_distribution: float = Form(0.0),
     other_taxable_income: float = Form(0.0),
+    # Non-taxable income (budgeting only)
+    roth_ira_distribution: float = Form(0.0),
+    roth_401k_distribution: float = Form(0.0),
+    other_nontaxable_income: float = Form(0.0),
     # Investment income
     short_term_cap_gains: float = Form(0.0),
     dividends_interest: float = Form(0.0),
@@ -1159,12 +1174,16 @@ def income_taxes_post(
     row.filing_state = filing_state
     row.base_salary = base_salary
     row.pay_frequency = pay_frequency
-    # Non-employment income
+    # Non-employment income (taxable)
     row.social_security_income = social_security_income
     row.pension_income = pension_income
     row.traditional_ira_distribution = traditional_ira_distribution
     row.traditional_401k_distribution = traditional_401k_distribution
     row.other_taxable_income = other_taxable_income
+    # Non-taxable income (budgeting only)
+    row.roth_ira_distribution = roth_ira_distribution
+    row.roth_401k_distribution = roth_401k_distribution
+    row.other_nontaxable_income = other_nontaxable_income
     # Investment income
     row.short_term_cap_gains = short_term_cap_gains
     row.dividends_interest = dividends_interest

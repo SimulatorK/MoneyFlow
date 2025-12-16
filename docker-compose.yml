@@ -33,7 +33,7 @@ services:
       # SSL settings (enable in docker-compose.ssl.yml)
       - SSL_ENABLED=false
       # Database path (SQLite)
-      - DATABASE_URL=sqlite:///./data/moneyflow.db
+      - DATABASE_URL=sqlite:///./moneyflow.db
     
     # Port mappings
     ports:
