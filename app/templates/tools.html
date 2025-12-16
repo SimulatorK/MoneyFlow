@@ -1438,9 +1438,11 @@
           </div>
           
           <!-- Net Worth Projection Chart -->
-          <div style="background: var(--bg-card); border-radius: 10px; padding: 1em; margin-bottom: 1em;">
+          <div style="background: var(--bg-card); border-radius: 10px; padding: 1.2em; margin-bottom: 1em;">
             <h5 style="margin: 0 0 1em 0; color: var(--text-heading);">📈 Net Worth Projection (Today's Dollars)</h5>
-            <canvas id="fireProjectionChart" height="250"></canvas>
+            <div style="position: relative; height: 350px; width: 100%;">
+              <canvas id="fireProjectionChart"></canvas>
+            </div>
           </div>
           
           <!-- Success by Age -->
@@ -3900,18 +3902,32 @@
       const paths = timeToFI.projection_paths;
       
       if (!paths || !paths.p50) {
+        console.log('No projection paths available');
         return;
       }
       
       const currentAge = data.profile.current_age;
       const lifeExpectancy = data.profile.life_expectancy;
       const totalYears = lifeExpectancy - currentAge;
+      const fiNumber = data.fi_calculation.fi_number;
       
-      // Create labels (ages)
+      // Create labels (ages) - sample every few years for cleaner display
+      const dataLength = Math.min(totalYears + 1, paths.p50.length);
       const labels = [];
-      for (let i = 0; i <= Math.min(totalYears, paths.p50.length - 1); i++) {
+      for (let i = 0; i < dataLength; i++) {
         labels.push(currentAge + i);
       }
+      
+      // Get data and cap extreme values to keep chart readable
+      // Cap at 3x the FI number or the max of p50, whichever is higher
+      const maxReasonable = Math.max(fiNumber * 3, Math.max(...paths.p50.slice(0, dataLength)));
+      
+      const capValue = (val) => Math.min(Math.max(val, 0), maxReasonable);
+      
+      const p10Data = paths.p10.slice(0, dataLength).map(capValue);
+      const p25Data = paths.p25.slice(0, dataLength).map(capValue);
+      const p50Data = paths.p50.slice(0, dataLength).map(capValue);
+      const fiData = Array(dataLength).fill(fiNumber);
       
       // Destroy existing chart if it exists
       if (fireProjectionChart) {
@@ -3926,44 +3942,44 @@
           datasets: [
             {
               label: 'Very Poor (p10)',
-              data: paths.p10.slice(0, labels.length),
-              borderColor: 'rgba(220, 53, 69, 0.8)',
+              data: p10Data,
+              borderColor: 'rgba(220, 53, 69, 0.9)',
               backgroundColor: 'rgba(220, 53, 69, 0.1)',
               borderWidth: 2,
               fill: false,
-              tension: 0.3,
+              tension: 0.2,
               pointRadius: 0,
-              pointHoverRadius: 4
+              pointHoverRadius: 5
             },
             {
               label: 'Below Average (p25)',
-              data: paths.p25.slice(0, labels.length),
-              borderColor: 'rgba(255, 193, 7, 0.8)',
+              data: p25Data,
+              borderColor: 'rgba(255, 193, 7, 0.9)',
               backgroundColor: 'rgba(255, 193, 7, 0.1)',
               borderWidth: 2,
               fill: false,
-              tension: 0.3,
+              tension: 0.2,
               pointRadius: 0,
-              pointHoverRadius: 4
+              pointHoverRadius: 5
             },
             {
               label: 'Average (p50)',
-              data: paths.p50.slice(0, labels.length),
-              borderColor: 'rgba(40, 167, 69, 0.8)',
-              backgroundColor: 'rgba(40, 167, 69, 0.1)',
+              data: p50Data,
+              borderColor: 'rgba(40, 167, 69, 0.9)',
+              backgroundColor: 'rgba(40, 167, 69, 0.15)',
               borderWidth: 3,
-              fill: false,
-              tension: 0.3,
+              fill: true,
+              tension: 0.2,
               pointRadius: 0,
-              pointHoverRadius: 4
+              pointHoverRadius: 5
             },
             {
               label: 'FI Number',
-              data: Array(labels.length).fill(data.fi_calculation.fi_number),
-              borderColor: 'rgba(111, 66, 193, 0.8)',
+              data: fiData,
+              borderColor: 'rgba(111, 66, 193, 0.9)',
               backgroundColor: 'transparent',
               borderWidth: 2,
-              borderDash: [10, 5],
+              borderDash: [8, 4],
               fill: false,
               pointRadius: 0,
               pointHoverRadius: 0
@@ -3984,16 +4000,26 @@
               labels: {
                 color: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary'),
                 usePointStyle: true,
-                padding: 15
+                pointStyle: 'line',
+                padding: 20,
+                font: { size: 11 }
               }
             },
             tooltip: {
+              backgroundColor: 'rgba(0,0,0,0.8)',
+              titleFont: { size: 13 },
+              bodyFont: { size: 12 },
+              padding: 12,
               callbacks: {
                 title: function(context) {
                   return 'Age ' + context[0].label;
                 },
                 label: function(context) {
-                  return context.dataset.label + ': $' + Math.round(context.raw).toLocaleString();
+                  const value = context.raw;
+                  if (value >= 1000000) {
+                    return context.dataset.label + ': $' + (value / 1000000).toFixed(2) + 'M';
+                  }
+                  return context.dataset.label + ': $' + Math.round(value).toLocaleString();
                 }
               }
             }
@@ -4003,27 +4029,34 @@
               title: {
                 display: true,
                 text: 'Age',
-                color: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary')
+                color: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary'),
+                font: { size: 12, weight: 'bold' }
               },
               grid: {
-                color: getComputedStyle(document.documentElement).getPropertyValue('--border-light')
+                color: getComputedStyle(document.documentElement).getPropertyValue('--border-light'),
+                drawOnChartArea: true
               },
               ticks: {
                 color: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary'),
-                maxTicksLimit: 10
+                maxTicksLimit: 12,
+                font: { size: 11 }
               }
             },
             y: {
+              beginAtZero: true,
+              suggestedMax: maxReasonable,
               title: {
                 display: true,
                 text: 'Portfolio Value (Today\'s $)',
-                color: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary')
+                color: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary'),
+                font: { size: 12, weight: 'bold' }
               },
               grid: {
                 color: getComputedStyle(document.documentElement).getPropertyValue('--border-light')
               },
               ticks: {
                 color: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary'),
+                font: { size: 11 },
                 callback: function(value) {
                   if (value >= 1000000) {
                     return '$' + (value / 1000000).toFixed(1) + 'M';
