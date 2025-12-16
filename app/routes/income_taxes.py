@@ -675,20 +675,27 @@ def calculate_fica(wages, filing_status, tax_year):
     """Calculate FICA taxes (Social Security + Medicare)."""
     year_data = get_tax_year_data(tax_year)
     ss_wage_base = year_data["ss_wage_base"]
-    ss_wages = min(wages, ss_wage_base)
+    ss_wages = min(wages, ss_wage_base)  # Capped at wage base
     social_security = ss_wages * SS_RATE
-    medicare = wages * MEDICARE_RATE
+    medicare_wages = wages  # No cap for Medicare
+    medicare = medicare_wages * MEDICARE_RATE
     threshold = ADDITIONAL_MEDICARE_THRESHOLD.get(filing_status, 200000)
     if wages > threshold:
         additional_medicare = (wages - threshold) * ADDITIONAL_MEDICARE_RATE
+        additional_medicare_wages = wages - threshold
     else:
         additional_medicare = 0
+        additional_medicare_wages = 0
     return {
         "social_security": social_security,
         "medicare": medicare,
         "additional_medicare": additional_medicare,
         "total_fica": social_security + medicare + additional_medicare,
-        "ss_wage_base": ss_wage_base
+        "ss_wage_base": ss_wage_base,
+        "ss_wages": ss_wages,  # Amount subject to SS tax (capped)
+        "medicare_wages": medicare_wages,  # Amount subject to Medicare (no cap)
+        "additional_medicare_wages": additional_medicare_wages,  # Amount over threshold
+        "additional_medicare_threshold": threshold
     }
 
 
@@ -1045,6 +1052,10 @@ def calculate_taxes(data, tax_year=None):
         "total_fica": fica["total_fica"],
         "fica_rate": fica_rate,
         "ss_wage_base": fica["ss_wage_base"],
+        "ss_wages": fica["ss_wages"],  # Amount subject to SS tax
+        "medicare_wages": fica["medicare_wages"],  # Amount subject to Medicare
+        "additional_medicare_wages": fica["additional_medicare_wages"],
+        "additional_medicare_threshold": fica["additional_medicare_threshold"],
         # Totals
         "total_taxes": total_taxes,
         "tax_rate": tax_rate,

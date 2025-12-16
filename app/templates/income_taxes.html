@@ -990,10 +990,46 @@
         <h4>FICA Taxes (Employment Income Only)</h4>
         {% if calculated.salary > 0 %}
         <table>
-          <tr><td>Social Security (6.2%, max ${{ "{:,.0f}".format(calculated.ss_wage_base) }})</td><td class="tax">${{ "{:,.2f}".format(calculated.social_security) }}</td></tr>
-          <tr><td>Medicare (1.45%)</td><td class="tax">${{ "{:,.2f}".format(calculated.medicare) }}</td></tr>
-          {% if calculated.additional_medicare %}<tr><td>Additional Medicare (0.9%)</td><td class="tax">${{ "{:,.2f}".format(calculated.additional_medicare) }}</td></tr>{% endif %}
-          <tr style="border-top:1px solid var(--border-color);"><td><b>Total FICA</b></td><td class="tax"><b>${{ "{:,.2f}".format(calculated.total_fica) }}</b> ({{ "%.1f"|format(calculated.fica_rate) }}%)</td></tr>
+          <tr style="background:rgba(56,117,232,0.05);"><td colspan="2" style="font-weight:600; color:var(--accent);">Social Security Tax (6.2%)</td></tr>
+          <tr>
+            <td style="padding-left:1em;">Wages Subject to SS Tax</td>
+            <td>${{ "{:,.2f}".format(calculated.ss_wages) }}
+              {% if calculated.ss_wages < calculated.medicare_wages %}
+              <span style="font-size:0.85em; color:var(--text-secondary);">(capped at ${{ "{:,.0f}".format(calculated.ss_wage_base) }})</span>
+              {% endif %}
+            </td>
+          </tr>
+          <tr>
+            <td style="padding-left:1em;">Social Security Tax</td>
+            <td class="tax">${{ "{:,.2f}".format(calculated.social_security) }}</td>
+          </tr>
+          
+          <tr style="background:rgba(56,117,232,0.05);"><td colspan="2" style="font-weight:600; color:var(--accent); padding-top:0.8em;">Medicare Tax (1.45%)</td></tr>
+          <tr>
+            <td style="padding-left:1em;">Wages Subject to Medicare</td>
+            <td>${{ "{:,.2f}".format(calculated.medicare_wages) }} <span style="font-size:0.85em; color:var(--text-secondary);">(no cap)</span></td>
+          </tr>
+          <tr>
+            <td style="padding-left:1em;">Medicare Tax</td>
+            <td class="tax">${{ "{:,.2f}".format(calculated.medicare) }}</td>
+          </tr>
+          
+          {% if calculated.additional_medicare > 0 %}
+          <tr style="background:rgba(255,193,7,0.08);"><td colspan="2" style="font-weight:600; color:#a68200; padding-top:0.8em;">Additional Medicare Tax (0.9%)</td></tr>
+          <tr>
+            <td style="padding-left:1em;">Wages Over ${{ "{:,.0f}".format(calculated.additional_medicare_threshold) }}</td>
+            <td>${{ "{:,.2f}".format(calculated.additional_medicare_wages) }}</td>
+          </tr>
+          <tr>
+            <td style="padding-left:1em;">Additional Medicare Tax</td>
+            <td class="tax">${{ "{:,.2f}".format(calculated.additional_medicare) }}</td>
+          </tr>
+          {% endif %}
+          
+          <tr style="border-top:2px solid var(--accent); background:rgba(56,117,232,0.1);">
+            <td><b>Total FICA</b></td>
+            <td class="tax"><b>${{ "{:,.2f}".format(calculated.total_fica) }}</b> <span style="font-size:0.9em;">({{ "%.1f"|format(calculated.fica_rate) }}% effective)</span></td>
+          </tr>
         </table>
         {% else %}
         <div style="background: rgba(40,167,69,0.1); padding: 0.8em; border-radius: 8px; font-size: 0.9em;">
