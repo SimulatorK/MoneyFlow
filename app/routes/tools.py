@@ -3247,6 +3247,7 @@ async def calculate_fire_plan(
     
     # Convert inputs
     withdrawal_rate = body.withdrawal_rate / 100
+    inflation_rate = body.inflation_rate / 100 if hasattr(body, 'inflation_rate') and body.inflation_rate else 0.03
     
     # Social Security and pension (annual amounts)
     social_security_annual = body.social_security_monthly * 12
