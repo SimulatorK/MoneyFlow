@@ -1158,18 +1158,13 @@
             <input type="number" id="fireCurrentAge" value="30" min="18" max="80" style="width: 100%;">
           </div>
           <div class="form-group">
-            <label>Life Expectancy</label>
-            <input type="number" id="fireLifeExpectancy" value="90" min="60" max="110" style="width: 100%;">
+            <label>Target Retirement Age (for chart)</label>
+            <input type="number" id="fireTargetRetirementAge" value="55" min="25" max="80" style="width: 100%;">
+            <small style="color: var(--text-secondary);">Monte Carlo will find when you can actually retire</small>
           </div>
           <div class="form-group">
-            <label>FIRE Type</label>
-            <select id="fireType" onchange="updateFIREType()">
-              <option value="regular">Regular FIRE (25× expenses)</option>
-              <option value="lean">Lean FIRE (25× minimal expenses)</option>
-              <option value="fat">Fat FIRE (25× luxury expenses)</option>
-              <option value="coast">Coast FIRE (stop saving, coast to retirement)</option>
-              <option value="barista">Barista FIRE (part-time work + investments)</option>
-            </select>
+            <label>Life Expectancy</label>
+            <input type="number" id="fireLifeExpectancy" value="90" min="60" max="110" style="width: 100%;">
           </div>
         </div>
         
@@ -1514,6 +1509,13 @@
         <div style="margin-bottom: 1em;">
           <label style="display: block; font-size: 0.9em; color: var(--text-secondary); margin-bottom: 0.3em;">Notes (Optional)</label>
           <textarea name="notes" rows="2" placeholder="Any notes about this account..." style="width: 100%; padding: 0.7em; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-input); color: var(--text-primary); resize: vertical;"></textarea>
+        </div>
+        <div style="margin-bottom: 1em;">
+          <label style="display: flex; align-items: center; gap: 0.5em; cursor: pointer;">
+            <input type="checkbox" name="use_for_fire" value="true" checked style="width: 18px; height: 18px;">
+            <span style="font-size: 0.9em; color: var(--text-secondary);">Include in FIRE calculations</span>
+          </label>
+          <small style="color: var(--text-secondary); display: block; margin-left: 1.8em;">Use this account for retirement projections and FIRE analysis</small>
         </div>
         <div class="modal-btns">
           <button type="button" class="btn-cancel" onclick="closeAddAccountModal()">Cancel</button>
@@ -3547,9 +3549,11 @@
       calcButton.disabled = true;
       
       // Get all inputs (all in today's dollars - inflation handled by historical data)
+      const targetRetirementAge = parseInt(document.getElementById('fireTargetRetirementAge').value) || 55;
+      
       const requestData = {
         current_age: parseInt(document.getElementById('fireCurrentAge').value) || 30,
-        target_retirement_age: 65,  // Not used as input, MC finds optimal retirement age
+        target_retirement_age: targetRetirementAge,  // Used for chart visualization
         life_expectancy: parseInt(document.getElementById('fireLifeExpectancy').value) || 90,
         annual_expenses: parseFloat(document.getElementById('fireAnnualExpenses').value) || 50000,
         retirement_expenses: parseFloat(document.getElementById('fireRetirementExpenses').value) || 40000,
@@ -3558,7 +3562,7 @@
         pension_monthly: 0,
         pension_start_age: 65,
         inflation_rate: 3.0,  // Used internally, actual inflation from historical data in MC
-        fire_type: document.getElementById('fireType').value,
+        fire_type: "regular",  // Simplified - no longer using FIRE type dropdown
         withdrawal_method: document.getElementById('fireWithdrawalMethod').value,
         withdrawal_rate: parseFloat(document.getElementById('fireSWR').value) || 4.0,
         upper_guardrail: parseFloat(document.getElementById('fireUpperGuardrail').value) || 5.0,
@@ -3605,7 +3609,10 @@
       
       // Portfolio status from API (now uses portfolio allocation from MC)
       const status = data.current_status;
-      document.getElementById('fireStatusAssets').textContent = '$' + Math.round(status.total_assets).toLocaleString('en-US');
+      
+      // Show FIRE-specific assets (only accounts marked for FIRE)
+      const fireAssets = status.fire_assets || status.total_assets;
+      document.getElementById('fireStatusAssets').textContent = '$' + Math.round(fireAssets).toLocaleString('en-US');
       document.getElementById('fireStatusContribs').textContent = '$' + Math.round(status.annual_contributions).toLocaleString('en-US') + '/year';
       
       // Show portfolio allocation instead of expected return
@@ -3614,8 +3621,9 @@
         `${allocation.stocks}% / ${allocation.bonds}% / ${allocation.cash}%`;
       document.getElementById('fireStatusReturn').title = 'Stocks / Bonds / Cash';
       
-      // Show number of accounts
-      document.getElementById('fireStatusAccounts').textContent = status.num_accounts + ' accounts tracked';
+      // Show number of FIRE accounts
+      const fireAccountCount = status.num_fire_accounts || status.num_accounts;
+      document.getElementById('fireStatusAccounts').textContent = fireAccountCount + ' accounts for FIRE';
       
       // Key metrics from Monte Carlo analysis
       const fiNumber = data.fi_calculation.fi_number;

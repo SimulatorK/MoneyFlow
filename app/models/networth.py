@@ -44,6 +44,7 @@ class Account(Base):
     notes = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     is_active = Column(Boolean, default=True)
+    use_for_fire = Column(Boolean, default=True)  # Include in FIRE calculations
     
     # Relationships
     user = relationship("User", backref="networth_accounts")

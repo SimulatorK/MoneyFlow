@@ -445,13 +445,23 @@ def expenses_page(
     })
 
 
+def parse_optional_int(value: str) -> Optional[int]:
+    """Parse a string to int, returning None for empty strings or invalid values."""
+    if value is None or value == "" or value == "None":
+        return None
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        return None
+
+
 @router.post("/expenses/add")
 def add_expense(
     request: Request,
     db: Session = Depends(get_db),
     category_id: int = Form(...),
-    subcategory_id: Optional[int] = Form(None),
-    vendor_id: Optional[int] = Form(None),
+    subcategory_id: str = Form(""),
+    vendor_id: str = Form(""),
     amount: float = Form(...),
     expense_date: str = Form(...),
     notes: Optional[str] = Form(None),
@@ -467,6 +477,10 @@ def add_expense(
     user = get_current_user(request, db)
     if not user:
         return RedirectResponse("/login")
+    
+    # Parse optional integer fields
+    subcategory_id_parsed = parse_optional_int(subcategory_id)
+    vendor_id_parsed = parse_optional_int(vendor_id)
     
     # Parse the date
     try:
@@ -484,13 +498,13 @@ def add_expense(
         return RedirectResponse("/expenses")
     
     # Verify vendor belongs to user (if provided)
-    if vendor_id and vendor_id > 0:
+    if vendor_id_parsed and vendor_id_parsed > 0:
         vendor = db.query(Vendor).filter(
-            Vendor.id == vendor_id,
+            Vendor.id == vendor_id_parsed,
             Vendor.user_id == user.id
         ).first()
         if not vendor:
-            vendor_id = None
+            vendor_id_parsed = None
     
     # Determine if recurring
     is_recurring_val = "yes" if is_recurring == "yes" else "no"
@@ -500,8 +514,8 @@ def add_expense(
     expense = Expense(
         user_id=user.id,
         category_id=category_id,
-        subcategory_id=subcategory_id if subcategory_id and subcategory_id > 0 else None,
-        vendor_id=vendor_id if vendor_id and vendor_id > 0 else None,
+        subcategory_id=subcategory_id_parsed if subcategory_id_parsed and subcategory_id_parsed > 0 else None,
+        vendor_id=vendor_id_parsed if vendor_id_parsed and vendor_id_parsed > 0 else None,
         amount=amount,
         expense_date=parsed_date,
         notes=notes if notes and notes.strip() else None,
@@ -632,8 +646,8 @@ def update_expense(
     request: Request,
     db: Session = Depends(get_db),
     category_id: int = Form(...),
-    subcategory_id: Optional[int] = Form(None),
-    vendor_id: Optional[int] = Form(None),
+    subcategory_id: str = Form(""),
+    vendor_id: str = Form(""),
     amount: float = Form(...),
     expense_date: str = Form(...),
     notes: Optional[str] = Form(None)
@@ -642,6 +656,10 @@ def update_expense(
     user = get_current_user(request, db)
     if not user:
         return RedirectResponse("/login")
+    
+    # Parse optional integer fields
+    subcategory_id_parsed = parse_optional_int(subcategory_id)
+    vendor_id_parsed = parse_optional_int(vendor_id)
     
     expense = db.query(Expense).filter(
         Expense.id == expense_id,
@@ -667,18 +685,18 @@ def update_expense(
         return RedirectResponse("/expenses")
     
     # Verify vendor belongs to user (if provided)
-    if vendor_id and vendor_id > 0:
+    if vendor_id_parsed and vendor_id_parsed > 0:
         vendor = db.query(Vendor).filter(
-            Vendor.id == vendor_id,
+            Vendor.id == vendor_id_parsed,
             Vendor.user_id == user.id
         ).first()
         if not vendor:
-            vendor_id = None
+            vendor_id_parsed = None
     
     # Update expense
     expense.category_id = category_id
-    expense.subcategory_id = subcategory_id if subcategory_id and subcategory_id > 0 else None
-    expense.vendor_id = vendor_id if vendor_id and vendor_id > 0 else None
+    expense.subcategory_id = subcategory_id_parsed if subcategory_id_parsed and subcategory_id_parsed > 0 else None
+    expense.vendor_id = vendor_id_parsed if vendor_id_parsed and vendor_id_parsed > 0 else None
     expense.amount = amount
     expense.expense_date = parsed_date
     expense.notes = notes if notes and notes.strip() else None

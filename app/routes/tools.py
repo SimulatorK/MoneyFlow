@@ -633,6 +633,7 @@ async def add_networth_account(
     institution: str = Form(None),
     notes: str = Form(None),
     initial_balance: float = Form(0),
+    use_for_fire: str = Form("true"),
     db: Session = Depends(get_db)
 ):
     """Add a new net worth account."""
@@ -641,6 +642,7 @@ async def add_networth_account(
         return RedirectResponse("/login", status_code=303)
     
     is_asset_bool = (is_asset == "true")
+    use_for_fire_bool = (use_for_fire == "true")
     
     # Check account limits (15 per type)
     existing_count = db.query(Account).filter(
@@ -662,7 +664,8 @@ async def add_networth_account(
             account_type=account_type,
             is_asset=is_asset_bool,
             institution=institution or None,
-            notes=notes or None
+            notes=notes or None,
+            use_for_fire=use_for_fire_bool
         )
         db.add(account)
         db.commit()
@@ -695,6 +698,7 @@ async def update_networth_account(
     account_type: str = Form(...),
     institution: str = Form(None),
     notes: str = Form(None),
+    use_for_fire: str = Form("true"),
     db: Session = Depends(get_db)
 ):
     """Update an existing net worth account."""
@@ -710,11 +714,14 @@ async def update_networth_account(
     if not account:
         return RedirectResponse("/tools?tab=networth", status_code=303)
     
+    use_for_fire_bool = (use_for_fire == "true")
+    
     try:
         account.name = name
         account.account_type = account_type
         account.institution = institution or None
         account.notes = notes or None
+        account.use_for_fire = use_for_fire_bool
         db.commit()
         
         logger.info(f"Net worth account updated: {name} (ID: {account_id}) for user {user.username}")
@@ -3134,21 +3141,21 @@ async def calculate_fire_plan(
     if not user:
         return JSONResponse({"error": "Not authenticated"}, status_code=401)
     
-    # Get user's accounts
+    # Get user's accounts - only active ones marked for FIRE calculations
     accounts = db.query(Account).filter(
         Account.user_id == user.id,
         Account.is_active == True
     ).all()
     
     # Build accounts data with latest balances and contribution settings
-    accounts_data = []
+    # Separate FIRE accounts from all accounts for tracking
+    accounts_data = []  # Only accounts marked for FIRE
+    all_accounts_data = []  # All accounts for reference
     total_assets = 0
     total_liabilities = 0
+    total_fire_assets = 0
     total_monthly_contributions = 0
-    
-    # Calculate weighted average expected return
-    weighted_return_sum = 0
-    total_asset_value = 0
+    fire_monthly_contributions = 0
     
     for acc in accounts:
         # Get latest balance
@@ -3163,7 +3170,7 @@ async def calculate_fire_plan(
             AccountContribution.account_id == acc.id
         ).first()
         
-        # Calculate monthly contribution
+        # Calculate monthly contribution from the stored contribution data
         contrib_amount = 0
         expected_return = 7.0
         stocks_pct = 80
@@ -3175,10 +3182,14 @@ async def calculate_fire_plan(
             raw_amount = contrib.amount if contrib.amount is not None else 0
             freq = contrib.frequency or "monthly"
             
-            # Convert to monthly
+            # Convert to monthly based on frequency
             freq_multiplier = {
-                "annually": 1/12, "quarterly": 1/3, "monthly": 1,
-                "semi-monthly": 2, "bi-weekly": 2.17, "weekly": 4.33
+                "annually": 1/12,
+                "quarterly": 1/3,
+                "monthly": 1,
+                "semi-monthly": 2,
+                "bi-weekly": 26/12,  # More accurate: 26 pay periods / 12 months
+                "weekly": 52/12      # More accurate: 52 weeks / 12 months
             }.get(freq, 1)
             
             contrib_amount = raw_amount * freq_multiplier
@@ -3194,33 +3205,47 @@ async def calculate_fire_plan(
             if contrib.interest_rate is not None:
                 interest_rate = contrib.interest_rate
         
-        if acc.is_asset:
-            total_assets += current_balance
-            total_monthly_contributions += contrib_amount
-            weighted_return_sum += current_balance * expected_return / 100
-            total_asset_value += current_balance
-        else:
-            total_liabilities += current_balance
+        # Check if account is marked for FIRE (default to True if column doesn't exist)
+        use_for_fire = getattr(acc, 'use_for_fire', True) if hasattr(acc, 'use_for_fire') else True
         
-        accounts_data.append({
+        account_info = {
             "id": acc.id,
             "name": acc.name,
             "account_type": acc.account_type,
             "is_asset": acc.is_asset,
             "current_balance": current_balance,
             "contribution_monthly": contrib_amount,
+            "contribution_raw": contrib.amount if contrib else 0,
+            "contribution_frequency": contrib.frequency if contrib else "monthly",
             "expected_return": expected_return,
             "stocks_pct": stocks_pct,
             "bonds_pct": bonds_pct,
             "cash_pct": cash_pct,
-            "interest_rate": interest_rate
-        })
+            "interest_rate": interest_rate,
+            "use_for_fire": use_for_fire
+        }
+        
+        all_accounts_data.append(account_info)
+        
+        if acc.is_asset:
+            total_assets += current_balance
+            total_monthly_contributions += contrib_amount
+            
+            # Only include in FIRE calculations if marked
+            if use_for_fire:
+                accounts_data.append(account_info)
+                total_fire_assets += current_balance
+                fire_monthly_contributions += contrib_amount
+        else:
+            total_liabilities += current_balance
+            if use_for_fire:
+                accounts_data.append(account_info)
     
     current_net_worth = total_assets - total_liabilities
-    annual_contributions = total_monthly_contributions * 12
+    fire_net_worth = total_fire_assets  # Only assets marked for FIRE
+    annual_contributions = fire_monthly_contributions * 12  # Only FIRE account contributions
     
     # Convert inputs
-    inflation_rate = body.inflation_rate / 100
     withdrawal_rate = body.withdrawal_rate / 100
     
     # Social Security and pension (annual amounts)
@@ -3228,22 +3253,15 @@ async def calculate_fire_plan(
     pension_annual = body.pension_monthly * 12
     
     # Calculate FI Number based on withdrawal strategy
-    fi_result = calculate_fi_number(
-        retirement_expenses=body.retirement_expenses,
-        withdrawal_rate=withdrawal_rate,
-        fire_type=body.fire_type,
-        current_age=body.current_age,
-        life_expectancy=body.life_expectancy,
-        target_retirement_age=body.target_retirement_age,
-        inflation_rate=inflation_rate,
-        social_security_annual=social_security_annual,
-        pension_annual=pension_annual
-    )
+    # FI Number = Annual expenses that need to come from portfolio / withdrawal rate
+    expenses_from_portfolio = max(0, body.retirement_expenses - social_security_annual - pension_annual)
+    if withdrawal_rate > 0:
+        fi_number = expenses_from_portfolio / withdrawal_rate
+    else:
+        fi_number = expenses_from_portfolio * 25  # Default 4% rule
     
-    fi_number = fi_result["adjusted_fi_number"]
-    
-    # Calculate progress
-    progress_pct = min((total_assets / fi_number) * 100, 100) if fi_number > 0 else 0
+    # Calculate progress based on FIRE-marked assets only
+    progress_pct = min((fire_net_worth / fi_number) * 100, 100) if fi_number > 0 else 0
     
     # =========================================================================
     # Run Monte Carlo analysis for FIRE projections
@@ -3360,27 +3378,28 @@ async def calculate_fire_plan(
         },
         "current_status": {
             "total_assets": total_assets,
+            "fire_assets": fire_net_worth,  # Only assets marked for FIRE
             "total_liabilities": total_liabilities,
             "net_worth": current_net_worth,
-            "annual_contributions": annual_contributions,
-            "monthly_contributions": total_monthly_contributions,
+            "annual_contributions": annual_contributions,  # FIRE accounts only
+            "monthly_contributions": fire_monthly_contributions,  # FIRE accounts only
+            "all_monthly_contributions": total_monthly_contributions,  # All accounts
             "portfolio_allocation": mc_fi_analysis["portfolio_allocation"] if mc_fi_analysis else {"stocks": 80, "bonds": 15, "cash": 5},
-            "num_accounts": len(accounts_data)
+            "num_accounts": len(accounts_data),
+            "num_fire_accounts": len([a for a in accounts_data if a.get("use_for_fire", True)])
         },
         "fi_calculation": {
             "fi_number": fi_number,
-            "base_fi_number": fi_result["base_fi_number"],
-            "fire_type": body.fire_type,
             "withdrawal_rate": withdrawal_rate * 100,
-            "expenses_from_portfolio": fi_result["expenses_from_portfolio"],
-            "other_income_annual": fi_result["other_income_annual"],
-            "description": fi_result.get("description", "")
+            "retirement_expenses": body.retirement_expenses,
+            "expenses_from_portfolio": expenses_from_portfolio,
+            "other_income_annual": social_security_annual + pension_annual,
         },
         "progress": {
-            "current_value": total_assets,
+            "current_value": fire_net_worth,  # Only FIRE-marked assets
             "fi_number": fi_number,
             "progress_percentage": progress_pct,
-            "remaining_amount": max(0, fi_number - total_assets)
+            "remaining_amount": max(0, fi_number - fire_net_worth)
         },
         "time_to_fi": {
             "method": "monte_carlo",
@@ -3412,7 +3431,12 @@ async def calculate_fire_plan(
             "final_portfolio": mc_fi_analysis["final_portfolio"] if mc_fi_analysis else None,
             "success_rate": success_rate,
             "fi_probability": fi_probability,
-        }
+        },
+        "accounts_used": [
+            {"id": a["id"], "name": a["name"], "balance": a["current_balance"], 
+             "contribution_monthly": a["contribution_monthly"]}
+            for a in accounts_data
+        ]
     }
     
     logger.info(f"FIRE MC analysis for user {user.username}: FI Number=${fi_number:,.0f}, "
