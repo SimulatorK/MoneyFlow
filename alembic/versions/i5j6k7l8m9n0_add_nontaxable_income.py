@@ -7,6 +7,7 @@ Create Date: 2024-12-16
 """
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy import inspect
 
 
 # revision identifiers, used by Alembic.
@@ -16,15 +17,35 @@ branch_labels = None
 depends_on = None
 
 
+def column_exists(table_name, column_name):
+    """Check if a column exists in a table."""
+    bind = op.get_bind()
+    inspector = inspect(bind)
+    columns = [col['name'] for col in inspector.get_columns(table_name)]
+    return column_name in columns
+
+
 def upgrade() -> None:
-    # Add non-taxable income columns to income_taxes table
-    op.add_column('income_taxes', sa.Column('roth_ira_distribution', sa.Float(), nullable=True, server_default='0'))
-    op.add_column('income_taxes', sa.Column('roth_401k_distribution', sa.Float(), nullable=True, server_default='0'))
-    op.add_column('income_taxes', sa.Column('other_nontaxable_income', sa.Float(), nullable=True, server_default='0'))
+    """Add non-taxable income columns to income_taxes table."""
+    columns_to_add = [
+        ('roth_ira_distribution', sa.Float(), True, '0'),
+        ('roth_401k_distribution', sa.Float(), True, '0'),
+        ('other_nontaxable_income', sa.Float(), True, '0'),
+    ]
+    
+    for col_name, col_type, nullable, server_default in columns_to_add:
+        if not column_exists('income_taxes', col_name):
+            op.add_column('income_taxes', sa.Column(col_name, col_type, nullable=nullable, server_default=server_default))
 
 
 def downgrade() -> None:
-    op.drop_column('income_taxes', 'other_nontaxable_income')
-    op.drop_column('income_taxes', 'roth_401k_distribution')
-    op.drop_column('income_taxes', 'roth_ira_distribution')
-
+    """Remove non-taxable income columns."""
+    columns_to_drop = [
+        'other_nontaxable_income',
+        'roth_401k_distribution',
+        'roth_ira_distribution',
+    ]
+    
+    for col_name in columns_to_drop:
+        if column_exists('income_taxes', col_name):
+            op.drop_column('income_taxes', col_name)

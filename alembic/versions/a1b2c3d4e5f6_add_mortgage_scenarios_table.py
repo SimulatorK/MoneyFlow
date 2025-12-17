@@ -9,6 +9,7 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy import inspect
 
 
 # revision identifiers, used by Alembic.
@@ -18,25 +19,33 @@ branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
 
+def table_exists(table_name):
+    """Check if a table exists."""
+    bind = op.get_bind()
+    inspector = inspect(bind)
+    return table_name in inspector.get_table_names()
+
+
 def upgrade() -> None:
     """Create mortgage_scenarios table for storing saved mortgage calculator scenarios."""
-    op.create_table(
-        'mortgage_scenarios',
-        sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('user_id', sa.Integer(), nullable=False),
-        sa.Column('name', sa.String(length=255), nullable=False),
-        sa.Column('compare_mode', sa.Boolean(), nullable=True, default=False),
-        sa.Column('scenario_data', sa.Text(), nullable=False),
-        sa.Column('created_at', sa.DateTime(), nullable=True),
-        sa.Column('updated_at', sa.DateTime(), nullable=True),
-        sa.ForeignKeyConstraint(['user_id'], ['users.id'], name='fk_mortgage_scenarios_user_id'),
-        sa.PrimaryKeyConstraint('id')
-    )
-    op.create_index(op.f('ix_mortgage_scenarios_id'), 'mortgage_scenarios', ['id'], unique=False)
+    if not table_exists('mortgage_scenarios'):
+        op.create_table(
+            'mortgage_scenarios',
+            sa.Column('id', sa.Integer(), nullable=False),
+            sa.Column('user_id', sa.Integer(), nullable=False),
+            sa.Column('name', sa.String(length=255), nullable=False),
+            sa.Column('compare_mode', sa.Boolean(), nullable=True, default=False),
+            sa.Column('scenario_data', sa.Text(), nullable=False),
+            sa.Column('created_at', sa.DateTime(), nullable=True),
+            sa.Column('updated_at', sa.DateTime(), nullable=True),
+            sa.ForeignKeyConstraint(['user_id'], ['users.id'], name='fk_mortgage_scenarios_user_id'),
+            sa.PrimaryKeyConstraint('id')
+        )
+        op.create_index(op.f('ix_mortgage_scenarios_id'), 'mortgage_scenarios', ['id'], unique=False)
 
 
 def downgrade() -> None:
     """Drop mortgage_scenarios table."""
-    op.drop_index(op.f('ix_mortgage_scenarios_id'), table_name='mortgage_scenarios')
-    op.drop_table('mortgage_scenarios')
-
+    if table_exists('mortgage_scenarios'):
+        op.drop_index(op.f('ix_mortgage_scenarios_id'), table_name='mortgage_scenarios')
+        op.drop_table('mortgage_scenarios')
