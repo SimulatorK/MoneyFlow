@@ -1084,7 +1084,21 @@
         
         <!-- Tax Analysis -->
         <div id="mcTaxAnalysis" style="background: var(--bg-primary); border-radius: 10px; padding: 1.2em; margin-top: 1.5em; border: 1px solid var(--border-light);">
-          <h4 style="margin: 0 0 0.8em 0; color: var(--text-heading);">🏛️ Projected Tax Treatment Analysis</h4>
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5em; margin-bottom: 0.8em;">
+            <h4 style="margin: 0; color: var(--text-heading);">🏛️ Projected Tax Treatment Analysis</h4>
+            <div style="display: flex; align-items: center; gap: 0.5em;">
+              <label style="font-size: 0.85em; color: var(--text-secondary);">View Year:</label>
+              <select id="taxTreatmentYear" onchange="updateTaxTreatmentYear()" style="padding: 0.4em 0.8em; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-input); color: var(--text-primary); font-size: 0.9em;">
+                <option value="0">Current</option>
+                <option value="5">Year 5</option>
+                <option value="10" selected>Year 10</option>
+                <option value="15">Year 15</option>
+                <option value="20">Year 20</option>
+                <option value="25">Year 25</option>
+                <option value="30">Year 30</option>
+              </select>
+            </div>
+          </div>
           <p style="font-size: 0.8em; color: var(--text-secondary); margin: 0 0 1em 0;">Estimated breakdown of projected portfolio by tax treatment (median outcome)</p>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5em;">
             <div>
@@ -1170,25 +1184,25 @@
         
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1em;">
           <div class="form-group">
-            <label>Annual Expenses <small style="color: var(--text-secondary);">(today's $)</small></label>
+            <label>Desired Annual Withdrawal <small style="color: var(--text-secondary);">(today's $)</small></label>
             <div style="position: relative;">
               <span style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-secondary);">$</span>
-              <input type="number" id="fireAnnualExpenses" value="50000" min="0" style="width: 100%; padding-left: 25px;">
+              <input type="number" id="fireDesiredWithdrawal" value="40000" min="0" style="width: 100%; padding-left: 25px;">
             </div>
-          </div>
-          <div class="form-group">
-            <label>Retirement Expenses <small style="color: var(--text-secondary);">(today's $)</small></label>
-            <div style="position: relative;">
-              <span style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-secondary);">$</span>
-              <input type="number" id="fireRetirementExpenses" value="40000" min="0" style="width: 100%; padding-left: 25px;">
-            </div>
-            <small style="color: var(--text-secondary);">Often 80% of pre-retirement</small>
+            <small style="color: var(--text-secondary);">How much you want to withdraw annually in retirement</small>
           </div>
           <div class="form-group">
             <label>Social Security <small style="color: var(--text-secondary);">(monthly at 67, today's $)</small></label>
             <div style="position: relative;">
               <span style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-secondary);">$</span>
               <input type="number" id="fireSocialSecurity" value="2000" min="0" style="width: 100%; padding-left: 25px;">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Pension <small style="color: var(--text-secondary);">(monthly, today's $)</small></label>
+            <div style="position: relative;">
+              <span style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-secondary);">$</span>
+              <input type="number" id="firePension" value="0" min="0" style="width: 100%; padding-left: 25px;">
             </div>
           </div>
         </div>
@@ -1434,9 +1448,40 @@
           
           <!-- Net Worth Projection Chart -->
           <div style="background: var(--bg-card); border-radius: 10px; padding: 1.2em; margin-bottom: 1em;">
-            <h5 style="margin: 0 0 1em 0; color: var(--text-heading);">📈 Net Worth Projection (Today's Dollars)</h5>
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5em; margin-bottom: 1em;">
+              <h5 style="margin: 0; color: var(--text-heading);">📈 Net Worth Projection (Today's Dollars)</h5>
+              <div style="display: flex; align-items: center; gap: 0.5em;">
+                <label style="font-size: 0.85em; color: var(--text-secondary);">Start Retirement at:</label>
+                <select id="fireChartRetirementAge" onchange="updateFIREChart()" style="padding: 0.4em 0.8em; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-input); color: var(--text-primary); font-size: 0.9em;">
+                  <option value="45">Age 45</option>
+                  <option value="50">Age 50</option>
+                  <option value="55" selected>Age 55</option>
+                  <option value="60">Age 60</option>
+                  <option value="65">Age 65</option>
+                  <option value="70">Age 70</option>
+                </select>
+              </div>
+            </div>
             <div style="position: relative; height: 350px; width: 100%;">
               <canvas id="fireProjectionChart"></canvas>
+            </div>
+            <!-- Withdrawal Distribution -->
+            <div id="fireWithdrawalDistribution" style="margin-top: 1em; padding: 1em; background: var(--bg-primary); border-radius: 8px; display: none;">
+              <h6 style="margin: 0 0 0.5em 0; color: var(--text-heading);">💰 Annual Withdrawal Distribution by Scenario</h6>
+              <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1em; font-size: 0.9em;">
+                <div style="text-align: center;">
+                  <div style="font-size: 0.8em; color: #dc3545;">Very Poor (p10)</div>
+                  <div id="fireWithdrawalP10" style="font-weight: 600;">--</div>
+                </div>
+                <div style="text-align: center;">
+                  <div style="font-size: 0.8em; color: #ffc107;">Below Average (p25)</div>
+                  <div id="fireWithdrawalP25" style="font-weight: 600;">--</div>
+                </div>
+                <div style="text-align: center;">
+                  <div style="font-size: 0.8em; color: #28a745;">Average (p50)</div>
+                  <div id="fireWithdrawalP50" style="font-weight: 600;">--</div>
+                </div>
+              </div>
             </div>
           </div>
           
@@ -1561,10 +1606,61 @@
       </div>
       <div class="modal-btns" style="margin-top: 1em;">
         <button type="button" class="btn-cancel" onclick="closeAccountDetailsModal()">Close</button>
+        <button type="button" class="btn-confirm" onclick="showEditAccountModal()" id="editAccountBtn" style="background: var(--accent);">✏️ Edit Account</button>
         <form id="deleteAccountForm" action="" method="post" style="display: inline;">
           <button type="submit" class="btn-cancel" style="background: #fee; color: #c44;">Delete Account</button>
         </form>
       </div>
+    </div>
+  </div>
+  
+  <!-- Edit Account Modal -->
+  <div class="modal-overlay" id="editAccountModal">
+    <div class="modal" style="max-width: 450px;">
+      <h3>✏️ Edit Account</h3>
+      <form id="editAccountForm" method="post">
+        <input type="hidden" id="editAccountId" name="account_id">
+        <div style="margin-bottom: 1em;">
+          <label style="display: block; font-size: 0.9em; color: var(--text-secondary); margin-bottom: 0.3em;">Account Name *</label>
+          <input type="text" name="name" id="editAccountName" required style="width: 100%; padding: 0.7em; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-input); color: var(--text-primary);">
+        </div>
+        <div style="margin-bottom: 1em;">
+          <label style="display: block; font-size: 0.9em; color: var(--text-secondary); margin-bottom: 0.3em;">Account Type *</label>
+          <select name="account_type" id="editAccountType" required style="width: 100%; padding: 0.7em; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-input); color: var(--text-primary);">
+            <optgroup label="Assets">
+              {% for value, label in account_types.assets %}
+              <option value="{{ value }}">{{ label }}</option>
+              {% endfor %}
+            </optgroup>
+            <optgroup label="Liabilities">
+              {% for value, label in account_types.liabilities %}
+              <option value="{{ value }}">{{ label }}</option>
+              {% endfor %}
+            </optgroup>
+          </select>
+        </div>
+        <div style="margin-bottom: 1em;">
+          <label style="display: block; font-size: 0.9em; color: var(--text-secondary); margin-bottom: 0.3em;">Institution (Optional)</label>
+          <input type="text" name="institution" id="editAccountInstitution" style="width: 100%; padding: 0.7em; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-input); color: var(--text-primary);">
+        </div>
+        <div style="margin-bottom: 1em;">
+          <label style="display: block; font-size: 0.9em; color: var(--text-secondary); margin-bottom: 0.3em;">Notes (Optional)</label>
+          <textarea name="notes" id="editAccountNotes" rows="2" style="width: 100%; padding: 0.7em; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-input); color: var(--text-primary); resize: vertical;"></textarea>
+        </div>
+        <div style="margin-bottom: 1em; padding: 0.8em; background: var(--bg-primary); border-radius: 6px; border: 1px solid var(--border-light);">
+          <label style="display: flex; align-items: center; gap: 0.5em; cursor: pointer;">
+            <input type="checkbox" name="use_for_fire" id="editAccountFireToggle" value="true" style="width: 18px; height: 18px;">
+            <span style="font-weight: 500; color: var(--text-heading);">🔥 Include in FIRE Calculations</span>
+          </label>
+          <small style="color: var(--text-secondary); display: block; margin-left: 1.8em; margin-top: 0.3em;">
+            When enabled, this account will be used for retirement projections and FIRE analysis
+          </small>
+        </div>
+        <div class="modal-btns">
+          <button type="button" class="btn-cancel" onclick="closeEditAccountModal()">Cancel</button>
+          <button type="submit" class="btn-confirm">Save Changes</button>
+        </div>
+      </form>
     </div>
   </div>
   
@@ -2417,18 +2513,28 @@
       document.getElementById('addBalanceModal').classList.remove('active');
     }
     
+    // Store current account data for editing
+    let currentAccountData = null;
+    
     async function showAccountDetails(accountId) {
       try {
         const response = await fetch('/tools/networth/account/' + accountId);
         if (response.ok) {
           const data = await response.json();
+          currentAccountData = data;  // Store for editing
           
           document.getElementById('accountDetailsTitle').textContent = '📋 ' + data.name;
           document.getElementById('deleteAccountForm').action = '/tools/networth/account/' + accountId + '/delete';
           
+          // FIRE status badge
+          const useForFire = data.use_for_fire !== false;  // Default to true
+          const fireBadge = useForFire 
+            ? '<span style="background: #28a745; color: white; padding: 0.2em 0.5em; border-radius: 4px; font-size: 0.75em; margin-left: 0.5em;">🔥 FIRE</span>'
+            : '<span style="background: #6c757d; color: white; padding: 0.2em 0.5em; border-radius: 4px; font-size: 0.75em; margin-left: 0.5em;">Not in FIRE</span>';
+          
           let html = `
             <div style="margin-bottom: 1em;">
-              <strong>Type:</strong> ${data.account_type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}<br>
+              <strong>Type:</strong> ${data.account_type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}${fireBadge}<br>
               <strong>Category:</strong> ${data.is_asset ? 'Asset' : 'Liability'}<br>
               ${data.institution ? '<strong>Institution:</strong> ' + data.institution + '<br>' : ''}
               ${data.notes ? '<strong>Notes:</strong> ' + data.notes + '<br>' : ''}
@@ -2484,6 +2590,32 @@
     
     function closeAccountDetailsModal() {
       document.getElementById('accountDetailsModal').classList.remove('active');
+      currentAccountData = null;
+    }
+    
+    function showEditAccountModal() {
+      if (!currentAccountData) return;
+      
+      const data = currentAccountData;
+      
+      // Populate form fields
+      document.getElementById('editAccountId').value = data.id;
+      document.getElementById('editAccountName').value = data.name || '';
+      document.getElementById('editAccountType').value = data.account_type || '';
+      document.getElementById('editAccountInstitution').value = data.institution || '';
+      document.getElementById('editAccountNotes').value = data.notes || '';
+      document.getElementById('editAccountFireToggle').checked = data.use_for_fire !== false;
+      
+      // Set form action
+      document.getElementById('editAccountForm').action = '/tools/networth/account/' + data.id + '/update';
+      
+      // Close details modal and open edit modal
+      document.getElementById('accountDetailsModal').classList.remove('active');
+      document.getElementById('editAccountModal').classList.add('active');
+    }
+    
+    function closeEditAccountModal() {
+      document.getElementById('editAccountModal').classList.remove('active');
     }
     
     async function updatePerformanceMetrics() {
@@ -3245,6 +3377,48 @@
       }
     }
     
+    function updateTaxTreatmentYear() {
+      if (!lastMCResults || !lastMCResults.projected_values) return;
+      
+      const selectedYear = parseInt(document.getElementById('taxTreatmentYear').value) || 10;
+      const projectedValues = lastMCResults.projected_values;
+      
+      // Get projected portfolio value at selected year
+      const yearIdx = Math.min(selectedYear, (lastMCResults.path_data?.p50?.length || 30) - 1);
+      const projectedTotal = lastMCResults.path_data?.p50?.[yearIdx] || 0;
+      
+      if (projectedTotal <= 0) {
+        document.getElementById('mcTaxProjectedFree').textContent = '-';
+        document.getElementById('mcTaxProjectedDeferred').textContent = '-';
+        document.getElementById('mcTaxProjectedTaxable').textContent = '-';
+        return;
+      }
+      
+      // Estimate tax bucket growth based on proportional contribution rates
+      const currentTotal = projectedValues.current_total || 1;
+      const growthRatio = projectedTotal / currentTotal;
+      
+      // Get current proportions
+      const currentFree = projectedValues.tax_free?.amount || 0;
+      const currentDeferred = projectedValues.tax_deferred?.amount || 0;
+      const currentTaxable = projectedValues.taxable?.amount || 0;
+      
+      // Project each bucket (simplified - actual would need contribution tracking)
+      const projFree = currentFree * growthRatio;
+      const projDeferred = currentDeferred * growthRatio;
+      const projTaxable = currentTaxable * growthRatio;
+      const projTotal = projFree + projDeferred + projTaxable;
+      
+      const fmt = (v, pct) => '$' + Math.round(v).toLocaleString() + ' (' + pct.toFixed(1) + '%)';
+      
+      document.getElementById('mcTaxProjectedFree').textContent = 
+        fmt(projFree, projTotal > 0 ? (projFree / projTotal * 100) : 0);
+      document.getElementById('mcTaxProjectedDeferred').textContent = 
+        fmt(projDeferred, projTotal > 0 ? (projDeferred / projTotal * 100) : 0);
+      document.getElementById('mcTaxProjectedTaxable').textContent = 
+        fmt(projTaxable, projTotal > 0 ? (projTaxable / projTotal * 100) : 0);
+    }
+    
     function drawMCChart(pathData) {
       const ctx = document.getElementById('mcChart');
       if (mcChart) mcChart.destroy();
@@ -3550,19 +3724,20 @@
       
       // Get all inputs (all in today's dollars - inflation handled by historical data)
       const targetRetirementAge = parseInt(document.getElementById('fireTargetRetirementAge').value) || 55;
+      const desiredWithdrawal = parseFloat(document.getElementById('fireDesiredWithdrawal').value) || 40000;
       
       const requestData = {
         current_age: parseInt(document.getElementById('fireCurrentAge').value) || 30,
         target_retirement_age: targetRetirementAge,  // Used for chart visualization
         life_expectancy: parseInt(document.getElementById('fireLifeExpectancy').value) || 90,
-        annual_expenses: parseFloat(document.getElementById('fireAnnualExpenses').value) || 50000,
-        retirement_expenses: parseFloat(document.getElementById('fireRetirementExpenses').value) || 40000,
+        annual_expenses: desiredWithdrawal,  // Same as desired withdrawal
+        retirement_expenses: desiredWithdrawal,  // Use desired withdrawal amount
         social_security_monthly: parseFloat(document.getElementById('fireSocialSecurity').value) || 0,
         social_security_start_age: 67,
-        pension_monthly: 0,
+        pension_monthly: parseFloat(document.getElementById('firePension').value) || 0,
         pension_start_age: 65,
         inflation_rate: 3.0,  // Used internally, actual inflation from historical data in MC
-        fire_type: "regular",  // Simplified - no longer using FIRE type dropdown
+        fire_type: "regular",  // Not used anymore
         withdrawal_method: document.getElementById('fireWithdrawalMethod').value,
         withdrawal_rate: parseFloat(document.getElementById('fireSWR').value) || 4.0,
         upper_guardrail: parseFloat(document.getElementById('fireUpperGuardrail').value) || 5.0,
@@ -3901,13 +4076,34 @@
       }
     }
     
-    function createFIREProjectionChart(data) {
+    // Store FIRE analysis data globally for chart updates
+    let currentFIREData = null;
+    
+    function updateFIREChart() {
+      if (!currentFIREData) return;
+      
+      // Get selected retirement age from dropdown
+      const selectedAge = parseInt(document.getElementById('fireChartRetirementAge').value) || 55;
+      
+      // Update the target retirement age in the stored data
+      currentFIREData.profile.target_retirement_age = selectedAge;
+      
+      // Recreate chart with new retirement age marker
+      createFIREProjectionChart(currentFIREData, selectedAge);
+    }
+    
+    function createFIREProjectionChart(data, retirementAge = null) {
+      currentFIREData = data;  // Store for later updates
+      
       const canvas = document.getElementById('fireProjectionChart');
       if (!canvas) return;
       
       const ctx = canvas.getContext('2d');
       const timeToFI = data.time_to_fi;
       const paths = timeToFI.projection_paths;
+      
+      // Use provided retirement age or from dropdown
+      const selectedRetirementAge = retirementAge || parseInt(document.getElementById('fireChartRetirementAge').value) || data.profile.target_retirement_age;
       
       if (!paths || !paths.p50) {
         console.log('No projection paths available');
@@ -3936,6 +4132,18 @@
       const p25Data = paths.p25.slice(0, dataLength).map(capValue);
       const p50Data = paths.p50.slice(0, dataLength).map(capValue);
       const fiData = Array(dataLength).fill(fiNumber);
+      
+      // Find retirement age index for vertical marker
+      const retirementIndex = selectedRetirementAge - currentAge;
+      
+      // Create retirement marker data (vertical line at retirement age)
+      const retirementMarkerData = labels.map((age, idx) => {
+        if (idx === retirementIndex) return maxReasonable;
+        return null;
+      });
+      
+      // Show withdrawal distribution
+      showWithdrawalDistribution(data, selectedRetirementAge);
       
       // Destroy existing chart if it exists
       if (fireProjectionChart) {
@@ -3991,6 +4199,19 @@
               fill: false,
               pointRadius: 0,
               pointHoverRadius: 0
+            },
+            {
+              label: 'Retirement Start (Age ' + selectedRetirementAge + ')',
+              data: retirementMarkerData,
+              borderColor: 'rgba(0, 123, 255, 0.9)',
+              backgroundColor: 'rgba(0, 123, 255, 0.3)',
+              borderWidth: 3,
+              borderDash: [5, 5],
+              fill: false,
+              pointRadius: 8,
+              pointStyle: 'triangle',
+              pointHoverRadius: 10,
+              spanGaps: false
             }
           ]
         },
@@ -4078,6 +4299,67 @@
           }
         }
       });
+    }
+    
+    function showWithdrawalDistribution(data, retirementAge) {
+      const distributionDiv = document.getElementById('fireWithdrawalDistribution');
+      if (!distributionDiv) return;
+      
+      const currentAge = data.profile.current_age;
+      const paths = data.time_to_fi.projection_paths;
+      const desiredWithdrawal = data.fi_calculation.retirement_expenses || 40000;
+      const withdrawalMethod = data.withdrawal_strategy.method;
+      const withdrawalRate = data.fi_calculation.withdrawal_rate / 100;
+      
+      if (!paths || !paths.p50) {
+        distributionDiv.style.display = 'none';
+        return;
+      }
+      
+      // Find the year index for retirement
+      const retirementYearIdx = retirementAge - currentAge;
+      
+      if (retirementYearIdx < 0 || retirementYearIdx >= paths.p50.length) {
+        distributionDiv.style.display = 'none';
+        return;
+      }
+      
+      // Get portfolio values at retirement for each scenario
+      const p10Value = paths.p10[retirementYearIdx] || 0;
+      const p25Value = paths.p25[retirementYearIdx] || 0;
+      const p50Value = paths.p50[retirementYearIdx] || 0;
+      
+      // Calculate withdrawals based on method
+      let p10Withdrawal, p25Withdrawal, p50Withdrawal;
+      
+      if (withdrawalMethod === 'fixed_swr') {
+        // Fixed percentage of portfolio
+        p10Withdrawal = p10Value * withdrawalRate;
+        p25Withdrawal = p25Value * withdrawalRate;
+        p50Withdrawal = p50Value * withdrawalRate;
+      } else if (withdrawalMethod === 'variable_pct') {
+        // Variable percentage based on remaining years
+        const remainingYears = data.profile.life_expectancy - retirementAge;
+        const vpwRate = 1 / remainingYears;
+        p10Withdrawal = p10Value * vpwRate;
+        p25Withdrawal = p25Value * vpwRate;
+        p50Withdrawal = p50Value * vpwRate;
+      } else {
+        // For guardrails and floor/ceiling, use desired withdrawal as baseline
+        p10Withdrawal = desiredWithdrawal * 0.85;  // Reduced in poor scenario
+        p25Withdrawal = desiredWithdrawal * 0.95;
+        p50Withdrawal = desiredWithdrawal;
+      }
+      
+      // Update display
+      document.getElementById('fireWithdrawalP10').textContent = 
+        '$' + Math.round(p10Withdrawal).toLocaleString() + '/yr';
+      document.getElementById('fireWithdrawalP25').textContent = 
+        '$' + Math.round(p25Withdrawal).toLocaleString() + '/yr';
+      document.getElementById('fireWithdrawalP50').textContent = 
+        '$' + Math.round(p50Withdrawal).toLocaleString() + '/yr';
+      
+      distributionDiv.style.display = 'block';
     }
   </script>
 </body>

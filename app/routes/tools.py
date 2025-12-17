@@ -1227,6 +1227,7 @@ async def get_account_details(
         "is_asset": account.is_asset,
         "institution": account.institution,
         "notes": account.notes,
+        "use_for_fire": getattr(account, 'use_for_fire', True),
         "balances": balances,
         "contribution": contribution
     })

@@ -604,7 +604,7 @@ def calculate_california_tax_with_breakdown(ca_taxable_income, filing_status, ta
     return total_tax, breakdown, mental_health_tax
 
 
-def calculate_state_tax(agi, filing_status, filing_state, tax_year):
+def calculate_state_tax(agi, filing_status, filing_state, tax_year, capital_gains_excluded=0):
     """
     Calculate state income tax for the specified state.
     
@@ -613,6 +613,7 @@ def calculate_state_tax(agi, filing_status, filing_state, tax_year):
         filing_status: Tax filing status
         filing_state: Two-letter state code (e.g., 'MO', 'CA')
         tax_year: Tax year for rate lookup
+        capital_gains_excluded: Amount of capital gains to exclude (for states that exempt them)
         
     Returns:
         Dictionary with state tax details
@@ -621,13 +622,21 @@ def calculate_state_tax(agi, filing_status, filing_state, tax_year):
     
     if filing_state == "MO":
         mo_standard_deduction = year_data["mo_standard_deductions"].get(filing_status, 15175)
-        mo_taxable_income = max(0, agi - mo_standard_deduction)
+        
+        # Missouri exempts capital gains for individuals starting 2025
+        # (HB 816 signed in 2024 - phases in, 100% exempt by 2025)
+        capital_gains_exemption = 0
+        if tax_year >= 2025:
+            capital_gains_exemption = capital_gains_excluded
+        
+        mo_taxable_income = max(0, agi - mo_standard_deduction - capital_gains_exemption)
         state_tax, state_breakdown = calculate_missouri_tax_with_breakdown(mo_taxable_income, tax_year)
         return {
             "state": "Missouri",
             "state_code": "MO",
             "standard_deduction": mo_standard_deduction,
             "taxable_income": mo_taxable_income,
+            "capital_gains_exemption": capital_gains_exemption,
             "state_tax": state_tax,
             "state_breakdown": state_breakdown,
             "brackets": year_data["mo_brackets"],
@@ -900,13 +909,17 @@ def calculate_taxes(data, tax_year=None):
     # FICA on wages
     fica = calculate_fica(fica_wages, filing_status, tax_year)
     
+    # Calculate total capital gains (STCG + LTCG) for state exclusions
+    total_capital_gains = stcg + ltcg
+    
     # State Tax (using unified state tax function)
-    state_tax_result = calculate_state_tax(agi, filing_status, filing_state, tax_year)
+    state_tax_result = calculate_state_tax(agi, filing_status, filing_state, tax_year, capital_gains_excluded=total_capital_gains)
     state_tax = state_tax_result["state_tax"]
     state_standard_deduction = state_tax_result["standard_deduction"]
     state_taxable_income = state_tax_result["taxable_income"]
     state_breakdown = state_tax_result["state_breakdown"]
     state_brackets = state_tax_result["brackets"]
+    capital_gains_exemption = state_tax_result.get("capital_gains_exemption", 0)
     mental_health_tax = state_tax_result.get("mental_health_tax", 0)
     city_tax = state_tax_result.get("city_tax", 0)
     
@@ -1045,6 +1058,7 @@ def calculate_taxes(data, tax_year=None):
         "state_breakdown": state_breakdown,
         "mental_health_tax": mental_health_tax,
         "city_tax": city_tax,
+        "capital_gains_exemption": capital_gains_exemption,  # MO exempts cap gains 2025+
         # FICA
         "social_security": fica["social_security"],
         "medicare": fica["medicare"],
