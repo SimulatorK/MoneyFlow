@@ -418,7 +418,7 @@ TAX_DATA = {
             "single": [(48350, 0.0), (533400, 0.15), (float('inf'), 0.20)],
             "head_of_household": [(64750, 0.0), (566700, 0.15), (float('inf'), 0.20)],
         },
-        "ss_wage_base": 176100,  # Projected (inflation adjusted)
+        "ss_wage_base": 184500,  # Projected (inflation adjusted)
         "amt_exemption": {
             "married_filing_jointly": 140200, "married_filing_separately": 70100,  # Projected
             "single": 90100, "head_of_household": 90100,  # Projected
@@ -829,7 +829,7 @@ def calculate_taxes(data, tax_year=None):
     agi = salary + non_employment_income + stcg + dividends + ltcg - pretax_retirement
     
     # MAGI (for most purposes, same as AGI)
-    magi = agi
+    magi = agi + trad_ira
     
     # Federal standard deduction
     standard_deduction = year_data["standard_deductions"].get(filing_status, 16100)
