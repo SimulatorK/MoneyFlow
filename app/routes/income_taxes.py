@@ -928,6 +928,9 @@ def calculate_taxes(data, tax_year=None):
     mo_taxable_income = state_taxable_income
     mo_state_tax = state_tax
     mo_breakdown = state_breakdown
+
+    # Total deductions (annual)
+    total_deductions_annual = pretax_deductions_annual + pretax_retirement + aftertax_retirement
     
     # Total taxes (federal + state + FICA)
     total_taxes = total_federal_tax + fica["total_fica"] + state_tax
@@ -1083,6 +1086,7 @@ def calculate_taxes(data, tax_year=None):
         "pretax_retirement_per_pay": pretax_retirement_per_pay,
         "aftertax_retirement_per_pay": aftertax_retirement_per_pay,
         "net_per_pay": net_per_pay,
+        "total_deductions_annual": total_deductions_annual,
     }
 
 

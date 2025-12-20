@@ -412,11 +412,12 @@
 
       <fieldset>
         <legend>Employment Income</legend>
-        <div class="form-grid">
+        <div class="form-grid"; style="display:flex; flex-direction:column; gap:1em;">
           <label>Base Salary (annual $)
             <span class="info-tooltip" data-tooltip="Annual W-2 wages from employment. Enter $0 if retired or no earned income.">i</span>
             <input type="number" step="0.01" name="base_salary" min="0" value="{{ data.base_salary if data and data.base_salary else 0 }}">
           </label>
+          <!-- space out like other labels  -->
           <label>Pay Frequency
             <select name="pay_frequency">
               {% for freq in pay_frequencies %}
@@ -428,33 +429,38 @@
       </fieldset>
 
       <fieldset>
+        <details style="margin-bottom:1em;" default-closed>
+          <summary>Non-Employment Income (Annual) <span class="info-tooltip" data-tooltip="Income subject to federal/state tax but NOT FICA taxes. Common for retirees.">i</span></summary>
         <legend>Non-Employment Income (Annual) <span class="info-tooltip" data-tooltip="Income subject to federal/state tax but NOT FICA taxes. Common for retirees.">i</span></legend>
         <p style="font-size:0.85em; color:var(--text-secondary); margin:0 0 1em 0;">Retirement distributions and other taxable income not subject to Social Security/Medicare taxes.</p>
-        <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 1em;">
-          <label>Social Security Benefits
+        <div style="display:flex; flex-direction:column; gap: 1em; justify-content:space-between;">
+          <label style="width:100%;">Social Security Benefits
             <span class="info-tooltip" data-tooltip="Up to 85% may be taxable depending on your total income. We estimate 85% as worst case.">i</span>
             <input type="number" step="0.01" name="social_security_income" min="0" value="{{ data.social_security_income if data and data.social_security_income else 0 }}">
           </label>
-          <label>Pension Income
+          <label style="width:100%;">Pension Income
             <span class="info-tooltip" data-tooltip="Annual pension or annuity payments. Typically fully taxable as ordinary income.">i</span>
             <input type="number" step="0.01" name="pension_income" min="0" value="{{ data.pension_income if data and data.pension_income else 0 }}">
           </label>
-          <label>Trad. IRA Distributions
+          <label style="width:100%;">Trad. IRA Distributions
             <span class="info-tooltip" data-tooltip="Withdrawals from Traditional IRA. Fully taxable as ordinary income. RMDs start at age 73.">i</span>
             <input type="number" step="0.01" name="traditional_ira_distribution" min="0" value="{{ data.traditional_ira_distribution if data and data.traditional_ira_distribution else 0 }}">
           </label>
-          <label>Trad. 401k Distributions
+          <label style="width:100%;">Trad. 401k Distributions
             <span class="info-tooltip" data-tooltip="Withdrawals from Traditional 401k. Fully taxable as ordinary income.">i</span>
             <input type="number" step="0.01" name="traditional_401k_distribution" min="0" value="{{ data.traditional_401k_distribution if data and data.traditional_401k_distribution else 0 }}">
           </label>
-          <label>Other Taxable Income
+          <label style="width:100%;">Other Taxable Income
             <span class="info-tooltip" data-tooltip="Rental income, royalties, self-employment, alimony received (pre-2019), etc.">i</span>
             <input type="number" step="0.01" name="other_taxable_income" min="0" value="{{ data.other_taxable_income if data and data.other_taxable_income else 0 }}">
           </label>
         </div>
+        </details>
       </fieldset>
 
       <fieldset>
+        <details style="margin-bottom:1em;" default-closed>
+          <summary>Non-Taxable Income (Annual) <span class="info-tooltip" data-tooltip="Tax-free income for budgeting purposes. Does NOT affect tax calculations.">i</span></summary>
         <legend>Non-Taxable Income (Annual) <span class="info-tooltip" data-tooltip="Tax-free income for budgeting purposes. Does NOT affect tax calculations.">i</span></legend>
         <p style="font-size:0.85em; color:var(--text-secondary); margin:0 0 1em 0;">Include for budgeting only. These amounts are tax-free and won't affect your tax liability.</p>
         <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 1em;">
@@ -471,10 +477,13 @@
             <input type="number" step="0.01" name="other_nontaxable_income" min="0" value="{{ data.other_nontaxable_income if data and data.other_nontaxable_income else 0 }}">
           </label>
         </div>
+        </details>
       </fieldset>
 
       <fieldset>
-        <legend>Investment Income (Annual)</legend>
+        <details style="margin-bottom:1em;" default-closed>
+          <summary>Investment Income (Annual) <span class="info-tooltip" data-tooltip="Capital gains, dividends, interest, etc.">i</span></summary>
+        <legend>Investment Income (Annual) <span class="info-tooltip" data-tooltip="Capital gains, dividends, interest, etc.">i</span></legend>
         <div class="form-grid">
           <label>Short-Term Cap Gains
             <input type="number" step="0.01" name="short_term_cap_gains" min="0" value="{{ data.short_term_cap_gains if data and data.short_term_cap_gains else 0 }}">
@@ -486,10 +495,13 @@
             <input type="number" step="0.01" name="long_term_cap_gains" min="0" value="{{ data.long_term_cap_gains if data and data.long_term_cap_gains else 0 }}">
           </label>
         </div>
+        </details>
       </fieldset>
 
       <fieldset>
-        <legend>ISO Stock Options (for AMT)</legend>
+        <details style="margin-bottom:1em;" default-closed>
+          <summary>ISO Stock Options (for AMT) <span class="info-tooltip" data-tooltip="Exercised ISOs create a "bargain element" that may trigger Alternative Minimum Tax.">i</span></summary>
+        <legend>ISO Stock Options (for AMT) <span class="info-tooltip" data-tooltip="Exercised ISOs create a "bargain element" that may trigger Alternative Minimum Tax.">i</span></legend>
         <p style="font-size:0.85em; color:var(--text-secondary); margin:0 0 0.8em 0;">Exercised ISOs create a "bargain element" that may trigger Alternative Minimum Tax.</p>
         <div class="form-grid-3">
           <label>Shares Exercised
@@ -502,6 +514,7 @@
             <input type="number" step="0.01" name="iso_fmv_at_exercise" min="0" value="{{ data.iso_fmv_at_exercise if data and data.iso_fmv_at_exercise else 0 }}">
           </label>
         </div>
+        </details>
       </fieldset>
 
       <fieldset>
@@ -520,7 +533,12 @@
       </fieldset>
 
       <fieldset>
-        <legend>Retirement Contributions (Annual) <span class="info-tooltip" data-tooltip="IRS limits for {{ selected_tax_year }}. Limits are per person unless noted. Combined Roth+Trad 401k cannot exceed employee limit.">i</span></legend>
+        <details style="margin-bottom:1em;" default-open>
+          <summary>Retirement Contributions <span class="info-tooltip" data-tooltip="Retirement contributions by type">i</span></summary>
+        <legend>Retirement Contributions (Annual) <span class="info-tooltip" 
+          data-tooltip="IRS limits for {{ selected_tax_year }}. 
+          Limits are per person unless noted. Combined Roth+Trad 401k cannot exceed employee limit.">i</span>
+        </legend>
         
         <!-- 401k Section -->
         <div style="margin-bottom:1em;">
@@ -615,6 +633,7 @@
             </div>
           </div>
         </div>
+        </details>  
       </fieldset>
       
       <fieldset>
@@ -1156,50 +1175,67 @@
         </table>
         
         <table style="margin-top:1em;">
-          <thead>
+          <!-- <thead>
             <tr style="background:rgba(220,53,69,0.1);">
               <th style="text-align:left; color:#dc3545;">Deductions</th>
               <th style="text-align:right; color:#dc3545;">Monthly</th>
             </tr>
-          </thead>
+          </thead> -->
           <tbody>
-            <tr style="color:#dc3545;">
+            <tr">
               <td style="padding-left:1em;">Federal Tax</td>
               <td class="money">−${{ "{:,.2f}".format(calculated.total_federal_tax / 12) }}</td>
             </tr>
-            <tr style="color:#dc3545;">
+            <tr">
               <td style="padding-left:1em;">State Tax ({{ calculated.state_code }})</td>
               <td class="money">−${{ "{:,.2f}".format(calculated.state_tax / 12) }}</td>
             </tr>
             {% if calculated.total_fica > 0 %}
-            <tr style="color:#dc3545;">
+            <tr">
               <td style="padding-left:1em;">FICA (SS + Medicare)</td>
               <td class="money">−${{ "{:,.2f}".format(calculated.total_fica / 12) }}</td>
             </tr>
             {% endif %}
-            <tr style="border-top:1px solid var(--border-color); color:#dc3545;">
-              <td><b>Total Taxes</b></td>
-              <td class="money"><b>−${{ "{:,.2f}".format(calculated.total_taxes / 12) }}</b></td>
-            </tr>
+            
+            <!-- <thead> -->
+            <!-- <tr style="background:rgba(220,53,69,0.1);"> -->
+            <!-- <th style="text-align:left;">Deductions</th>
+              <!-- <th style="text-align:right;">Monthly</th> -->
+            </tr> -->
+          </thead>
             {% if calculated.pretax_deductions_annual > 0 %}
-            <tr style="color:#6c757d;">
+            <tr">
               <td style="padding-left:1em;">Pretax Benefits</td>
               <td class="money">−${{ "{:,.2f}".format(calculated.pretax_deductions_annual / 12) }}</td>
             </tr>
             {% endif %}
             {% if calculated.pretax_retirement > 0 %}
-            <tr style="color:#6c757d;">
+            <tr">
               <td style="padding-left:1em;">Traditional 401k/IRA</td>
               <td class="money">−${{ "{:,.2f}".format(calculated.pretax_retirement / 12) }}</td>
             </tr>
             {% endif %}
             {% if calculated.aftertax_retirement > 0 %}
-            <tr style="color:#6c757d;">
+            <tr">
               <td style="padding-left:1em;">Roth 401k/IRA</td>
               <td class="money">−${{ "{:,.2f}".format(calculated.aftertax_retirement / 12) }}</td>
             </tr>
             {% endif %}
-            <tr style="border-top:3px solid #28a745; background:rgba(40,167,69,0.2);">
+            {% if calculated.total_taxes > 0 %}
+            <!-- Format as white text -->
+            <tr style="border-top:1px solid var(--border-color); color:white!important;">
+              <td><b>Total Taxes</b></td>
+              <td class="money"><b style="color:white;">−${{ "{:,.2f}".format(calculated.total_taxes / 12) }}</b></td>
+            </tr>
+            {% endif %}
+            {% if calculated.total_deductions_annual > 0 %}
+            <tr" style="border-top:1px solid var(--border-color); color:white!important;">
+              <td><b>Total Deductions</b></td>
+              <td class="money"><b style="color:white;">−${{ "{:,.2f}".format(calculated.total_deductions_annual / 12) }}</b></td>
+            </tr>
+            {% endif %}
+            
+            <tr style="padding-left:1em; border-top:2px solid var(--border-color); ">
               <td><b style="font-size:1.15em; color:#28a745;">NET MONTHLY INCOME</b></td>
               <td class="money"><b style="font-size:1.15em; color:#28a745;">${{ "{:,.2f}".format(((calculated.gross_income + calculated.total_nontaxable_income) - calculated.total_taxes - calculated.pretax_deductions_annual - calculated.pretax_retirement - calculated.aftertax_retirement) / 12) }}</b></td>
             </tr>
