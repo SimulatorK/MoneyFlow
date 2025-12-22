@@ -913,7 +913,7 @@ def calculate_taxes(data, tax_year=None):
     total_capital_gains = stcg + ltcg
     
     # State Tax (using unified state tax function)
-    state_tax_result = calculate_state_tax(agi, filing_status, filing_state, tax_year, capital_gains_excluded=total_capital_gains)
+    state_tax_result = calculate_state_tax(agi - pretax_deductions_annual, filing_status, filing_state, tax_year, capital_gains_excluded=total_capital_gains)
     state_tax = state_tax_result["state_tax"]
     state_standard_deduction = state_tax_result["standard_deduction"]
     state_taxable_income = state_tax_result["taxable_income"]
