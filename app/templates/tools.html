@@ -2695,37 +2695,88 @@
       // Parse balance history from template
       const balanceHistory = {{ balance_history | tojson }};
       
-      // Group by date and calculate net worth over time
-      const dateMap = {};
+      // Helper function to get end of month key (YYYY-MM)
+      function getMonthKey(dateStr) {
+        const d = new Date(dateStr);
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      }
+      
+      // Helper to get end of month date for display
+      function getEndOfMonth(monthKey) {
+        const [year, month] = monthKey.split('-').map(Number);
+        return new Date(year, month, 0); // Last day of month
+      }
+      
+      // Step 1: Group balances by account and month (to average within months)
+      // Structure: { accountId: { monthKey: { balances: [], is_asset: bool } } }
+      const accountMonthly = {};
+      
       balanceHistory.forEach(b => {
-        if (!dateMap[b.date]) {
-          dateMap[b.date] = { assets: 0, liabilities: 0 };
+        const monthKey = getMonthKey(b.date);
+        if (!accountMonthly[b.account_id]) {
+          accountMonthly[b.account_id] = {};
         }
-        if (b.is_asset) {
-          dateMap[b.date].assets += b.balance;
-        } else {
-          dateMap[b.date].liabilities += b.balance;
+        if (!accountMonthly[b.account_id][monthKey]) {
+          accountMonthly[b.account_id][monthKey] = { balances: [], is_asset: b.is_asset };
         }
+        accountMonthly[b.account_id][monthKey].balances.push(b.balance);
       });
       
-      // Sort dates and build chart data
-      const sortedDates = Object.keys(dateMap).sort();
-      const labels = sortedDates.map(d => new Date(d).toLocaleDateString('en-US', { month: 'short', year: '2-digit' }));
+      // Step 2: Calculate average balance per account per month
+      const accountMonthlyAvg = {};
+      Object.keys(accountMonthly).forEach(accountId => {
+        accountMonthlyAvg[accountId] = {};
+        Object.keys(accountMonthly[accountId]).forEach(monthKey => {
+          const data = accountMonthly[accountId][monthKey];
+          const avg = data.balances.reduce((a, b) => a + b, 0) / data.balances.length;
+          accountMonthlyAvg[accountId][monthKey] = { balance: avg, is_asset: data.is_asset };
+        });
+      });
       
-      // Calculate running totals
-      let runningAssets = 0;
-      let runningLiabilities = 0;
+      // Step 3: Get all unique months across all accounts
+      const allMonths = new Set();
+      Object.values(accountMonthly).forEach(months => {
+        Object.keys(months).forEach(m => allMonths.add(m));
+      });
+      const sortedMonths = Array.from(allMonths).sort();
+      
+      // Step 4: For each month, sum the latest known balance per account
+      // Track last known balance per account
+      const lastKnownBalance = {};
       const assetsData = [];
       const liabilitiesData = [];
       const netWorthData = [];
-      
-      sortedDates.forEach(d => {
-        runningAssets = dateMap[d].assets || runningAssets;
-        runningLiabilities = dateMap[d].liabilities || runningLiabilities;
-        assetsData.push(runningAssets);
-        liabilitiesData.push(runningLiabilities);
-        netWorthData.push(runningAssets - runningLiabilities);
+      const labels = sortedMonths.map(m => {
+        const d = getEndOfMonth(m);
+        return d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
       });
+      
+      sortedMonths.forEach(monthKey => {
+        // Update last known balance for each account that has data this month
+        Object.keys(accountMonthlyAvg).forEach(accountId => {
+          if (accountMonthlyAvg[accountId][monthKey]) {
+            lastKnownBalance[accountId] = accountMonthlyAvg[accountId][monthKey];
+          }
+        });
+        
+        // Sum all account balances for this month
+        let totalAssets = 0;
+        let totalLiabilities = 0;
+        Object.values(lastKnownBalance).forEach(data => {
+          if (data.is_asset) {
+            totalAssets += data.balance;
+          } else {
+            totalLiabilities += data.balance;
+          }
+        });
+        
+        assetsData.push(totalAssets);
+        liabilitiesData.push(totalLiabilities);
+        netWorthData.push(totalAssets - totalLiabilities);
+      });
+      
+      // Use sortedMonths for date comparison
+      const sortedDates = sortedMonths;
       
       if (sortedDates.length === 0) {
         ctx.parentElement.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 2em;">Add balance entries to see your net worth trend over time.</p>';

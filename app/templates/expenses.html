@@ -451,6 +451,22 @@
         .modal input { width: 100%; padding: 0.6em; font-size: 1em; border: 1px solid var(--border-color); border-radius: 6px; margin-bottom: 1em; background: var(--bg-input); color: var(--text-primary); }
         .modal-btns { display: flex; gap: 0.8em; justify-content: flex-end; }
         
+        /* Mini button for check/uncheck all */
+        .btn-mini {
+            font-size: 0.7em;
+            padding: 0.2em 0.5em;
+            background: var(--bg-hover);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            cursor: pointer;
+            color: var(--text-secondary);
+        }
+        .btn-mini:hover {
+            background: var(--accent);
+            color: #fff;
+            border-color: var(--accent);
+        }
+        
         @media (max-width: 900px) {
             .page-content { flex-direction: column; }
             .stats-grid { grid-template-columns: 1fr 1fr; }
@@ -682,16 +698,16 @@
         
         {% if total_expenses > 10 and not show_all %}
         <div class="pagination">
-          <a href="/expenses?show_all=true&lookback={{ current_lookback }}{% if category_filter %}&category_filter={{ category_filter }}{% endif %}">View All {{ total_expenses }} Expenses →</a>
+          <a href="/expenses?show_all=true&lookback={{ current_lookback }}{% if categories_filter_str %}&categories_filter={{ categories_filter_str }}{% endif %}{% if vendors_filter_str %}&vendors_filter={{ vendors_filter_str }}{% endif %}">View All {{ total_expenses }} Expenses →</a>
         </div>
         {% elif show_all and total_pages > 1 %}
         <div class="pagination">
           {% if page > 1 %}
-          <a href="/expenses?show_all=true&page={{ page - 1 }}&lookback={{ current_lookback }}{% if category_filter %}&category_filter={{ category_filter }}{% endif %}">← Prev</a>
+          <a href="/expenses?show_all=true&page={{ page - 1 }}&lookback={{ current_lookback }}{% if categories_filter_str %}&categories_filter={{ categories_filter_str }}{% endif %}{% if vendors_filter_str %}&vendors_filter={{ vendors_filter_str }}{% endif %}">← Prev</a>
           {% endif %}
           <span class="current">Page {{ page }} of {{ total_pages }}</span>
           {% if page < total_pages %}
-          <a href="/expenses?show_all=true&page={{ page + 1 }}&lookback={{ current_lookback }}{% if category_filter %}&category_filter={{ category_filter }}{% endif %}">Next →</a>
+          <a href="/expenses?show_all=true&page={{ page + 1 }}&lookback={{ current_lookback }}{% if categories_filter_str %}&categories_filter={{ categories_filter_str }}{% endif %}{% if vendors_filter_str %}&vendors_filter={{ vendors_filter_str }}{% endif %}">Next →</a>
           {% endif %}
         </div>
         {% endif %}
@@ -728,7 +744,13 @@
           </div>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1em;">
             <div>
-              <label style="margin-bottom:0.3em; display:block;">Categories (select multiple)</label>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom:0.3em;">
+                <label style="display:block;">Categories (select multiple)</label>
+                <div style="display: flex; gap: 0.5em;">
+                  <button type="button" class="btn-mini" onclick="toggleAllCategories(true)">All</button>
+                  <button type="button" class="btn-mini" onclick="toggleAllCategories(false)">None</button>
+                </div>
+              </div>
               <div class="category-checkboxes" id="categoryCheckboxes">
                 <label class="category-checkbox {% if filter_uncategorized %}checked{% endif %}" style="background: #fff3cd; border: 1px solid #ffc107;">
                   <input type="checkbox" value="uncategorized" {% if filter_uncategorized %}checked{% endif %} onchange="updateCategorySelection()">
@@ -750,7 +772,13 @@
               {% endif %}
             </div>
             <div>
-              <label style="margin-bottom:0.3em; display:block;">Vendors (select multiple)</label>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom:0.3em;">
+                <label style="display:block;">Vendors (select multiple)</label>
+                <div style="display: flex; gap: 0.5em;">
+                  <button type="button" class="btn-mini" onclick="toggleAllVendors(true)">All</button>
+                  <button type="button" class="btn-mini" onclick="toggleAllVendors(false)">None</button>
+                </div>
+              </div>
               <div class="category-checkboxes" id="vendorCheckboxes">
                 <label class="category-checkbox {% if filter_no_vendor %}checked{% endif %}" style="background: #fff3cd; border: 1px solid #ffc107;">
                   <input type="checkbox" value="no_vendor" {% if filter_no_vendor %}checked{% endif %} onchange="updateVendorSelection()">
@@ -1097,6 +1125,22 @@
       clearAllFilters();
     }
     
+    function toggleAllCategories(selectAll) {
+      const checkboxes = document.querySelectorAll('#categoryCheckboxes input[type="checkbox"]');
+      checkboxes.forEach(cb => {
+        cb.checked = selectAll;
+        cb.closest('label').classList.toggle('checked', selectAll);
+      });
+    }
+    
+    function toggleAllVendors(selectAll) {
+      const checkboxes = document.querySelectorAll('#vendorCheckboxes input[type="checkbox"]');
+      checkboxes.forEach(cb => {
+        cb.checked = selectAll;
+        cb.closest('label').classList.toggle('checked', selectAll);
+      });
+    }
+    
     function updateVendorSelection() {
       // Update visual state of vendor checkboxes
       document.querySelectorAll('#vendorCheckboxes .category-checkbox').forEach(label => {
@@ -1343,13 +1387,14 @@
     // Subcategory modal
     function showSubcategoryModal() {
       const categorySelect = document.getElementById('categorySelect');
+      const categoryInput = document.getElementById('categoryInput');
       if (!categorySelect.value) {
         alert('Please select a category first');
         return;
       }
       
-      document.getElementById('selectedCategoryName').textContent = 
-        categorySelect.options[categorySelect.selectedIndex].text;
+      // Get the category name from the visible input field
+      document.getElementById('selectedCategoryName').textContent = categoryInput.value || 'Selected Category';
       document.getElementById('subcategoryModal').classList.add('active');
       document.getElementById('newSubcategoryName').focus();
     }

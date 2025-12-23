@@ -441,6 +441,65 @@
           <a href="/tools?tab=networth" style="display: block; text-align: center; margin-top: 1em; color: var(--accent); font-size: 0.9em;">View Full Net Worth Details →</a>
         </div>
         {% endif %}
+        
+        <!-- Budget vs Actual Spending Card -->
+        {% if budget_vs_actual and budget_vs_actual.comparisons %}
+        <div class="card" style="margin-top: 1em;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8em;">
+            <h3 style="margin: 0;">📊 Budget vs Actual (This Month)</h3>
+            <a href="/budget" style="font-size: 0.85em; color: var(--accent);">View Full Budget →</a>
+          </div>
+          
+          <div class="quick-stats" style="margin-bottom: 1em;">
+            <div class="stat-card" style="border-left-color: var(--accent);">
+              <div class="label">Total Budgeted</div>
+              <div class="value">${{ "{:,.0f}".format(budget_vs_actual.total_budgeted) }}</div>
+            </div>
+            <div class="stat-card" style="border-left-color: {% if budget_vs_actual.total_actual <= budget_vs_actual.total_budgeted %}#28a745{% else %}#dc3545{% endif %};">
+              <div class="label">Actual Spending</div>
+              <div class="value">${{ "{:,.0f}".format(budget_vs_actual.total_actual) }}</div>
+            </div>
+            <div class="stat-card" style="border-left-color: {% if (budget_vs_actual.total_budgeted - budget_vs_actual.total_actual) >= 0 %}#28a745{% else %}#dc3545{% endif %};">
+              <div class="label">Remaining</div>
+              <div class="value {% if (budget_vs_actual.total_budgeted - budget_vs_actual.total_actual) >= 0 %}positive{% else %}negative{% endif %}">
+                ${{ "{:,.0f}".format(budget_vs_actual.total_budgeted - budget_vs_actual.total_actual) }}
+              </div>
+            </div>
+          </div>
+          
+          <!-- Top Variances -->
+          <div style="font-size: 0.9em;">
+            <div style="font-weight: 600; margin-bottom: 0.5em; color: var(--text-secondary);">Top Categories by Variance</div>
+            {% for item in budget_vs_actual.comparisons[:5] %}
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.4em 0; border-bottom: 1px solid var(--border-light);">
+              <span style="flex: 1;">{{ item.name }}</span>
+              <span style="width: 80px; text-align: right; font-weight: 500;">${{ "{:,.0f}".format(item.actual) }}</span>
+              <span style="width: 80px; text-align: right; color: var(--text-secondary);">/ ${{ "{:,.0f}".format(item.budgeted) }}</span>
+              <span style="width: 60px; text-align: right; font-weight: 600; color: {% if item.actual <= item.budgeted %}#28a745{% else %}#dc3545{% endif %};">
+                {% if item.budgeted > 0 %}{{ "{:.0f}".format((item.actual / item.budgeted) * 100) }}%{% else %}—{% endif %}
+              </span>
+            </div>
+            {% endfor %}
+          </div>
+          
+          {% if budget_vs_actual.unallocated_expenses %}
+          <div style="margin-top: 1em; padding-top: 0.8em; border-top: 1px solid var(--border-light);">
+            <div style="font-weight: 600; margin-bottom: 0.5em; color: #ffc107;">⚠️ Unbudgeted Spending</div>
+            {% for item in budget_vs_actual.unallocated_expenses[:3] %}
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.3em 0; font-size: 0.85em;">
+              <span>{{ item.category_name }}{% if item.subcategory_name %} › {{ item.subcategory_name }}{% endif %}</span>
+              <span style="font-weight: 500; color: #ffc107;">${{ "{:,.0f}".format(item.amount) }}</span>
+            </div>
+            {% endfor %}
+            {% if budget_vs_actual.unallocated_expenses | length > 3 %}
+            <div style="font-size: 0.8em; color: var(--text-secondary); margin-top: 0.3em;">
+              +{{ budget_vs_actual.unallocated_expenses | length - 3 }} more categories
+            </div>
+            {% endif %}
+          </div>
+          {% endif %}
+        </div>
+        {% endif %}
       </div>
     </div>
     

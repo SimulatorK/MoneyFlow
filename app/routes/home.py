@@ -23,7 +23,7 @@ from app.models.expense import Expense, Category as ExpenseCategory, SubCategory
 from app.models.budget import FixedCost, BudgetItem
 from app.models.networth import Account
 from app.routes.income_taxes import calculate_taxes
-from app.routes.budget import calculate_budget_summary
+from app.routes.budget import calculate_budget_summary, get_actual_spending_for_period, calculate_budget_vs_actual
 from app.routes.tools import calculate_net_worth_summary
 from app.logging_config import get_logger
 import base64
@@ -371,14 +371,18 @@ def home(request: Request, db: Session = Depends(get_db)):
     income_data = db.query(IncomeTaxes).filter(IncomeTaxes.user_id == user.id).first()
     summary = None
     sankey_data = []
-    
     sankey_data_detailed = []
+    budget_vs_actual = None
     
     if income_data:
         logger.debug("Calculating budget summary")
         summary = calculate_budget_summary(db, user.id, income_data)
         sankey_data = generate_sankey_data(summary, income_data, include_details=False)
         sankey_data_detailed = generate_sankey_data(summary, income_data, include_details=True)
+        
+        # Get budget vs actual spending for the last month
+        actual_spending = get_actual_spending_for_period(db, user.id, 1)
+        budget_vs_actual = calculate_budget_vs_actual(db, user.id, summary, actual_spending, 1)
     else:
         logger.info("No income data found for user")
     
@@ -407,5 +411,6 @@ def home(request: Request, db: Session = Depends(get_db)):
         "sankey_data": sankey_data,
         "sankey_data_detailed": sankey_data_detailed,
         "spending_trends": spending_trends,
-        "networth_summary": networth_summary
+        "networth_summary": networth_summary,
+        "budget_vs_actual": budget_vs_actual
     })

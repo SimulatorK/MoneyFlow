@@ -411,6 +411,13 @@
   </nav>
   
   <div class="page-content">
+    {% if error == 'duplicate_category' %}
+    <div class="error-message" style="background: #f8d7da; color: #721c24; padding: 1em; border-radius: 8px; margin-bottom: 1em; display: flex; justify-content: space-between; align-items: center; width: 100%;">
+      <span>⚠️ This category/subcategory combination already exists in your budget. Each category can only be used once.</span>
+      <button onclick="this.parentElement.remove()" style="background: none; border: none; font-size: 1.2em; cursor: pointer;">×</button>
+    </div>
+    {% endif %}
+    
     <!-- LEFT COLUMN - Add Expense Form -->
     <div class="left-column">
       
@@ -557,56 +564,105 @@
         {% endif %}
       </div> --> -->
       
-      <!-- 50/30/20 Rule -->
+      <!-- Budget Rule Check -->
       <div class="card rule-card">
-        <h3>📐 50/30/20 Rule Check</h3>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5em;">
+          <h3 style="margin: 0;">📐 Budget Rule Check</h3>
+          <button type="button" class="btn-mini" onclick="toggleBudgetTargetsEdit()" id="editTargetsBtn">✏️ Edit Targets</button>
+        </div>
         <p style="font-size: 0.8em; color: var(--text-secondary); margin-bottom: 1em;">
-          Based on gross monthly income of ${{ "{:,.0f}".format(summary.gross_monthly) }}
+          Based on gross monthly income of ${{ "{:,.0f}".format(summary.gross_monthly) }}. 
+          <span style="color: var(--accent);">Tip: 50/30/20 is a common guideline - customize to fit your goals!</span>
         </p>
-        <table class="rule-table">
-          <thead>
-            <tr>
-              <th>Category</th>
-              <th class="amount">Amount</th>
-              <th class="pct">Actual</th>
-              <th class="target">Target</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Needs + Debt*</td>
-              <td class="amount">${{ "{:,.0f}".format(summary.total_needs + summary.total_debt) }}</td>
-              <td class="pct {% if (summary.needs_pct + summary.debt_pct) <= 50 %}rule-ok{% else %}rule-warn{% endif %}">
-                {{ "{:.0f}".format(summary.needs_pct + summary.debt_pct) }}%
-              </td>
-              <td class="target">≤50%</td>
-            </tr>
-            <tr>
-              <td>Debt</td>
-              <td class="amount">${{ "{:,.0f}".format(summary.total_debt) }}</td>
-              <td class="pct {% if (summary.debt_pct) <= 36 %}rule-ok{% else %}rule-warn{% endif %}">
-                {{ "{:.0f}".format(summary.debt_pct) }}%
-              </td>
-              <td class="target">≤36%</td>
-            </tr>
-            <tr>
-              <td>Wants</td>
-              <td class="amount">${{ "{:,.0f}".format(summary.total_wants) }}</td>
-              <td class="pct {% if summary.wants_pct <= 30 %}rule-ok{% else %}rule-warn{% endif %}">
-                {{ "{:.0f}".format(summary.wants_pct) }}%
-              </td>
-              <td class="target">≤30%</td>
-            </tr>
-            <tr>
-              <td>Savings</td>
-              <td class="amount">${{ "{:,.0f}".format(summary.total_savings) }}</td>
-              <td class="pct {% if summary.savings_pct >= 20 %}rule-ok{% else %}rule-warn{% endif %}">
-                {{ "{:.0f}".format(summary.savings_pct) }}%
-              </td>
-              <td class="target">≥20%</td>
-            </tr>
-          </tbody>
-        </table>
+        
+        <!-- Display Mode -->
+        <div id="budgetRuleDisplay">
+          <table class="rule-table">
+            <thead>
+              <tr>
+                <th>Category</th>
+                <th class="amount">Amount</th>
+                <th class="pct">Actual</th>
+                <th class="target">Target</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Needs + Debt*</td>
+                <td class="amount">${{ "{:,.0f}".format(summary.total_needs + summary.total_debt) }}</td>
+                <td class="pct {% if (summary.needs_pct + summary.debt_pct) <= (user.budget_needs_target or 50) %}rule-ok{% else %}rule-warn{% endif %}">
+                  {{ "{:.0f}".format(summary.needs_pct + summary.debt_pct) }}%
+                </td>
+                <td class="target">≤{{ "{:.0f}".format(user.budget_needs_target or 50) }}%</td>
+              </tr>
+              <tr>
+                <td>Debt</td>
+                <td class="amount">${{ "{:,.0f}".format(summary.total_debt) }}</td>
+                <td class="pct {% if (summary.debt_pct) <= 36 %}rule-ok{% else %}rule-warn{% endif %}">
+                  {{ "{:.0f}".format(summary.debt_pct) }}%
+                </td>
+                <td class="target">≤36%</td>
+              </tr>
+              <tr>
+                <td>Wants</td>
+                <td class="amount">${{ "{:,.0f}".format(summary.total_wants) }}</td>
+                <td class="pct {% if summary.wants_pct <= (user.budget_wants_target or 30) %}rule-ok{% else %}rule-warn{% endif %}">
+                  {{ "{:.0f}".format(summary.wants_pct) }}%
+                </td>
+                <td class="target">≤{{ "{:.0f}".format(user.budget_wants_target or 30) }}%</td>
+              </tr>
+              <tr>
+                <td>Savings</td>
+                <td class="amount">${{ "{:,.0f}".format(summary.total_savings) }}</td>
+                <td class="pct {% if summary.savings_pct >= (user.budget_savings_target or 20) %}rule-ok{% else %}rule-warn{% endif %}">
+                  {{ "{:.0f}".format(summary.savings_pct) }}%
+                </td>
+                <td class="target">≥{{ "{:.0f}".format(user.budget_savings_target or 20) }}%</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        
+        <!-- Edit Mode -->
+        <form id="budgetRuleEdit" method="post" action="/budget/update-targets" style="display: none;">
+          <table class="rule-table">
+            <thead>
+              <tr>
+                <th>Category</th>
+                <th class="target">Your Target (%)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Needs + Debt</td>
+                <td>
+                  <input type="number" name="needs_target" value="{{ user.budget_needs_target or 50 }}" 
+                         min="0" max="100" step="1" style="width: 60px; text-align: right;"> %
+                </td>
+              </tr>
+              <tr>
+                <td>Wants</td>
+                <td>
+                  <input type="number" name="wants_target" value="{{ user.budget_wants_target or 30 }}" 
+                         min="0" max="100" step="1" style="width: 60px; text-align: right;"> %
+                </td>
+              </tr>
+              <tr>
+                <td>Savings</td>
+                <td>
+                  <input type="number" name="savings_target" value="{{ user.budget_savings_target or 20 }}" 
+                         min="0" max="100" step="1" style="width: 60px; text-align: right;"> %
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div style="display: flex; gap: 0.5em; margin-top: 1em; justify-content: flex-end;">
+            <button type="button" class="btn-secondary" onclick="toggleBudgetTargetsEdit()">Cancel</button>
+            <button type="button" class="btn-secondary" onclick="resetToDefaults()">Reset to 50/30/20</button>
+            <button type="submit" class="btn-primary">Save Targets</button>
+          </div>
+        </form>
+        
         <p style="font-size: 0.75em; color: var(--text-secondary); margin-top: 0.8em; font-style: italic;">
           *Needs + Debt are combined as debt payments are typically considered essential obligations.
         </p>
@@ -834,6 +890,13 @@
           <div style="display: flex; justify-content: space-between; padding: 0.3em 0; border-bottom: 1px solid rgba(0,0,0,0.1);">
             <span>{{ u.category_name }}</span>
             <span style="font-weight: 600;">${{ "{:,.0f}".format(u.amount) }}</span>
+            {% if u.subcategories %}
+              {% for s in u.subcategories %}
+              <span>{{ s.name }}</span>
+              <span style="font-weight: 600;">${{ "{:,.0f}".format(s.amount) }}</span>
+              {% endfor %}
+            {% endif %}
+            
           </div>
           {% endfor %}
         </div>
@@ -887,7 +950,7 @@
         
         <div class="form-row" style="grid-template-columns: 1fr 1fr;">
           <label>Expense Category (Optional)
-            <select name="expense_category_id" id="editCostCategory" onchange="loadSubcategoriesForFixedCost('edit')">
+            <select name="expense_category_id" id="editCostCategory" onchange="loadSubcategoriesForFixedCost('edit'); updateEditCostRollingAverages();">
               <option value="">-- None --</option>
               {% for cat in expense_categories %}
               <option value="{{ cat.id }}">{{ cat.name }}</option>
@@ -895,7 +958,7 @@
             </select>
           </label>
           <label>Sub-Category
-            <select name="expense_subcategory_id" id="editCostSubcategory">
+            <select name="expense_subcategory_id" id="editCostSubcategory" onchange="updateEditCostRollingAverages();">
               <option value="">All in category</option>
             </select>
           </label>
@@ -919,6 +982,9 @@
               <span><b>Tracked Average</b></span>
             </label>
             <div id="editTrackedAmountRow" style="margin-left: 1.5em; display: none;">
+              <p style="font-size: 0.85em; color: var(--text-secondary); margin: 0 0 0.5em 0;">
+                Select an expense category above to see rolling averages.
+              </p>
               <div class="form-row">
                 <label>Period
                   <select name="tracking_period_months" id="editCostTrackingPeriod">
@@ -927,6 +993,11 @@
                     <option value="12">12 Month Avg</option>
                   </select>
                 </label>
+              </div>
+              <div class="rolling-avgs" id="editCostRollingAvgs" style="margin-top: 0.5em;">
+                <div>3mo: <span id="editCostAvg3mo">$0</span></div>
+                <div>6mo: <span id="editCostAvg6mo">$0</span></div>
+                <div>12mo: <span id="editCostAvg12mo">$0</span></div>
               </div>
             </div>
           </div>
@@ -1134,6 +1205,8 @@
           if (data.expense_subcategory_id) {
             document.getElementById('editCostSubcategory').value = data.expense_subcategory_id;
           }
+          // Fetch and display rolling averages
+          await updateEditCostRollingAverages();
         }
         
         const isTracked = data.amount_mode === 'tracked';
@@ -1147,6 +1220,33 @@
       } catch (err) {
         console.error('Error loading fixed cost:', err);
         alert('Error loading fixed cost data');
+      }
+    }
+    
+    async function updateEditCostRollingAverages() {
+      const categoryId = document.getElementById('editCostCategory').value;
+      const subcategoryId = document.getElementById('editCostSubcategory').value;
+      const display = document.getElementById('editCostRollingAvgs');
+      
+      if (!categoryId) {
+        display.style.display = 'none';
+        return;
+      }
+      
+      try {
+        let url = `/api/budget/rolling-averages?category_id=${categoryId}`;
+        if (subcategoryId) url += `&subcategory_id=${subcategoryId}`;
+        
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        document.getElementById('editCostAvg3mo').textContent = '$' + data.tracked_3mo.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0});
+        document.getElementById('editCostAvg6mo').textContent = '$' + data.tracked_6mo.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0});
+        document.getElementById('editCostAvg12mo').textContent = '$' + data.tracked_12mo.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0});
+        display.style.display = 'flex';
+      } catch (err) {
+        console.error('Error fetching rolling averages:', err);
+        display.style.display = 'none';
       }
     }
     
@@ -1376,6 +1476,29 @@
           }
         });
       }
+    }
+    
+    // ===== BUDGET TARGETS FUNCTIONS =====
+    function toggleBudgetTargetsEdit() {
+      const displayDiv = document.getElementById('budgetRuleDisplay');
+      const editForm = document.getElementById('budgetRuleEdit');
+      const editBtn = document.getElementById('editTargetsBtn');
+      
+      if (displayDiv.style.display !== 'none') {
+        displayDiv.style.display = 'none';
+        editForm.style.display = 'block';
+        editBtn.textContent = '❌ Cancel';
+      } else {
+        displayDiv.style.display = 'block';
+        editForm.style.display = 'none';
+        editBtn.textContent = '✏️ Edit Targets';
+      }
+    }
+    
+    function resetToDefaults() {
+      document.querySelector('input[name="needs_target"]').value = 50;
+      document.querySelector('input[name="wants_target"]').value = 30;
+      document.querySelector('input[name="savings_target"]').value = 20;
     }
   </script>
 </body>

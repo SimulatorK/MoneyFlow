@@ -531,7 +531,7 @@ def calculate_budget_summary(db: Session, user_id: int, income_data):
 
 
 @router.get("/budget")
-def budget_page(request: Request, db: Session = Depends(get_db), lookback: int = Query(1)):
+def budget_page(request: Request, db: Session = Depends(get_db), lookback: int = Query(1), error: Optional[str] = Query(None)):
     user = get_current_user(request, db)
     if not user:
         return RedirectResponse("/login")
@@ -579,7 +579,8 @@ def budget_page(request: Request, db: Session = Depends(get_db), lookback: int =
         "lookback_months": lookback,
         "profile_picture_b64": profile_picture_b64,
         "profile_picture_type": profile_picture_type,
-        "dark_mode": user.dark_mode
+        "dark_mode": user.dark_mode,
+        "error": error
     })
 
 
@@ -600,14 +601,40 @@ def add_fixed_cost(
     if not user:
         return RedirectResponse("/login")
     
+    # Normalize IDs
+    cat_id = expense_category_id if expense_category_id and expense_category_id > 0 else None
+    subcat_id = expense_subcategory_id if expense_subcategory_id and expense_subcategory_id > 0 else None
+    
+    # Check for duplicate category/subcategory in fixed costs
+    if cat_id:
+        existing_fixed = db.query(FixedCost).filter(
+            FixedCost.user_id == user.id,
+            FixedCost.expense_category_id == cat_id,
+            FixedCost.expense_subcategory_id == subcat_id,
+            FixedCost.is_active == True
+        ).first()
+        
+        if existing_fixed:
+            return RedirectResponse("/budget?error=duplicate_category", status_code=303)
+        
+        # Also check variable expenses (BudgetItem)
+        existing_budget = db.query(BudgetItem).filter(
+            BudgetItem.user_id == user.id,
+            BudgetItem.expense_category_id == cat_id,
+            BudgetItem.expense_subcategory_id == subcat_id
+        ).first()
+        
+        if existing_budget:
+            return RedirectResponse("/budget?error=duplicate_category", status_code=303)
+    
     fixed_cost = FixedCost(
         user_id=user.id,
         name=name.strip(),
         amount=amount,
         frequency=frequency,
         category_type=category_type,
-        expense_category_id=expense_category_id if expense_category_id and expense_category_id > 0 else None,
-        expense_subcategory_id=expense_subcategory_id if expense_subcategory_id and expense_subcategory_id > 0 else None,
+        expense_category_id=cat_id,
+        expense_subcategory_id=subcat_id,
         amount_mode=amount_mode,
         tracking_period_months=tracking_period_months,
         is_active=True
@@ -717,31 +744,41 @@ def add_budget_item(
     if not user:
         return RedirectResponse("/login")
     
+    # Normalize subcategory ID
+    subcat_id = expense_subcategory_id if expense_subcategory_id else None
+    
+    # Check if this category/subcategory already exists in fixed costs
+    existing_fixed = db.query(FixedCost).filter(
+        FixedCost.user_id == user.id,
+        FixedCost.expense_category_id == expense_category_id,
+        FixedCost.expense_subcategory_id == subcat_id,
+        FixedCost.is_active == True
+    ).first()
+    
+    if existing_fixed:
+        return RedirectResponse("/budget?error=duplicate_category", status_code=303)
+    
     # Check if this category/subcategory already has a budget item
     existing = db.query(BudgetItem).filter(
         BudgetItem.user_id == user.id,
         BudgetItem.expense_category_id == expense_category_id,
-        BudgetItem.expense_subcategory_id == (expense_subcategory_id if expense_subcategory_id else None)
+        BudgetItem.expense_subcategory_id == subcat_id
     ).first()
     
     if existing:
-        # Update existing
-        existing.use_tracked_average = use_tracked_average
-        existing.specified_amount = specified_amount
-        existing.tracking_period_months = tracking_period_months
-        existing.category_type = category_type
-    else:
-        # Create new
-        item = BudgetItem(
-            user_id=user.id,
-            expense_category_id=expense_category_id,
-            expense_subcategory_id=expense_subcategory_id if expense_subcategory_id else None,
-            use_tracked_average=use_tracked_average,
-            specified_amount=specified_amount,
-            tracking_period_months=tracking_period_months,
-            category_type=category_type
-        )
-        db.add(item)
+        return RedirectResponse("/budget?error=duplicate_category", status_code=303)
+    
+    # Create new
+    item = BudgetItem(
+        user_id=user.id,
+        expense_category_id=expense_category_id,
+        expense_subcategory_id=subcat_id,
+        use_tracked_average=use_tracked_average,
+        specified_amount=specified_amount,
+        tracking_period_months=tracking_period_months,
+        category_type=category_type
+    )
+    db.add(item)
     
     db.commit()
     return RedirectResponse("/budget", status_code=303)
@@ -840,6 +877,28 @@ def delete_budget_item(item_id: int, request: Request, db: Session = Depends(get
         return JSONResponse({"success": True})
     
     return JSONResponse({"error": "Not found"}, status_code=404)
+
+
+@router.post("/budget/update-targets")
+def update_budget_targets(
+    request: Request,
+    db: Session = Depends(get_db),
+    needs_target: float = Form(50.0),
+    wants_target: float = Form(30.0),
+    savings_target: float = Form(20.0)
+):
+    """Update user's custom budget rule targets."""
+    user = get_current_user(request, db)
+    if not user:
+        return RedirectResponse("/login")
+    
+    # Clamp values to valid range
+    user.budget_needs_target = max(0, min(100, needs_target))
+    user.budget_wants_target = max(0, min(100, wants_target))
+    user.budget_savings_target = max(0, min(100, savings_target))
+    
+    db.commit()
+    return RedirectResponse("/budget", status_code=303)
 
 
 @router.get("/api/budget/rolling-averages")

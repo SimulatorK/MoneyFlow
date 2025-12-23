@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, LargeBinary, DateTime, Boolean
+from sqlalchemy import Column, Integer, String, LargeBinary, DateTime, Boolean, Float
 from datetime import datetime
 from app.models import Base
 
@@ -13,4 +13,8 @@ class User(Base):
     dark_mode = Column(Boolean, default=False)  # User preference for dark mode
     tutorial_completed = Column(Boolean, default=False)  # Track if user completed onboarding tutorial
     tutorial_step = Column(Integer, default=0)  # Current step in tutorial (0 = not started)
+    # Custom budget rule targets (50/30/20 defaults)
+    budget_needs_target = Column(Float, default=50.0)  # Default 50% for needs
+    budget_wants_target = Column(Float, default=30.0)  # Default 30% for wants
+    budget_savings_target = Column(Float, default=20.0)  # Default 20% for savings
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
