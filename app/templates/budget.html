@@ -59,6 +59,25 @@
           border-radius: 6px;
           flex-shrink: 0;
         }
+        .grid-container-2x2 {
+            display: grid;
+            /* Creates 2 columns, each taking up an equal fraction of the available space (1fr) */
+            grid-template-columns: repeat(2, 1fr);
+            /* Creates 2 rows, each taking up an equal fraction of the available space */
+            grid-template-rows: repeat(2, 1fr);
+            /* Adds a gap (spacing) between the grid cells */
+            gap: 10px;
+            /* Optional: Set a specific width for the overall grid container */
+            width: 300px;
+            /* Optional: Set a specific height for the overall grid container */
+            height: 300px; 
+
+            /* Optional: Flex container up and down the page */
+            flex-direction: column;
+            flex-direction: row;
+            flex-wrap: wrap;
+            
+        }
 
         * { box-sizing: border-box; }
         body { margin: 0; font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-primary); color: var(--text-primary); }
@@ -503,24 +522,28 @@
       </div>
       
       <!-- Income Summary -->
+       <!-- Make a 2x2 grid -->
       <div class="card">
         <h3>📊 Monthly Income</h3>
         {% if summary.income %}
-        <div class="summary-grid">
+        <div class="grid-container-2x2">
           <div class="summary-box income">
             <div class="summary-value positive">${{ "{:,.0f}".format(summary.gross_monthly) }}</div>
             <div class="summary-label">Gross</div>
           </div>
           <div class="summary-box expense">
             <div class="summary-value negative">${{ "{:,.0f}".format(summary.income.total_taxes / 12) }}</div>
+            <div class="summary-value-percentage">({{ "{:.1f}".format(summary.income.total_taxes / (summary.gross_monthly * 12) * 100) }}%)</div>
             <div class="summary-label">Taxes</div>
           </div>
           <div class="summary-box retirement">
-            <div class="summary-value">${{ "{:,.0f}".format(summary.total_retirement_monthly) }}</div>
+            <div class="summary-value {% if summary.total_retirement_monthly / summary.gross_monthly * 100 >= 20 %}positive{% else %}negative{% endif %}">${{ "{:,.0f}".format(summary.total_retirement_monthly) }}</div>
+            <div class="summary-value-percentage">({{ "{:.1f}".format(summary.total_retirement_monthly / summary.gross_monthly * 100) }}%)</div>
             <div class="summary-label">Retirement</div>
           </div>
           <div class="summary-box income">
-            <div class="summary-value positive">${{ "{:,.0f}".format(summary.net_monthly) }}</div>
+            <div class="summary-value {% if summary.net_monthly >= 0 %}positive{% else %}negative{% endif %}">${{ "{:,.0f}".format(summary.net_monthly) }}</div>
+            <div class="summary-value-percentage">({{ "{:.1f}".format(summary.net_monthly / summary.gross_monthly * 100) }}%)</div>
             <div class="summary-label">Take-Home</div>
           </div>
         </div>
@@ -557,6 +580,14 @@
                 {{ "{:.0f}".format(summary.needs_pct + summary.debt_pct) }}%
               </td>
               <td class="target">≤50%</td>
+            </tr>
+            <tr>
+              <td>Debt</td>
+              <td class="amount">${{ "{:,.0f}".format(summary.total_debt) }}</td>
+              <td class="pct {% if (summary.debt_pct) <= 36 %}rule-ok{% else %}rule-warn{% endif %}">
+                {{ "{:.0f}".format(summary.debt_pct) }}%
+              </td>
+              <td class="target">≤36%</td>
             </tr>
             <tr>
               <td>Wants</td>
