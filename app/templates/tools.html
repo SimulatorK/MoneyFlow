@@ -1353,9 +1353,9 @@
             <div style="font-size: 0.75em; color: var(--text-secondary);">of FI Number</div>
           </div>
           <div style="background: linear-gradient(135deg, rgba(56,117,232,0.1), rgba(56,117,232,0.2)); padding: 1.2em; border-radius: 10px; text-align: center; border: 1px solid rgba(56,117,232,0.3);">
-            <div style="font-size: 0.85em; color: var(--text-secondary);">📅 Years to FI</div>
+            <div style="font-size: 0.85em; color: var(--text-secondary);">📅 Years to Selected FIRE Age</div>
             <div id="fireYearsToFI" style="font-size: 1.8em; font-weight: 700; color: var(--accent);">-</div>
-            <div id="fireFIAge" style="font-size: 0.75em; color: var(--text-secondary);">FI at age -</div>
+            <div id="fireFIAge" style="font-size: 0.75em; color: var(--text-secondary);">Based on target age</div>
           </div>
           <div style="background: linear-gradient(135deg, rgba(111,66,193,0.1), rgba(111,66,193,0.2)); padding: 1.2em; border-radius: 10px; text-align: center; border: 1px solid rgba(111,66,193,0.3);">
             <div style="font-size: 0.85em; color: var(--text-secondary);">💰 Annual Withdrawal</div>
@@ -1464,7 +1464,7 @@
             <div style="background: var(--bg-card); padding: 1em; border-radius: 8px; text-align: center;">
               <div style="font-size: 0.85em; color: var(--text-secondary);">FI Achievement Rate</div>
               <div id="fireFIProbability" style="font-size: 2em; font-weight: 700; color: var(--accent);">-</div>
-              <div style="font-size: 0.75em; color: var(--text-secondary);">Simulations reaching FI number</div>
+              <div id="fireFIProbabilityDesc" style="font-size: 0.75em; color: var(--text-secondary);">Reaching FI before target age</div>
             </div>
           </div>
           
@@ -3886,20 +3886,15 @@
       document.getElementById('fireFINumber').textContent = '$' + Math.round(fiNumber).toLocaleString('en-US');
       document.getElementById('fireCurrentProgress').textContent = progressPct.toFixed(1) + '%';
       
-      // Monte Carlo provides a range - show median with range
-      if (yearsToFI === null || yearsToFI >= 100) {
-        document.getElementById('fireYearsToFI').textContent = '∞';
-        document.getElementById('fireFIAge').textContent = 'Need to increase savings';
-      } else {
-        const yearsOptimistic = timeToFI.years_to_fi?.optimistic;
-        const yearsPessimistic = timeToFI.years_to_fi?.pessimistic;
-        document.getElementById('fireYearsToFI').textContent = Math.round(yearsToFI);
-        document.getElementById('fireFIAge').innerHTML = 
-          `FI at age <strong>${fiAge}</strong><br>` +
-          `<span style="font-size: 0.8em; color: var(--text-secondary);">` +
-          `(${Math.round(yearsOptimistic)}-${Math.round(yearsPessimistic)} years range)` +
-          `</span>`;
-      }
+      // Calculate years to selected retirement age from dropdown
+      const currentAge = data.profile?.current_age || parseInt(document.getElementById('fireCurrentAge').value) || 30;
+      const selectedRetirementAge = parseInt(document.getElementById('fireChartRetirementAge').value) || data.profile?.target_retirement_age || 55;
+      const yearsToSelectedAge = selectedRetirementAge - currentAge;
+      
+      // Show years to selected FIRE age
+      document.getElementById('fireYearsToFI').textContent = yearsToSelectedAge > 0 ? yearsToSelectedAge : 0;
+      document.getElementById('fireFIAge').innerHTML = `Target: Age <strong>${selectedRetirementAge}</strong>`;
+      
       document.getElementById('fireAnnualWithdrawal').textContent = '$' + Math.round(annualWithdrawal).toLocaleString('en-US');
       
       // Show FI probability and success rate
@@ -4110,14 +4105,14 @@
       
       // Success rates
       const successRate = mc.success_rate || 0;
-      const fiProbability = mc.fi_probability || 0;
       const successColor = successRate >= 90 ? '#28a745' : successRate >= 75 ? '#ffc107' : '#dc3545';
-      const fiColor = fiProbability >= 90 ? '#28a745' : fiProbability >= 75 ? '#ffc107' : '#dc3545';
       
       document.getElementById('fireMCSuccessRate').textContent = successRate.toFixed(1) + '%';
       document.getElementById('fireMCSuccessRate').style.color = successColor;
-      document.getElementById('fireFIProbability').textContent = fiProbability.toFixed(1) + '%';
-      document.getElementById('fireFIProbability').style.color = fiColor;
+      
+      // Calculate FI Achievement Rate based on selected retirement age
+      // This is the percentage of simulations that reach FI number BEFORE the selected age
+      updateFIAchievementRate(data);
       
       // Create projection chart
       createFIREProjectionChart(data);
@@ -4161,8 +4156,74 @@
       // Update the target retirement age in the stored data
       currentFIREData.profile.target_retirement_age = selectedAge;
       
+      // Update Years to FI display
+      const currentAge = currentFIREData.profile?.current_age || 30;
+      const yearsToSelectedAge = selectedAge - currentAge;
+      document.getElementById('fireYearsToFI').textContent = yearsToSelectedAge > 0 ? yearsToSelectedAge : 0;
+      document.getElementById('fireFIAge').innerHTML = `Target: Age <strong>${selectedAge}</strong>`;
+      
+      // Update FI Achievement Rate based on new selected age
+      updateFIAchievementRate(currentFIREData);
+      
       // Recreate chart with new retirement age marker
       createFIREProjectionChart(currentFIREData, selectedAge);
+    }
+    
+    function updateFIAchievementRate(data) {
+      // Calculate percentage of simulations reaching FI number BEFORE selected retirement age
+      const selectedAge = parseInt(document.getElementById('fireChartRetirementAge').value) || 55;
+      const currentAge = data.profile?.current_age || 30;
+      const yearsToRetirement = selectedAge - currentAge;
+      const fiNumber = data.fi_calculation?.fi_number || 0;
+      
+      const paths = data.time_to_fi?.projection_paths;
+      const successByAge = data.time_to_fi?.success_by_retirement_age;
+      
+      let fiAchievementRate = 0;
+      
+      // Try to get from success_by_retirement_age if available
+      if (successByAge && successByAge.length > 0) {
+        const matchingAge = successByAge.find(item => item.retirement_age === selectedAge);
+        if (matchingAge) {
+          fiAchievementRate = matchingAge.success_probability || 0;
+        } else {
+          // Interpolate or use the closest age
+          const sortedAges = successByAge.sort((a, b) => a.retirement_age - b.retirement_age);
+          const closestAge = sortedAges.reduce((prev, curr) => 
+            Math.abs(curr.retirement_age - selectedAge) < Math.abs(prev.retirement_age - selectedAge) ? curr : prev
+          );
+          fiAchievementRate = closestAge.success_probability || 0;
+        }
+      } else if (paths && paths.p50 && yearsToRetirement > 0 && yearsToRetirement < paths.p50.length) {
+        // Calculate from projection paths
+        // Check if median (p50) reaches FI by selected age
+        const portfolioAtRetirement = paths.p50[yearsToRetirement];
+        if (portfolioAtRetirement >= fiNumber) {
+          // At median, we reach FI - estimate probability based on percentiles
+          const p25AtRetirement = paths.p25?.[yearsToRetirement] || 0;
+          const p10AtRetirement = paths.p10?.[yearsToRetirement] || 0;
+          
+          if (p10AtRetirement >= fiNumber) {
+            fiAchievementRate = 90; // Even p10 reaches FI
+          } else if (p25AtRetirement >= fiNumber) {
+            fiAchievementRate = 75; // p25 reaches FI
+          } else {
+            fiAchievementRate = 50; // Only median reaches FI
+          }
+        } else {
+          // Median doesn't reach FI by this age
+          fiAchievementRate = data.monte_carlo?.fi_probability || 0;
+        }
+      } else {
+        // Fallback to API value
+        fiAchievementRate = data.monte_carlo?.fi_probability || 0;
+      }
+      
+      const fiColor = fiAchievementRate >= 90 ? '#28a745' : fiAchievementRate >= 75 ? '#ffc107' : fiAchievementRate >= 50 ? '#fd7e14' : '#dc3545';
+      
+      document.getElementById('fireFIProbability').textContent = fiAchievementRate.toFixed(1) + '%';
+      document.getElementById('fireFIProbability').style.color = fiColor;
+      document.getElementById('fireFIProbabilityDesc').textContent = `Reaching FI before age ${selectedAge}`;
     }
     
     function createFIREProjectionChart(data, retirementAge = null) {
