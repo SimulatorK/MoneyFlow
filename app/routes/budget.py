@@ -111,9 +111,9 @@ def get_expense_averages_multi(db: Session, user_id: int):
     today = date.today()
     
     result = {
-        3: {"category": {}, "subcategory": {}},
-        6: {"category": {}, "subcategory": {}},
-        12: {"category": {}, "subcategory": {}}
+        3: {"category": {}, "subcategory": {}, "category_only": {}},
+        6: {"category": {}, "subcategory": {}, "category_only": {}},
+        12: {"category": {}, "subcategory": {}, "category_only": {}}
     }
     
     for months in [3, 6, 12]:
@@ -126,6 +126,7 @@ def get_expense_averages_multi(db: Session, user_id: int):
         
         category_totals = {}
         subcategory_totals = {}
+        category_only_totals = {}  # Expenses in category but without subcategory
         
         for expense in expenses:
             cat_id = expense.category_id
@@ -134,15 +135,174 @@ def get_expense_averages_multi(db: Session, user_id: int):
             if cat_id:
                 category_totals[cat_id] = category_totals.get(cat_id, 0) + expense.amount
                 
-            if subcat_id:
-                key = (cat_id, subcat_id)
-                subcategory_totals[key] = subcategory_totals.get(key, 0) + expense.amount
+                if subcat_id:
+                    key = (cat_id, subcat_id)
+                    subcategory_totals[key] = subcategory_totals.get(key, 0) + expense.amount
+                else:
+                    # Track expenses in category without subcategory
+                    category_only_totals[cat_id] = category_only_totals.get(cat_id, 0) + expense.amount
         
         # Convert to monthly averages
         result[months]["category"] = {k: v / months for k, v in category_totals.items()}
         result[months]["subcategory"] = {k: v / months for k, v in subcategory_totals.items()}
+        result[months]["category_only"] = {k: v / months for k, v in category_only_totals.items()}
     
     return result
+
+
+def get_actual_spending_for_period(db: Session, user_id: int, lookback_months: int = 1):
+    """Get actual spending for a specific lookback period, broken down by category and subcategory."""
+    today = date.today()
+    start_date = today - timedelta(days=lookback_months * 30)
+    
+    expenses = db.query(Expense).filter(
+        Expense.user_id == user_id,
+        Expense.expense_date >= start_date
+    ).all()
+    
+    # By category
+    by_category = {}
+    by_subcategory = {}
+    uncategorized_total = 0
+    
+    for expense in expenses:
+        cat_id = expense.category_id
+        subcat_id = expense.subcategory_id
+        cat_name = expense.category.name if expense.category else "Uncategorized"
+        
+        if cat_id:
+            if cat_id not in by_category:
+                by_category[cat_id] = {
+                    "name": cat_name,
+                    "total": 0,
+                    "subcategories": {}
+                }
+            by_category[cat_id]["total"] += expense.amount
+            
+            if subcat_id:
+                subcat_name = expense.subcategory.name if expense.subcategory else "Unspecified"
+                if subcat_id not in by_category[cat_id]["subcategories"]:
+                    by_category[cat_id]["subcategories"][subcat_id] = {
+                        "name": subcat_name,
+                        "total": 0
+                    }
+                by_category[cat_id]["subcategories"][subcat_id]["total"] += expense.amount
+                
+                # Also track in flat structure
+                key = (cat_id, subcat_id)
+                if key not in by_subcategory:
+                    by_subcategory[key] = {
+                        "category_name": cat_name,
+                        "subcategory_name": subcat_name,
+                        "total": 0
+                    }
+                by_subcategory[key]["total"] += expense.amount
+        else:
+            uncategorized_total += expense.amount
+    
+    return {
+        "by_category": by_category,
+        "by_subcategory": by_subcategory,
+        "uncategorized": uncategorized_total,
+        "total": sum(e.amount for e in expenses)
+    }
+
+
+def calculate_budget_vs_actual(db: Session, user_id: int, summary: dict, actual_spending: dict, lookback_months: int):
+    """
+    Calculate comparison between budgeted amounts and actual spending.
+    Fixed expenses are assumed to be spent as budgeted (not tracked via expenses).
+    Variable expenses are compared to actual spending.
+    """
+    comparisons = []
+    unbudgeted_expenses = []
+    
+    # Get all expense categories the user has spent in
+    spent_categories = set(actual_spending["by_category"].keys())
+    
+    # Track which categories are covered by budget items
+    budgeted_category_keys = set()  # (cat_id, subcat_id or None)
+    
+    # Process variable budget items
+    for item in summary.get("budget_items", []):
+        cat_id = item.get("expense_category_id")
+        subcat_id = item.get("expense_subcategory_id")
+        budgeted = item.get("monthly_amount", 0) * lookback_months
+        
+        if cat_id:
+            if subcat_id:
+                # Specific subcategory
+                budgeted_category_keys.add((cat_id, subcat_id))
+                key = (cat_id, subcat_id)
+                actual = actual_spending["by_subcategory"].get(key, {}).get("total", 0)
+            else:
+                # Whole category
+                budgeted_category_keys.add((cat_id, None))
+                actual = actual_spending["by_category"].get(cat_id, {}).get("total", 0)
+            
+            diff = budgeted - actual
+            pct = (actual / budgeted * 100) if budgeted > 0 else (100 if actual > 0 else 0)
+            
+            comparisons.append({
+                "name": item.get("category_name", "Unknown") + (f" > {item.get('subcategory_name')}" if item.get("subcategory_name") else ""),
+                "category_type": item.get("category_type", "need"),
+                "budgeted": budgeted,
+                "actual": actual,
+                "difference": diff,
+                "percentage": pct,
+                "is_over": actual > budgeted,
+                "is_variable": True
+            })
+    
+    # Find unbudgeted categories (expenses in categories not in the budget)
+    for cat_id, cat_data in actual_spending["by_category"].items():
+        # Check if this category is fully covered
+        if (cat_id, None) in budgeted_category_keys:
+            continue
+        
+        # Check if all subcategories are covered
+        subcats_covered = True
+        for subcat_id in cat_data.get("subcategories", {}).keys():
+            if (cat_id, subcat_id) not in budgeted_category_keys:
+                subcats_covered = False
+                break
+        
+        if not subcats_covered:
+            # Some or all spending in this category is unbudgeted
+            unbudgeted_amount = cat_data["total"]
+            # Subtract any budgeted subcategories
+            for subcat_id in cat_data.get("subcategories", {}).keys():
+                if (cat_id, subcat_id) in budgeted_category_keys:
+                    unbudgeted_amount -= cat_data["subcategories"][subcat_id]["total"]
+            
+            if unbudgeted_amount > 0:
+                unbudgeted_expenses.append({
+                    "category_name": cat_data["name"],
+                    "amount": unbudgeted_amount,
+                    "subcategories": [
+                        {"name": s["name"], "amount": s["total"]}
+                        for sid, s in cat_data.get("subcategories", {}).items()
+                        if (cat_id, sid) not in budgeted_category_keys
+                    ]
+                })
+    
+    # Add uncategorized expenses
+    if actual_spending.get("uncategorized", 0) > 0:
+        unbudgeted_expenses.append({
+            "category_name": "Uncategorized",
+            "amount": actual_spending["uncategorized"],
+            "subcategories": []
+        })
+    
+    # Sort comparisons by how over budget they are
+    comparisons.sort(key=lambda x: x["percentage"], reverse=True)
+    
+    return {
+        "comparisons": comparisons,
+        "unbudgeted": unbudgeted_expenses,
+        "total_unbudgeted": sum(u["amount"] for u in unbudgeted_expenses),
+        "lookback_months": lookback_months
+    }
 
 
 def get_expense_averages(db: Session, user_id: int, months: int = 3):
@@ -371,7 +531,7 @@ def calculate_budget_summary(db: Session, user_id: int, income_data):
 
 
 @router.get("/budget")
-def budget_page(request: Request, db: Session = Depends(get_db)):
+def budget_page(request: Request, db: Session = Depends(get_db), lookback: int = Query(1)):
     user = get_current_user(request, db)
     if not user:
         return RedirectResponse("/login")
@@ -383,7 +543,7 @@ def budget_page(request: Request, db: Session = Depends(get_db)):
     budget_categories = db.query(BudgetCategory).filter(BudgetCategory.user_id == user.id).all()
     
     # Get expense categories (for linking)
-    expense_categories = db.query(ExpenseCategory).filter(ExpenseCategory.user_id == user.id).all()
+    expense_categories = db.query(ExpenseCategory).filter(ExpenseCategory.user_id == user.id).order_by(ExpenseCategory.name).all()
     
     # Calculate budget summary
     summary = calculate_budget_summary(db, user.id, income_data)
@@ -393,6 +553,12 @@ def budget_page(request: Request, db: Session = Depends(get_db)):
     
     # Get budget items
     budget_items = db.query(BudgetItem).filter(BudgetItem.user_id == user.id).all()
+    
+    # Get actual spending for selected lookback period
+    actual_spending = get_actual_spending_for_period(db, user.id, lookback)
+    
+    # Calculate budget vs actual comparison
+    budget_vs_actual = calculate_budget_vs_actual(db, user.id, summary, actual_spending, lookback)
     
     profile_picture_b64, profile_picture_type = get_profile_picture_data(user)
     
@@ -408,6 +574,9 @@ def budget_page(request: Request, db: Session = Depends(get_db)):
         "frequencies": FREQUENCIES,
         "category_types": CATEGORY_TYPES,
         "frequency_to_monthly": FREQUENCY_TO_MONTHLY,
+        "actual_spending": actual_spending,
+        "budget_vs_actual": budget_vs_actual,
+        "lookback_months": lookback,
         "profile_picture_b64": profile_picture_b64,
         "profile_picture_type": profile_picture_type,
         "dark_mode": user.dark_mode
@@ -596,6 +765,21 @@ def get_budget_item(item_id: int, request: Request, db: Session = Depends(get_db
     # Get expense averages for this category
     expense_avgs = get_expense_averages_multi(db, user.id)
     
+    # Get the correct averages based on whether a subcategory is selected
+    if item.expense_subcategory_id:
+        # Specific subcategory - use subcategory averages
+        key = (item.expense_category_id, item.expense_subcategory_id)
+        tracked_3mo = expense_avgs[3]["subcategory"].get(key, 0)
+        tracked_6mo = expense_avgs[6]["subcategory"].get(key, 0)
+        tracked_12mo = expense_avgs[12]["subcategory"].get(key, 0)
+    elif item.expense_category_id:
+        # Whole category (all subcategories) - use category averages
+        tracked_3mo = expense_avgs[3]["category"].get(item.expense_category_id, 0)
+        tracked_6mo = expense_avgs[6]["category"].get(item.expense_category_id, 0)
+        tracked_12mo = expense_avgs[12]["category"].get(item.expense_category_id, 0)
+    else:
+        tracked_3mo = tracked_6mo = tracked_12mo = 0
+    
     return JSONResponse({
         "id": item.id,
         "expense_category_id": item.expense_category_id,
@@ -604,9 +788,9 @@ def get_budget_item(item_id: int, request: Request, db: Session = Depends(get_db
         "specified_amount": item.specified_amount,
         "tracking_period_months": item.tracking_period_months or 3,
         "category_type": item.category_type,
-        "tracked_3mo": expense_avgs[3]["category"].get(item.expense_category_id, 0) if item.expense_category_id else 0,
-        "tracked_6mo": expense_avgs[6]["category"].get(item.expense_category_id, 0) if item.expense_category_id else 0,
-        "tracked_12mo": expense_avgs[12]["category"].get(item.expense_category_id, 0) if item.expense_category_id else 0
+        "tracked_3mo": tracked_3mo,
+        "tracked_6mo": tracked_6mo,
+        "tracked_12mo": tracked_12mo
     })
 
 
@@ -656,6 +840,44 @@ def delete_budget_item(item_id: int, request: Request, db: Session = Depends(get
         return JSONResponse({"success": True})
     
     return JSONResponse({"error": "Not found"}, status_code=404)
+
+
+@router.get("/api/budget/rolling-averages")
+def get_rolling_averages_api(
+    request: Request, 
+    db: Session = Depends(get_db),
+    category_id: int = Query(None),
+    subcategory_id: int = Query(None)
+):
+    """API endpoint to get rolling averages for a category/subcategory combination."""
+    user = get_current_user(request, db)
+    if not user:
+        return JSONResponse({"error": "Not authenticated"}, status_code=401)
+    
+    if not category_id:
+        return JSONResponse({"tracked_3mo": 0, "tracked_6mo": 0, "tracked_12mo": 0})
+    
+    # Get expense averages
+    expense_avgs = get_expense_averages_multi(db, user.id)
+    
+    # Get the correct averages based on whether a subcategory is selected
+    if subcategory_id:
+        # Specific subcategory - use subcategory averages
+        key = (category_id, subcategory_id)
+        tracked_3mo = expense_avgs[3]["subcategory"].get(key, 0)
+        tracked_6mo = expense_avgs[6]["subcategory"].get(key, 0)
+        tracked_12mo = expense_avgs[12]["subcategory"].get(key, 0)
+    else:
+        # Whole category (all subcategories) - use category averages
+        tracked_3mo = expense_avgs[3]["category"].get(category_id, 0)
+        tracked_6mo = expense_avgs[6]["category"].get(category_id, 0)
+        tracked_12mo = expense_avgs[12]["category"].get(category_id, 0)
+    
+    return JSONResponse({
+        "tracked_3mo": tracked_3mo,
+        "tracked_6mo": tracked_6mo,
+        "tracked_12mo": tracked_12mo
+    })
 
 
 @router.get("/api/budget/summary")

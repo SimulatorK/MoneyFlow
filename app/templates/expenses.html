@@ -384,6 +384,58 @@
         .dropdown-item.danger:hover { background: #fee; }
         .dropdown-divider { height: 1px; background: #e8eef8; }
         
+        /* Autocomplete dropdown styles */
+        .autocomplete-wrapper {
+            position: relative;
+            width: 100%;
+        }
+        .autocomplete-wrapper input[type="text"] {
+            width: 100%;
+            padding: 0.5em;
+            font-size: 1em;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: var(--bg-input);
+            color: var(--text-primary);
+        }
+        .autocomplete-dropdown {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            max-height: 200px;
+            overflow-y: auto;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-top: none;
+            border-radius: 0 0 6px 6px;
+            z-index: 100;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .autocomplete-dropdown.show {
+            display: block;
+        }
+        .autocomplete-option {
+            padding: 0.5em 0.8em;
+            cursor: pointer;
+            font-size: 0.95em;
+            color: var(--text-primary);
+        }
+        .autocomplete-option:hover, .autocomplete-option.highlighted {
+            background: var(--accent);
+            color: #fff;
+        }
+        .autocomplete-option.hidden {
+            display: none;
+        }
+        .autocomplete-option em {
+            color: var(--text-secondary);
+        }
+        .autocomplete-option:hover em, .autocomplete-option.highlighted em {
+            color: rgba(255,255,255,0.8);
+        }
+        
         /* Modal for adding categories */
         .modal-overlay {
             display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
@@ -473,29 +525,51 @@
           </div>
           
           <div class="form-row">
-            <label>Category
-              <select name="category_id" id="categorySelect" required onchange="loadSubcategories()">
-                <option value="">Select category...</option>
-                {% for cat in categories %}
-                  <option value="{{ cat.id }}">{{ cat.name }}</option>
-                {% endfor %}
-              </select>
+            <label>Category (Optional)
+              <div class="autocomplete-wrapper">
+                <input type="text" id="categoryInput" placeholder="Start typing or select..." autocomplete="off" onkeyup="filterCategoryOptions()" onfocus="showCategoryDropdown()">
+                <input type="hidden" name="category_id" id="categorySelect" value="">
+                <div class="autocomplete-dropdown" id="categoryDropdown">
+                  <div class="autocomplete-option" data-value="" onclick="selectCategory('', 'None (Uncategorized)')">
+                    <em>None (Uncategorized)</em>
+                  </div>
+                  {% for cat in categories %}
+                  <div class="autocomplete-option" data-value="{{ cat.id }}" onclick="selectCategory('{{ cat.id }}', '{{ cat.name }}')">
+                    {{ cat.name }}
+                  </div>
+                  {% endfor %}
+                </div>
+              </div>
             </label>
             <label>Sub-Category (Optional)
-              <select name="subcategory_id" id="subcategorySelect">
-                <option value="">Select sub-category...</option>
-              </select>
+              <div class="autocomplete-wrapper">
+                <input type="text" id="subcategoryInput" placeholder="Select category first..." autocomplete="off" onkeyup="filterSubcategoryOptions()" onfocus="showSubcategoryDropdown()" disabled>
+                <input type="hidden" name="subcategory_id" id="subcategorySelect" value="">
+                <div class="autocomplete-dropdown" id="subcategoryDropdown">
+                  <div class="autocomplete-option" data-value="" onclick="selectSubcategory('', 'None')">
+                    <em>None</em>
+                  </div>
+                </div>
+              </div>
             </label>
           </div>
           
           <div class="form-row">
             <label>Vendor (Optional)
-              <select name="vendor_id" id="vendorSelect">
-                <option value="">Select vendor...</option>
-                {% for vendor in vendors %}
-                  <option value="{{ vendor.id }}">{{ vendor.name }}</option>
-                {% endfor %}
-              </select>
+              <div class="autocomplete-wrapper">
+                <input type="text" id="vendorInput" placeholder="Start typing or select..." autocomplete="off" onkeyup="filterVendorOptions()" onfocus="showVendorDropdown()">
+                <input type="hidden" name="vendor_id" id="vendorSelect" value="">
+                <div class="autocomplete-dropdown" id="vendorDropdown">
+                  <div class="autocomplete-option" data-value="" onclick="selectVendor('', 'None')">
+                    <em>None</em>
+                  </div>
+                  {% for vendor in vendors %}
+                  <div class="autocomplete-option" data-value="{{ vendor.id }}" onclick="selectVendor('{{ vendor.id }}', '{{ vendor.name }}')">
+                    {{ vendor.name }}
+                  </div>
+                  {% endfor %}
+                </div>
+              </div>
             </label>
           </div>
           
@@ -656,6 +730,10 @@
             <div>
               <label style="margin-bottom:0.3em; display:block;">Categories (select multiple)</label>
               <div class="category-checkboxes" id="categoryCheckboxes">
+                <label class="category-checkbox {% if filter_uncategorized %}checked{% endif %}" style="background: #fff3cd; border: 1px solid #ffc107;">
+                  <input type="checkbox" value="uncategorized" {% if filter_uncategorized %}checked{% endif %} onchange="updateCategorySelection()">
+                  ⚠️ Uncategorized
+                </label>
                 {% for cat in categories %}
                 <label class="category-checkbox {% if cat.id in category_filters %}checked{% endif %}">
                   <input type="checkbox" value="{{ cat.id }}" {% if cat.id in category_filters %}checked{% endif %} onchange="updateCategorySelection()">
@@ -666,7 +744,7 @@
               {% if selected_category_names %}
               <div class="selected-cats" id="selectedCatsTags" style="margin-top: 0.3em;">
                 {% for name in selected_category_names %}
-                <span class="selected-cat-tag" style="font-size: 0.8em; background: var(--accent); color: #fff; padding: 0.2em 0.5em; border-radius: 4px; margin-right: 0.3em;">{{ name }}</span>
+                <span class="selected-cat-tag" style="font-size: 0.8em; background: {% if name == 'Uncategorized' %}#ffc107{% else %}var(--accent){% endif %}; color: {% if name == 'Uncategorized' %}#664d03{% else %}#fff{% endif %}; padding: 0.2em 0.5em; border-radius: 4px; margin-right: 0.3em;">{{ name }}</span>
                 {% endfor %}
               </div>
               {% endif %}
@@ -674,6 +752,10 @@
             <div>
               <label style="margin-bottom:0.3em; display:block;">Vendors (select multiple)</label>
               <div class="category-checkboxes" id="vendorCheckboxes">
+                <label class="category-checkbox {% if filter_no_vendor %}checked{% endif %}" style="background: #fff3cd; border: 1px solid #ffc107;">
+                  <input type="checkbox" value="no_vendor" {% if filter_no_vendor %}checked{% endif %} onchange="updateVendorSelection()">
+                  ⚠️ No Vendor
+                </label>
                 {% for vendor in vendors %}
                 <label class="category-checkbox {% if vendor.id in vendor_filters %}checked{% endif %}">
                   <input type="checkbox" value="{{ vendor.id }}" {% if vendor.id in vendor_filters %}checked{% endif %} onchange="updateVendorSelection()">
@@ -687,7 +769,7 @@
               {% if selected_vendor_names %}
               <div class="selected-vendors" style="margin-top: 0.3em;">
                 {% for name in selected_vendor_names %}
-                <span style="font-size: 0.8em; background: #e8385a; color: #fff; padding: 0.2em 0.5em; border-radius: 4px; margin-right: 0.3em;">{{ name }}</span>
+                <span style="font-size: 0.8em; background: {% if name == 'No Vendor' %}#ffc107{% else %}#e8385a{% endif %}; color: {% if name == 'No Vendor' %}#664d03{% else %}#fff{% endif %}; padding: 0.2em 0.5em; border-radius: 4px; margin-right: 0.3em;">{{ name }}</span>
                 {% endfor %}
               </div>
               {% endif %}
@@ -922,19 +1004,19 @@
           </label>
         </div>
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1em; margin-bottom:1em;">
-          <label style="display:flex; flex-direction:column; gap:0.3em; font-size:0.95em; color:#344a7a;">
-            Category
-            <select name="category_id" id="editExpenseCategory" required onchange="loadEditSubcategories()">
-              <option value="">Select category...</option>
+          <label style="display:flex; flex-direction:column; gap:0.3em; font-size:0.95em; color:var(--text-secondary);">
+            Category (Optional)
+            <select name="category_id" id="editExpenseCategory" onchange="loadEditSubcategories()">
+              <option value="">None (Uncategorized)</option>
               {% for cat in categories %}
               <option value="{{ cat.id }}">{{ cat.name }}</option>
               {% endfor %}
             </select>
           </label>
-          <label style="display:flex; flex-direction:column; gap:0.3em; font-size:0.95em; color:#344a7a;">
-            Sub-Category
+          <label style="display:flex; flex-direction:column; gap:0.3em; font-size:0.95em; color:var(--text-secondary);">
+            Sub-Category (Optional)
             <select name="subcategory_id" id="editExpenseSubcategory">
-              <option value="">Select sub-category...</option>
+              <option value="">None</option>
             </select>
           </label>
         </div>
@@ -989,20 +1071,20 @@
     function applyFilters() {
       const lookback = document.getElementById('lookbackSelect').value;
       
-      // Get all checked category IDs
+      // Get all checked category IDs (including "uncategorized")
       const categoryBoxes = document.querySelectorAll('#categoryCheckboxes input:checked');
-      const categoryIds = Array.from(categoryBoxes).map(cb => cb.value);
+      const categoryValues = Array.from(categoryBoxes).map(cb => cb.value);
       
-      // Get all checked vendor IDs
+      // Get all checked vendor IDs (including "no_vendor")
       const vendorBoxes = document.querySelectorAll('#vendorCheckboxes input:checked');
-      const vendorIds = Array.from(vendorBoxes).map(cb => cb.value);
+      const vendorValues = Array.from(vendorBoxes).map(cb => cb.value);
       
       let url = '/expenses?lookback=' + lookback;
-      if (categoryIds.length > 0) {
-        url += '&categories_filter=' + categoryIds.join(',');
+      if (categoryValues.length > 0) {
+        url += '&categories_filter=' + categoryValues.join(',');
       }
-      if (vendorIds.length > 0) {
-        url += '&vendors_filter=' + vendorIds.join(',');
+      if (vendorValues.length > 0) {
+        url += '&vendors_filter=' + vendorValues.join(',');
       }
       window.location.href = url;
     }
@@ -1064,12 +1146,136 @@
       optionsDiv.style.display = isRecurring ? 'block' : 'none';
     }
     
-    // Load subcategories when category changes
+    // ===== AUTOCOMPLETE FUNCTIONS =====
+    
+    // Category autocomplete
+    function showCategoryDropdown() {
+      const dropdown = document.getElementById('categoryDropdown');
+      dropdown.classList.add('show');
+      filterCategoryOptions();
+    }
+    
+    function hideCategoryDropdown() {
+      setTimeout(() => {
+        document.getElementById('categoryDropdown').classList.remove('show');
+      }, 200);
+    }
+    
+    function filterCategoryOptions() {
+      const input = document.getElementById('categoryInput').value.toLowerCase();
+      const options = document.querySelectorAll('#categoryDropdown .autocomplete-option');
+      options.forEach(opt => {
+        const text = opt.textContent.toLowerCase();
+        if (text.includes(input) || input === '') {
+          opt.classList.remove('hidden');
+        } else {
+          opt.classList.add('hidden');
+        }
+      });
+    }
+    
+    function selectCategory(value, name) {
+      document.getElementById('categorySelect').value = value;
+      document.getElementById('categoryInput').value = value ? name : '';
+      document.getElementById('categoryDropdown').classList.remove('show');
+      
+      // Enable/disable subcategory input
+      const subcatInput = document.getElementById('subcategoryInput');
+      const subcatSelect = document.getElementById('subcategorySelect');
+      
+      if (value) {
+        subcatInput.disabled = false;
+        subcatInput.placeholder = 'Start typing or select...';
+        loadSubcategories();
+      } else {
+        subcatInput.disabled = true;
+        subcatInput.placeholder = 'Select category first...';
+        subcatInput.value = '';
+        subcatSelect.value = '';
+        document.getElementById('subcategoryDropdown').innerHTML = '<div class="autocomplete-option" data-value="" onclick="selectSubcategory(\'\', \'None\')"><em>None</em></div>';
+      }
+    }
+    
+    // Subcategory autocomplete
+    function showSubcategoryDropdown() {
+      if (!document.getElementById('subcategoryInput').disabled) {
+        document.getElementById('subcategoryDropdown').classList.add('show');
+        filterSubcategoryOptions();
+      }
+    }
+    
+    function hideSubcategoryDropdown() {
+      setTimeout(() => {
+        document.getElementById('subcategoryDropdown').classList.remove('show');
+      }, 200);
+    }
+    
+    function filterSubcategoryOptions() {
+      const input = document.getElementById('subcategoryInput').value.toLowerCase();
+      const options = document.querySelectorAll('#subcategoryDropdown .autocomplete-option');
+      options.forEach(opt => {
+        const text = opt.textContent.toLowerCase();
+        if (text.includes(input) || input === '') {
+          opt.classList.remove('hidden');
+        } else {
+          opt.classList.add('hidden');
+        }
+      });
+    }
+    
+    function selectSubcategory(value, name) {
+      document.getElementById('subcategorySelect').value = value;
+      document.getElementById('subcategoryInput').value = value ? name : '';
+      document.getElementById('subcategoryDropdown').classList.remove('show');
+    }
+    
+    // Vendor autocomplete
+    function showVendorDropdown() {
+      document.getElementById('vendorDropdown').classList.add('show');
+      filterVendorOptions();
+    }
+    
+    function hideVendorDropdown() {
+      setTimeout(() => {
+        document.getElementById('vendorDropdown').classList.remove('show');
+      }, 200);
+    }
+    
+    function filterVendorOptions() {
+      const input = document.getElementById('vendorInput').value.toLowerCase();
+      const options = document.querySelectorAll('#vendorDropdown .autocomplete-option');
+      options.forEach(opt => {
+        const text = opt.textContent.toLowerCase();
+        if (text.includes(input) || input === '') {
+          opt.classList.remove('hidden');
+        } else {
+          opt.classList.add('hidden');
+        }
+      });
+    }
+    
+    function selectVendor(value, name) {
+      document.getElementById('vendorSelect').value = value;
+      document.getElementById('vendorInput').value = value ? name : '';
+      document.getElementById('vendorDropdown').classList.remove('show');
+    }
+    
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('.autocomplete-wrapper')) {
+        document.querySelectorAll('.autocomplete-dropdown').forEach(d => d.classList.remove('show'));
+      }
+    });
+    
+    // ===== END AUTOCOMPLETE FUNCTIONS =====
+    
+    // Load subcategories when category changes (for autocomplete)
     async function loadSubcategories() {
       const categoryId = document.getElementById('categorySelect').value;
-      const subcategorySelect = document.getElementById('subcategorySelect');
+      const subcategoryDropdown = document.getElementById('subcategoryDropdown');
       
-      subcategorySelect.innerHTML = '<option value="">Select sub-category...</option>';
+      // Reset subcategory dropdown
+      subcategoryDropdown.innerHTML = '<div class="autocomplete-option" data-value="" onclick="selectSubcategory(\'\', \'None\')"><em>None</em></div>';
       
       if (!categoryId) return;
       
@@ -1078,10 +1284,12 @@
         const data = await response.json();
         
         data.subcategories.forEach(sub => {
-          const option = document.createElement('option');
-          option.value = sub.id;
+          const option = document.createElement('div');
+          option.className = 'autocomplete-option';
+          option.setAttribute('data-value', sub.id);
           option.textContent = sub.name;
-          subcategorySelect.appendChild(option);
+          option.onclick = function() { selectSubcategory(sub.id, sub.name); };
+          subcategoryDropdown.appendChild(option);
         });
       } catch (err) {
         console.error('Error loading subcategories:', err);
@@ -1114,16 +1322,19 @@
         
         const data = await response.json();
         
-        // Add to dropdown
-        const select = document.getElementById('categorySelect');
-        const option = document.createElement('option');
-        option.value = data.id;
+        // Add to autocomplete dropdown
+        const dropdown = document.getElementById('categoryDropdown');
+        const option = document.createElement('div');
+        option.className = 'autocomplete-option';
+        option.setAttribute('data-value', data.id);
         option.textContent = data.name;
-        select.appendChild(option);
-        select.value = data.id;
+        option.onclick = function() { selectCategory(data.id, data.name); };
+        dropdown.appendChild(option);
+        
+        // Select the new category
+        selectCategory(data.id, data.name);
         
         closeCategoryModal();
-        loadSubcategories();
       } catch (err) {
         console.error('Error creating category:', err);
       }
@@ -1165,13 +1376,17 @@
         
         const data = await response.json();
         
-        // Add to dropdown
-        const select = document.getElementById('subcategorySelect');
-        const option = document.createElement('option');
-        option.value = data.id;
+        // Add to autocomplete dropdown
+        const dropdown = document.getElementById('subcategoryDropdown');
+        const option = document.createElement('div');
+        option.className = 'autocomplete-option';
+        option.setAttribute('data-value', data.id);
         option.textContent = data.name;
-        select.appendChild(option);
-        select.value = data.id;
+        option.onclick = function() { selectSubcategory(data.id, data.name); };
+        dropdown.appendChild(option);
+        
+        // Select the new subcategory
+        selectSubcategory(data.id, data.name);
         
         closeSubcategoryModal();
       } catch (err) {
@@ -1205,19 +1420,26 @@
         
         const data = await response.json();
         
-        // Add to dropdowns (add form and edit form)
-        ['vendorSelect', 'editExpenseVendor'].forEach(selectId => {
-          const select = document.getElementById(selectId);
-          if (select) {
-            const option = document.createElement('option');
-            option.value = data.id;
-            option.textContent = data.name;
-            select.appendChild(option);
-          }
-        });
+        // Add to autocomplete dropdown
+        const dropdown = document.getElementById('vendorDropdown');
+        const option = document.createElement('div');
+        option.className = 'autocomplete-option';
+        option.setAttribute('data-value', data.id);
+        option.textContent = data.name;
+        option.onclick = function() { selectVendor(data.id, data.name); };
+        dropdown.appendChild(option);
+        
+        // Also add to edit modal select
+        const editSelect = document.getElementById('editExpenseVendor');
+        if (editSelect) {
+          const opt = document.createElement('option');
+          opt.value = data.id;
+          opt.textContent = data.name;
+          editSelect.appendChild(opt);
+        }
         
         // Select the new vendor
-        document.getElementById('vendorSelect').value = data.id;
+        selectVendor(data.id, data.name);
         
         closeVendorModal();
       } catch (err) {
@@ -1388,7 +1610,7 @@
       const categoryId = document.getElementById('editExpenseCategory').value;
       const subcategorySelect = document.getElementById('editExpenseSubcategory');
       
-      subcategorySelect.innerHTML = '<option value="">Select sub-category...</option>';
+      subcategorySelect.innerHTML = '<option value="">None</option>';
       
       if (!categoryId) return;
       

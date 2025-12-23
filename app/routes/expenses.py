@@ -334,8 +334,8 @@ def expenses_page(
     page: int = Query(1, ge=1),
     show_all: bool = Query(False),
     lookback: str = Query("all"),
-    categories_filter: str = Query(""),  # Comma-separated category IDs
-    vendors_filter: str = Query("")  # Comma-separated vendor IDs
+    categories_filter: str = Query(""),  # Comma-separated category IDs, "uncategorized" for null category
+    vendors_filter: str = Query("")  # Comma-separated vendor IDs, "no_vendor" for null vendor
 ):
     user = get_current_user(request, db)
     if not user:
@@ -347,21 +347,33 @@ def expenses_page(
     # Get user's vendors
     vendors = db.query(Vendor).filter(Vendor.user_id == user.id).order_by(Vendor.name).all()
     
-    # Parse category filters (comma-separated IDs)
+    # Parse category filters (comma-separated IDs or special values like "uncategorized")
     category_filters = []
+    filter_uncategorized = False
     if categories_filter:
-        try:
-            category_filters = [int(c.strip()) for c in categories_filter.split(",") if c.strip()]
-        except ValueError:
-            category_filters = []
+        filter_parts = [c.strip() for c in categories_filter.split(",") if c.strip()]
+        for part in filter_parts:
+            if part == "uncategorized":
+                filter_uncategorized = True
+            else:
+                try:
+                    category_filters.append(int(part))
+                except ValueError:
+                    pass
     
-    # Parse vendor filters (comma-separated IDs)
+    # Parse vendor filters (comma-separated IDs or special values like "no_vendor")
     vendor_filters = []
+    filter_no_vendor = False
     if vendors_filter:
-        try:
-            vendor_filters = [int(v.strip()) for v in vendors_filter.split(",") if v.strip()]
-        except ValueError:
-            vendor_filters = []
+        filter_parts = [v.strip() for v in vendors_filter.split(",") if v.strip()]
+        for part in filter_parts:
+            if part == "no_vendor":
+                filter_no_vendor = True
+            else:
+                try:
+                    vendor_filters.append(int(part))
+                except ValueError:
+                    pass
     
     # Get recent expenses
     per_page = 50 if show_all else 10
@@ -379,12 +391,28 @@ def expenses_page(
     if start_date:
         recent_expenses_query = recent_expenses_query.filter(Expense.expense_date >= start_date)
 
-    # Filter by category filters
-    if category_filters and len(category_filters) > 0:
+    # Filter by category filters (including uncategorized)
+    if filter_uncategorized and category_filters:
+        # Filter for uncategorized OR specific categories
+        from sqlalchemy import or_
+        recent_expenses_query = recent_expenses_query.filter(
+            or_(Expense.category_id.is_(None), Expense.category_id.in_(category_filters))
+        )
+    elif filter_uncategorized:
+        recent_expenses_query = recent_expenses_query.filter(Expense.category_id.is_(None))
+    elif category_filters:
         recent_expenses_query = recent_expenses_query.filter(Expense.category_id.in_(category_filters))
     
-    # Filter by vendor filters
-    if vendor_filters and len(vendor_filters) > 0:
+    # Filter by vendor filters (including no vendor)
+    if filter_no_vendor and vendor_filters:
+        # Filter for no vendor OR specific vendors
+        from sqlalchemy import or_
+        recent_expenses_query = recent_expenses_query.filter(
+            or_(Expense.vendor_id.is_(None), Expense.vendor_id.in_(vendor_filters))
+        )
+    elif filter_no_vendor:
+        recent_expenses_query = recent_expenses_query.filter(Expense.vendor_id.is_(None))
+    elif vendor_filters:
         recent_expenses_query = recent_expenses_query.filter(Expense.vendor_id.in_(vendor_filters))
 
     recent_expenses = recent_expenses_query.order_by(Expense.expense_date.desc(), Expense.created_at.desc()).offset(offset).limit(per_page).all()
@@ -398,6 +426,8 @@ def expenses_page(
     
     # Get selected category names for display
     selected_category_names = []
+    if filter_uncategorized:
+        selected_category_names.append("Uncategorized")
     if category_filters:
         for cat_id in category_filters:
             cat = db.query(Category).filter(Category.id == cat_id).first()
@@ -406,6 +436,8 @@ def expenses_page(
     
     # Get selected vendor names for display
     selected_vendor_names = []
+    if filter_no_vendor:
+        selected_vendor_names.append("No Vendor")
     if vendor_filters:
         for vendor_id in vendor_filters:
             vendor = db.query(Vendor).filter(Vendor.id == vendor_id).first()
@@ -436,9 +468,11 @@ def expenses_page(
         "category_filters": category_filters,
         "categories_filter_str": categories_filter,
         "selected_category_names": selected_category_names,
+        "filter_uncategorized": filter_uncategorized,
         "vendor_filters": vendor_filters,
         "vendors_filter_str": vendors_filter,
         "selected_vendor_names": selected_vendor_names,
+        "filter_no_vendor": filter_no_vendor,
         "profile_picture_b64": profile_picture_b64,
         "profile_picture_type": profile_picture_type,
         "dark_mode": user.dark_mode
@@ -459,7 +493,7 @@ def parse_optional_int(value: str) -> Optional[int]:
 def add_expense(
     request: Request,
     db: Session = Depends(get_db),
-    category_id: int = Form(...),
+    category_id: str = Form(""),
     subcategory_id: str = Form(""),
     vendor_id: str = Form(""),
     amount: float = Form(...),
@@ -473,12 +507,14 @@ def add_expense(
     
     Supports both one-time and recurring expenses. For recurring expenses,
     the frequency specifies how often the expense occurs.
+    Category, subcategory, and vendor are all optional.
     """
     user = get_current_user(request, db)
     if not user:
         return RedirectResponse("/login")
     
     # Parse optional integer fields
+    category_id_parsed = parse_optional_int(category_id)
     subcategory_id_parsed = parse_optional_int(subcategory_id)
     vendor_id_parsed = parse_optional_int(vendor_id)
     
@@ -488,14 +524,14 @@ def add_expense(
     except ValueError:
         parsed_date = date.today()
     
-    # Verify category belongs to user
-    category = db.query(Category).filter(
-        Category.id == category_id,
-        Category.user_id == user.id
-    ).first()
-    
-    if not category:
-        return RedirectResponse("/expenses")
+    # Verify category belongs to user (if provided)
+    if category_id_parsed and category_id_parsed > 0:
+        category = db.query(Category).filter(
+            Category.id == category_id_parsed,
+            Category.user_id == user.id
+        ).first()
+        if not category:
+            category_id_parsed = None
     
     # Verify vendor belongs to user (if provided)
     if vendor_id_parsed and vendor_id_parsed > 0:
@@ -513,7 +549,7 @@ def add_expense(
     # Create expense
     expense = Expense(
         user_id=user.id,
-        category_id=category_id,
+        category_id=category_id_parsed if category_id_parsed and category_id_parsed > 0 else None,
         subcategory_id=subcategory_id_parsed if subcategory_id_parsed and subcategory_id_parsed > 0 else None,
         vendor_id=vendor_id_parsed if vendor_id_parsed and vendor_id_parsed > 0 else None,
         amount=amount,
@@ -645,19 +681,20 @@ def update_expense(
     expense_id: int,
     request: Request,
     db: Session = Depends(get_db),
-    category_id: int = Form(...),
+    category_id: str = Form(""),
     subcategory_id: str = Form(""),
     vendor_id: str = Form(""),
     amount: float = Form(...),
     expense_date: str = Form(...),
     notes: Optional[str] = Form(None)
 ):
-    """Update an existing expense."""
+    """Update an existing expense. Category, subcategory, and vendor are all optional."""
     user = get_current_user(request, db)
     if not user:
         return RedirectResponse("/login")
     
     # Parse optional integer fields
+    category_id_parsed = parse_optional_int(category_id)
     subcategory_id_parsed = parse_optional_int(subcategory_id)
     vendor_id_parsed = parse_optional_int(vendor_id)
     
@@ -675,14 +712,14 @@ def update_expense(
     except ValueError:
         parsed_date = expense.expense_date
     
-    # Verify category belongs to user
-    category = db.query(Category).filter(
-        Category.id == category_id,
-        Category.user_id == user.id
-    ).first()
-    
-    if not category:
-        return RedirectResponse("/expenses")
+    # Verify category belongs to user (if provided)
+    if category_id_parsed and category_id_parsed > 0:
+        category = db.query(Category).filter(
+            Category.id == category_id_parsed,
+            Category.user_id == user.id
+        ).first()
+        if not category:
+            category_id_parsed = None
     
     # Verify vendor belongs to user (if provided)
     if vendor_id_parsed and vendor_id_parsed > 0:
@@ -694,7 +731,7 @@ def update_expense(
             vendor_id_parsed = None
     
     # Update expense
-    expense.category_id = category_id
+    expense.category_id = category_id_parsed if category_id_parsed and category_id_parsed > 0 else None
     expense.subcategory_id = subcategory_id_parsed if subcategory_id_parsed and subcategory_id_parsed > 0 else None
     expense.vendor_id = vendor_id_parsed if vendor_id_parsed and vendor_id_parsed > 0 else None
     expense.amount = amount

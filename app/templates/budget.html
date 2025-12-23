@@ -19,6 +19,9 @@
             --border-light: #e8eef8;
             --nav-bg: #243869;
             --accent: #3875e8;
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
         }
         [data-theme="dark"] {
             --bg-primary: #1a1d24;
@@ -33,6 +36,9 @@
             --border-light: #353a47;
             --nav-bg: #161920;
             --accent: #4d8ef0;
+            --success: #3dd05b;
+            --warning: #ffcd39;
+            --danger: #f55;
         }
         .app-title {
           margin: 0;
@@ -61,167 +67,12 @@
         .app-header {
             background: var(--bg-header);
             padding: 1em 2em;
-            text-align: center;
-            border-bottom: 3px solid var(--accent);
-        }
-        .app-title {
-            margin: 0; font-size: 2.2em; font-weight: 700; color: #fff;
-            letter-spacing: -0.02em; text-shadow: 0 2px 8px rgba(0,0,0,0.2);
-        }
-        .app-title .icon { margin-right: 0.3em; }
-        .app-subtitle { margin: 0.3em 0 0 0; font-size: 0.9em; color: rgba(255,255,255,0.75); }
-        .app-version {
-            display: inline-block; background: rgba(255,255,255,0.15);
-            padding: 0.15em 0.6em; border-radius: 12px; font-size: 0.75em;
-            color: rgba(255,255,255,0.9); margin-left: 0.5em;
-        }
-        
-        .page-content { 
-            display: flex; gap: 2em; padding: 1.5em; 
-            max-width: 1500px; margin: 0 auto; flex-wrap: wrap;
-        }
-        
-        .left-column { flex: 1 1 550px; min-width: 320px; }
-        .right-column { flex: 1 1 400px; min-width: 320px; }
-        
-        .card {
-            background: var(--bg-card);
-            border-radius: 12px;
-            box-shadow: 0 2px 12px rgba(60,90,170,0.08);
-            padding: 1.5em;
-            margin-bottom: 1.5em;
-        }
-        .card h3 {
-            margin: 0 0 1em 0;
-            color: var(--text-heading);
-            font-size: 1.1em;
-            border-bottom: 2px solid var(--border-light);
-            padding-bottom: 0.5em;
-        }
-        
-        /* Forms */
-        .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 0.8em; margin-bottom: 0.8em; }
-        .form-row label { display: flex; flex-direction: column; gap: 0.3em; font-size: 0.9em; color: var(--text-secondary); font-weight: 500; }
-        .form-row input, .form-row select { padding: 0.5em; font-size: 0.95em; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-input); color: var(--text-primary); }
-        
-        .btn-primary { background: #3875e8; color: #fff; border: none; padding: 0.5em 1.2em; border-radius: 6px; font-weight: 600; cursor: pointer; }
-        .btn-primary:hover { background: #2a5bb8; }
-        .btn-secondary { background: #e8eef8; color: #344a7a; border: 1px solid #c5d4e8; padding: 0.4em 0.9em; border-radius: 6px; cursor: pointer; font-size: 0.9em; }
-        .btn-secondary:hover { background: #d4e0f0; }
-        .btn-danger { background: #fee; color: #c44; border: 1px solid #fcc; padding: 0.3em 0.6em; border-radius: 5px; cursor: pointer; font-size: 0.85em; }
-        .btn-danger:hover { background: #fdd; }
-        .btn-edit { background: none; border: none; color: #3875e8; cursor: pointer; font-size: 0.85em; padding: 0.3em 0.5em; }
-        .btn-edit:hover { text-decoration: underline; }
-        
-        /* Modal */
-        .modal-overlay {
-            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;
-        }
-        .modal-overlay.active { display: flex; }
-        .modal {
-            background: var(--bg-card); border-radius: 12px; padding: 1.5em 2em;
-            max-width: 550px; width: 90%; box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-        }
-        .modal h4 { margin: 0 0 1em 0; color: var(--text-heading); }
-        .modal-btns { display: flex; gap: 0.8em; justify-content: flex-end; margin-top: 1em; }
-        .modal input, .modal select { background: var(--bg-input); color: var(--text-primary); border: 1px solid var(--border-color); }
-        
-        /* Fixed costs table */
-        .cost-table { width: 100%; border-collapse: collapse; font-size: 0.9em; }
-        .cost-table th, .cost-table td { padding: 0.5em 0.6em; text-align: left; }
-        .cost-table th { color: var(--text-secondary); font-weight: 600; border-bottom: 2px solid var(--border-light); }
-        .cost-table td { border-bottom: 1px solid var(--border-light); }
-        .cost-table .amount { text-align: right; font-weight: 500; }
-        .cost-table .monthly { text-align: right; color: var(--text-secondary); font-size: 0.9em; }
-        .cost-table .actions { text-align: right; }
-        .cost-table .type-badge {
-            display: inline-block; padding: 0.2em 0.5em; border-radius: 4px; font-size: 0.8em; font-weight: 500;
-        }
-        .type-need { background: #e3f0e3; color: #2a6b3a; }
-        .type-want { background: #fff3cd; color: #856404; }
-        .type-savings { background: #d4edda; color: #155724; }
-        .type-debt { background: #f8d7da; color: #721c24; }
-        [data-theme="dark"] .type-need { background: #1e3a29; color: #7fd98c; }
-        [data-theme="dark"] .type-want { background: #3d3520; color: #ffc107; }
-        [data-theme="dark"] .type-savings { background: #1a3a27; color: #6ee882; }
-        [data-theme="dark"] .type-debt { background: #3a2020; color: #f88; }
-        
-        /* Budget items */
-        .budget-item {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 0.6em 0.8em; background: var(--bg-hover); border-radius: 6px; margin-bottom: 0.5em;
-        }
-        .budget-item .item-info { flex: 1; }
-        .budget-item .item-name { font-weight: 500; color: var(--text-heading); }
-        .budget-item .item-source { font-size: 0.85em; color: var(--text-secondary); }
-        .budget-item .item-amount { font-weight: 600; color: #28a745; margin-right: 1em; }
-        
-        /* Summary stats */
-        .summary-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1em; margin-bottom: 1.5em; }
-        .summary-box {
-            background: var(--bg-hover);
-            border-radius: 10px; padding: 1em; text-align: center;
-        }
-        .summary-box.income { background: linear-gradient(135deg, #d6ffe3, #c8f5d6); }
-        .summary-box.expense { background: linear-gradient(135deg, #ffe8e8, #fdd); }
-        .summary-box.leftover-positive { background: linear-gradient(135deg, #d6ffe3, #b8f0c8); }
-        .summary-box.leftover-negative { background: linear-gradient(135deg, #ffe8e8, #fcc); }
-        .summary-box.retirement { background: linear-gradient(135deg, #e3f0ff, #d4e8ff); }
-        [data-theme="dark"] .summary-box.income { background: linear-gradient(135deg, #1e3a29, #243a30); }
-        [data-theme="dark"] .summary-box.expense { background: linear-gradient(135deg, #3a2525, #3d2020); }
-        [data-theme="dark"] .summary-box.leftover-positive { background: linear-gradient(135deg, #1e3a29, #1f3a2a); }
-        [data-theme="dark"] .summary-box.leftover-negative { background: linear-gradient(135deg, #3a2525, #3d1f1f); }
-        [data-theme="dark"] .summary-box.retirement { background: linear-gradient(135deg, #1e2a3a, #253545); }
-        .summary-value { font-size: 1.4em; font-weight: 700; color: var(--text-heading); }
-        .summary-value.positive { color: #28a745; }
-        .summary-value.negative { color: #dc3545; }
-        .summary-label { font-size: 0.8em; color: var(--text-secondary); margin-top: 0.3em; }
-        .summary-label { font-size: 0.8em; color: #667a9a; margin-top: 0.3em; }
-        
-        /* Breakdown */
-        .breakdown-section { margin-bottom: 1.2em; }
-        .breakdown-section h4 { margin: 0 0 0.5em 0; color: #344a7a; font-size: 0.95em; }
-        .breakdown-bar {
-            height: 24px; background: #e8eef8; border-radius: 12px; overflow: hidden;
-            display: flex; margin-bottom: 0.5em;
-        }
-        .breakdown-bar .bar-segment { height: 100%; transition: width 0.3s; }
-        .bar-needs { background: #4caf50; }
-        .bar-wants { background: #ff9800; }
-        .bar-savings { background: #2196f3; }
-        .bar-debt { background: #f44336; }
-        .bar-leftover { background: #9e9e9e; }
-        
-        .breakdown-legend { display: flex; flex-wrap: wrap; gap: 1em; font-size: 0.85em; }
-        .legend-item { display: flex; align-items: center; gap: 0.4em; }
-        .legend-dot { width: 12px; height: 12px; border-radius: 3px; }
-        
-        /* 50/30/20 Rule */
-        .rule-card { background: #f0f7ff; border: 1px solid #c5d8f0; }
-        .rule-item { display: flex; justify-content: space-between; padding: 0.5em 0; border-bottom: 1px solid #dde8f5; }
-        .rule-item:last-child { border-bottom: none; }
-        .rule-label { color: #344a7a; }
-        .rule-values { display: flex; gap: 1em; }
-        .rule-actual { font-weight: 600; }
-        .rule-target { color: #889ab0; }
-        .rule-ok { color: #1a6b3a; }
-        .rule-warn { color: #b03030; }
-        
-        /* Charts */
-        .chart-container { position: relative; height: 200px; }
-        
-        /* App Header with Profile */
-        .app-header {
-            background: var(--bg-header);
-            padding: 1em 2em;
             display: flex; align-items: center; justify-content: space-between;
             border-bottom: 3px solid var(--accent);
         }
         .header-left { flex: 1; }
         .header-center { flex: 2; text-align: center; }
         .header-right { flex: 1; display: flex; justify-content: flex-end; align-items: center; gap: 1em; }
-        .app-title { margin: 0; font-size: 2.2em; font-weight: 700; color: #fff; }
         .app-title .icon { margin-right: 0.3em; }
         .app-subtitle { margin: 0.3em 0 0 0; font-size: 0.9em; color: rgba(255,255,255,0.75); }
         .app-version { display: inline-block; background: rgba(255,255,255,0.15); padding: 0.15em 0.6em; border-radius: 12px; font-size: 0.75em; color: rgba(255,255,255,0.9); margin-left: 0.5em; }
@@ -241,7 +92,7 @@
         .dropdown-header .username { font-size: 0.85em; color: var(--text-secondary); }
         .dropdown-item { display: block; padding: 0.8em 1em; color: var(--text-primary); text-decoration: none; font-size: 0.9em; }
         .dropdown-item:hover { background: var(--border-light); }
-        .dropdown-item.danger { color: #dc3545; }
+        .dropdown-item.danger { color: var(--danger); }
         .dropdown-divider { height: 1px; background: var(--border-light); }
         
         /* Navigation */
@@ -251,13 +102,245 @@
         .tab:hover { color: #fff; background: rgba(255,255,255,0.05); }
         .tab.active { color: #fff; background: rgba(255,255,255,0.1); border-bottom-color: var(--accent); font-weight: 600; }
         
-        /* Collapsible sections */
-        details { margin-bottom: 0.5em; }
-        summary { cursor: pointer; font-weight: 500; color: #344a7a; padding: 0.5em 0; }
+        .page-content { 
+            display: flex; gap: 1.5em; padding: 1.5em; 
+            max-width: 1600px; margin: 0 auto; flex-wrap: wrap;
+        }
         
+        .left-column { flex: 1 1 400px; min-width: 320px; max-width: 450px; }
+        .right-column { flex: 2 1 700px; min-width: 400px; }
+        
+        .card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(60,90,170,0.08);
+            padding: 1.5em;
+            margin-bottom: 1.5em;
+        }
+        .card h3 {
+            margin: 0 0 1em 0;
+            color: var(--text-heading);
+            font-size: 1.1em;
+            border-bottom: 2px solid var(--border-light);
+            padding-bottom: 0.5em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        /* Forms */
+        .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 0.8em; margin-bottom: 0.8em; }
+        .form-row label { display: flex; flex-direction: column; gap: 0.3em; font-size: 0.9em; color: var(--text-secondary); font-weight: 500; }
+        .form-row input, .form-row select { padding: 0.5em; font-size: 0.95em; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-input); color: var(--text-primary); }
+        
+        .btn-primary { background: var(--accent); color: #fff; border: none; padding: 0.5em 1.2em; border-radius: 6px; font-weight: 600; cursor: pointer; }
+        .btn-primary:hover { background: #2a5bb8; }
+        .btn-secondary { background: var(--bg-hover); color: var(--text-heading); border: 1px solid var(--border-color); padding: 0.4em 0.9em; border-radius: 6px; cursor: pointer; font-size: 0.9em; }
+        .btn-secondary:hover { background: var(--border-light); }
+        .btn-danger { background: #fee; color: var(--danger); border: 1px solid #fcc; padding: 0.3em 0.6em; border-radius: 5px; cursor: pointer; font-size: 0.85em; }
+        .btn-danger:hover { background: #fdd; }
+        .btn-edit { background: none; border: none; color: var(--accent); cursor: pointer; font-size: 0.85em; padding: 0.3em 0.5em; }
+        .btn-edit:hover { text-decoration: underline; }
+        
+        /* Modal */
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal {
+            background: var(--bg-card); border-radius: 12px; padding: 1.5em 2em;
+            max-width: 550px; width: 90%; box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            max-height: 85vh; overflow-y: auto;
+        }
+        .modal h4 { margin: 0 0 1em 0; color: var(--text-heading); }
+        .modal-btns { display: flex; gap: 0.8em; justify-content: flex-end; margin-top: 1em; }
+        .modal input, .modal select { background: var(--bg-input); color: var(--text-primary); border: 1px solid var(--border-color); }
+        
+        /* Two-column expense layout */
+        .expense-columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5em;
+        }
+        @media (max-width: 1100px) {
+            .expense-columns { grid-template-columns: 1fr; }
+        }
+        
+        .expense-column {
+            background: var(--bg-card);
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(60,90,170,0.08);
+            padding: 1.2em;
+        }
+        .expense-column h4 {
+            margin: 0 0 0.8em 0;
+            color: var(--text-heading);
+            font-size: 1em;
+            display: flex;
+            align-items: center;
+            gap: 0.5em;
+            padding-bottom: 0.5em;
+            border-bottom: 2px solid var(--border-light);
+        }
+        .expense-column.fixed h4 { border-bottom-color: #4caf50; }
+        .expense-column.variable h4 { border-bottom-color: #ff9800; }
+        
+        .expense-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.6em 0.8em;
+            background: var(--bg-hover);
+            border-radius: 6px;
+            margin-bottom: 0.5em;
+            border-left: 3px solid var(--accent);
+        }
+        .expense-item.fixed { border-left-color: #4caf50; }
+        .expense-item.variable { border-left-color: #ff9800; }
+        
+        .expense-item .item-info { flex: 1; }
+        .expense-item .item-name { font-weight: 500; color: var(--text-heading); font-size: 0.95em; }
+        .expense-item .item-meta { font-size: 0.8em; color: var(--text-secondary); margin-top: 0.2em; }
+        .expense-item .item-amount { font-weight: 600; color: var(--text-heading); margin-right: 0.8em; font-size: 0.95em; }
+        .expense-item .item-actions { display: flex; gap: 0.3em; }
+        
+        .type-badge {
+            display: inline-block; padding: 0.15em 0.4em; border-radius: 4px; font-size: 0.75em; font-weight: 500;
+        }
+        .type-need { background: #e3f0e3; color: #2a6b3a; }
+        .type-want { background: #fff3cd; color: #856404; }
+        .type-savings { background: #d4edda; color: #155724; }
+        .type-debt { background: #f8d7da; color: #721c24; }
+        [data-theme="dark"] .type-need { background: #1e3a29; color: #7fd98c; }
+        [data-theme="dark"] .type-want { background: #3d3520; color: #ffc107; }
+        [data-theme="dark"] .type-savings { background: #1a3a27; color: #6ee882; }
+        [data-theme="dark"] .type-debt { background: #3a2020; color: #f88; }
+        
+        /* Summary stats */
+        .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.8em; margin-bottom: 1em; }
+        .summary-box {
+            background: var(--bg-hover);
+            border-radius: 10px; padding: 1em; text-align: center;
+        }
+        .summary-box.income { background: linear-gradient(135deg, #d6ffe3, #c8f5d6); }
+        .summary-box.expense { background: linear-gradient(135deg, #ffe8e8, #fdd); }
+        .summary-box.leftover-positive { background: linear-gradient(135deg, #d6ffe3, #b8f0c8); }
+        .summary-box.leftover-negative { background: linear-gradient(135deg, #ffe8e8, #fcc); }
+        .summary-box.retirement { background: linear-gradient(135deg, #e3f0ff, #d4e8ff); }
+        [data-theme="dark"] .summary-box.income { background: linear-gradient(135deg, #1e3a29, #243a30); }
+        [data-theme="dark"] .summary-box.expense { background: linear-gradient(135deg, #3a2525, #3d2020); }
+        [data-theme="dark"] .summary-box.leftover-positive { background: linear-gradient(135deg, #1e3a29, #1f3a2a); }
+        [data-theme="dark"] .summary-box.leftover-negative { background: linear-gradient(135deg, #3a2525, #3d1f1f); }
+        [data-theme="dark"] .summary-box.retirement { background: linear-gradient(135deg, #1e2a3a, #253545); }
+        .summary-value { font-size: 1.3em; font-weight: 700; color: var(--text-heading); }
+        .summary-value.positive { color: var(--success); }
+        .summary-value.negative { color: var(--danger); }
+        .summary-label { font-size: 0.75em; color: var(--text-secondary); margin-top: 0.3em; }
+        
+        /* 50/30/20 Rule */
+        .rule-card { background: var(--bg-hover); border: 1px solid var(--border-color); }
+        .rule-table { width: 100%; border-collapse: collapse; font-size: 0.9em; }
+        .rule-table th, .rule-table td { padding: 0.6em 0.8em; text-align: left; }
+        .rule-table th { color: var(--text-secondary); font-weight: 600; border-bottom: 2px solid var(--border-light); font-size: 0.85em; }
+        .rule-table td { border-bottom: 1px solid var(--border-light); }
+        .rule-table tr:last-child td { border-bottom: none; }
+        .rule-table .amount { text-align: right; font-weight: 600; }
+        .rule-table .pct { text-align: right; }
+        .rule-table .target { text-align: right; color: var(--text-secondary); font-size: 0.9em; }
+        .rule-ok { color: var(--success); }
+        .rule-warn { color: var(--danger); }
+        
+        /* Budget vs Actual */
+        .comparison-table { width: 100%; border-collapse: collapse; font-size: 0.9em; }
+        .comparison-table th, .comparison-table td { padding: 0.5em 0.6em; text-align: left; }
+        .comparison-table th { color: var(--text-secondary); font-weight: 600; border-bottom: 2px solid var(--border-light); font-size: 0.85em; }
+        .comparison-table td { border-bottom: 1px solid var(--border-light); }
+        .comparison-table .amount { text-align: right; font-weight: 500; }
+        .comparison-table .over { color: var(--danger); }
+        .comparison-table .under { color: var(--success); }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--border-light);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .progress-bar .fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s;
+        }
+        .progress-bar .fill.under { background: var(--success); }
+        .progress-bar .fill.over { background: var(--danger); }
+        .progress-bar .fill.near { background: var(--warning); }
+        
+        /* Unbudgeted expenses */
+        .unbudgeted-list {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 8px;
+            padding: 1em;
+            margin-top: 1em;
+        }
+        [data-theme="dark"] .unbudgeted-list {
+            background: #3d3520;
+            border-color: #6d5a10;
+        }
+        .unbudgeted-list h5 {
+            margin: 0 0 0.5em 0;
+            color: #856404;
+            font-size: 0.95em;
+        }
+        [data-theme="dark"] .unbudgeted-list h5 { color: #ffc107; }
+        
+        /* Charts */
+        .chart-container { position: relative; height: 220px; }
+        .chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5em; }
         @media (max-width: 900px) {
-            .page-content { flex-direction: column; }
-            .summary-grid { grid-template-columns: 1fr 1fr; }
+            .chart-row { grid-template-columns: 1fr; }
+            .summary-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        
+        /* Breakdown bar */
+        .breakdown-bar {
+            height: 28px; background: var(--border-light); border-radius: 14px; overflow: hidden;
+            display: flex; margin: 0.8em 0;
+        }
+        .breakdown-bar .bar-segment { height: 100%; transition: width 0.3s; min-width: 0; }
+        .bar-needs { background: #4caf50; }
+        .bar-wants { background: #ff9800; }
+        .bar-savings { background: #2196f3; }
+        .bar-debt { background: #f44336; }
+        .bar-leftover { background: #9e9e9e; }
+        
+        .breakdown-legend { display: flex; flex-wrap: wrap; gap: 1em; font-size: 0.85em; }
+        .legend-item { display: flex; align-items: center; gap: 0.4em; }
+        .legend-dot { width: 12px; height: 12px; border-radius: 3px; }
+        
+        /* Rolling averages display */
+        .rolling-avgs {
+            display: flex;
+            gap: 1em;
+            font-size: 0.85em;
+            color: var(--text-secondary);
+            padding: 0.5em;
+            background: var(--bg-hover);
+            border-radius: 6px;
+            margin-top: 0.5em;
+        }
+        .rolling-avgs span { font-weight: 500; }
+        
+        /* Totals row */
+        .totals-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.8em;
+            margin-top: 0.5em;
+            background: var(--border-light);
+            border-radius: 6px;
+            font-weight: 600;
         }
     </style>
 </head>
@@ -267,11 +350,7 @@
     <div class="header-left"></div>
     <div class="header-center">
       <h1 class="app-title">
-        <img
-          src="/static/apple-touch-icon.png"
-          alt="MoneyFlow"
-          class="app-icon"
-        />
+        <img src="/static/apple-touch-icon.png" alt="MoneyFlow" class="app-icon" />
         MoneyFlow
         <span class="app-version">v1.2.0</span>
       </h1>
@@ -313,88 +392,40 @@
   </nav>
   
   <div class="page-content">
-    <!-- LEFT COLUMN -->
+    <!-- LEFT COLUMN - Add Expense Form -->
     <div class="left-column">
       
-      <!-- Income Summary (from Income & Taxes page) -->
+      <!-- Unified Add Budget Item Form -->
       <div class="card">
-        <h3>Monthly Income (from Income & Taxes)</h3>
-        {% if summary.income %}
-        <div class="summary-grid" style="grid-template-columns: repeat(4, 1fr);">
-          <div class="summary-box income">
-            <div class="summary-value positive">${{ "{:,.0f}".format(summary.gross_monthly) }}</div>
-            <div class="summary-label">Gross Monthly</div>
-          </div>
-          <div class="summary-box expense">
-            <div class="summary-value negative">${{ "{:,.0f}".format(summary.income.total_taxes / 12 if summary.income else 0) }}</div>
-            <div class="summary-label">Monthly Taxes</div>
-          </div>
-          <div class="summary-box retirement">
-            <div class="summary-value">${{ "{:,.0f}".format(summary.total_retirement_monthly) }}</div>
-            <div class="summary-label">Retirement</div>
-          </div>
-          <div class="summary-box income">
-            <div class="summary-value positive">${{ "{:,.0f}".format(summary.net_monthly) }}</div>
-            <div class="summary-label">Take-Home Pay</div>
-          </div>
-        </div>
-        
-        <!-- Tax Breakdown -->
-        {% if summary.income %}
-        <div style="background: var(--bg-hover); border-radius: 8px; padding: 0.8em 1em; margin-top: 0.8em;">
-          <div style="font-size: 0.85em; color: var(--text-secondary); margin-bottom: 0.5em;">
-            <strong>Monthly Tax Breakdown (Annual ÷ 12):</strong>
-          </div>
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.5em 1em; font-size: 0.85em;">
-            <span>Federal Income: <b style="color: #dc3545;">${{ "{:,.0f}".format(summary.income.federal_tax_ordinary / 12) }}</b></span>
-            {% if summary.income.ltcg_tax > 0 %}
-            <span>Capital Gains: <b style="color: #dc3545;">${{ "{:,.0f}".format(summary.income.ltcg_tax / 12) }}</b></span>
-            {% endif %}
-            {% if summary.income.amt_owed > 0 %}
-            <span>AMT: <b style="color: #dc3545;">${{ "{:,.0f}".format(summary.income.amt_owed / 12) }}</b></span>
-            {% endif %}
-            <span>State (MO): <b style="color: #dc3545;">${{ "{:,.0f}".format(summary.income.mo_state_tax / 12) }}</b></span>
-            <span>Social Security: <b style="color: #dc3545;">${{ "{:,.0f}".format(summary.income.social_security / 12) }}</b></span>
-            <span>Medicare: <b style="color: #dc3545;">${{ "{:,.0f}".format((summary.income.medicare + (summary.income.additional_medicare or 0)) / 12) }}</b></span>
-          </div>
-          <div style="margin-top: 0.6em; padding-top: 0.5em; border-top: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 0.9em; font-weight: 600;">
-              Total Monthly Taxes: <span style="color: #dc3545;">${{ "{:,.0f}".format(summary.income.total_taxes / 12) }}</span>
-              <span style="font-size: 0.8em; color: var(--text-secondary); margin-left: 0.5em;">({{ "{:.1f}".format(summary.income.tax_rate) }}% effective rate)</span>
-            </span>
-            <a href="/income-taxes" style="color: var(--accent); font-size: 0.85em;">View details →</a>
-          </div>
-        </div>
-        {% endif %}
-        {% else %}
-        <p style="color:#889ab0; text-align:center;">
-          No income data found. <a href="/income-taxes" style="color:#3875e8;">Set up your income →</a>
-        </p>
-        {% endif %}
-      </div>
-      
-      <!-- Fixed Recurring Costs -->
-      <div class="card">
-        <h3>Fixed Recurring Costs</h3>
-        <p style="font-size:0.85em; color:#667a9a; margin-bottom:1em;">
-          Add recurring bills and fixed expenses. Optionally link to expense categories for tracking.
-        </p>
-        
-        <form method="post" action="/budget/fixed-cost/add" style="margin-bottom:1.5em; padding:1em; background:#f8fafd; border-radius:8px;" id="addFixedCostForm">
-          <!-- Row 1: Name, Type, Frequency -->
-          <div class="form-row" style="grid-template-columns: 2fr 1fr 1fr;">
-            <label>Name
-              <input type="text" name="name" required placeholder="e.g., Rent, Netflix, Car Payment">
+        <h3>➕ Add Budget Item</h3>
+        <form method="post" action="" id="unifiedBudgetForm">
+          <!-- Expense Type Selector -->
+          <div class="form-row">
+            <label>Expense Type
+              <select name="expense_type" id="expenseTypeSelect" onchange="toggleExpenseTypeForm()" required>
+                <option value="fixed">Fixed/Recurring Cost</option>
+                <option value="variable">Variable Expense</option>
+              </select>
             </label>
-            <label>Type
-              <select name="category_type">
+          </div>
+          
+          <!-- Common Fields -->
+          <div class="form-row">
+            <label>Name
+              <input type="text" name="name" id="expenseName" placeholder="e.g., Rent, Groceries, Netflix" required>
+            </label>
+          </div>
+          
+          <div class="form-row" style="grid-template-columns: 1fr 1fr;">
+            <label>Category Type
+              <select name="category_type" id="categoryTypeSelect">
                 {% for key, label in category_types %}
                 <option value="{{ key }}">{{ label }}</option>
                 {% endfor %}
               </select>
             </label>
-            <label>Frequency
-              <select name="frequency" id="addFixedFrequency">
+            <label>Frequency <span id="frequencyLabel">(for fixed costs)</span>
+              <select name="frequency" id="frequencySelect">
                 {% for freq in frequencies %}
                 <option value="{{ freq }}" {% if freq == 'monthly' %}selected{% endif %}>{{ freq.replace('-', ' ').title() }}</option>
                 {% endfor %}
@@ -402,370 +433,382 @@
             </label>
           </div>
           
-          <!-- Row 2: Expense Category Link (Optional) -->
-          <div class="form-row" style="margin-top:0.5em;">
-            <label>Link to Expense Category (Optional)
-              <select name="expense_category_id" id="addExpenseCategorySelect" onchange="loadSubcategoriesForFixedCost('add')">
-                <option value="">-- None (manual tracking) --</option>
+          <!-- Link to Expense Category (Optional for fixed, required for variable) -->
+          <div class="form-row" style="grid-template-columns: 1fr 1fr;">
+            <label><span id="categoryLinkLabel">Link to Expense Category (Optional)</span>
+              <select name="expense_category_id" id="expenseCategorySelect" onchange="loadSubcategoriesForForm(); updateRollingAverages();">
+                <option value="">-- None --</option>
                 {% for cat in expense_categories %}
                 <option value="{{ cat.id }}">{{ cat.name }}</option>
                 {% endfor %}
               </select>
             </label>
             <label>Sub-Category
-              <select name="expense_subcategory_id" id="addExpenseSubcategorySelect">
+              <select name="expense_subcategory_id" id="expenseSubcategorySelect" onchange="updateRollingAverages();">
                 <option value="">All in category</option>
               </select>
             </label>
           </div>
           
           <!-- Amount Source Section -->
-          <div style="background:#fff; border:1px solid #dde; border-radius:6px; padding:1em; margin:1em 0;">
-            <label style="font-weight:600; color:#344a7a; display:block; margin-bottom:0.8em;">Amount Source</label>
-            <div style="display:flex; flex-direction:column; gap:0.8em;">
-              <label style="display:flex; align-items:center; gap:0.5em; cursor:pointer;">
-                <input type="radio" name="amount_mode" value="fixed" checked onchange="toggleAmountMode(this, 'add')">
-                <span><b>Fixed Amount</b> - I know the exact recurring cost</span>
+          <div style="background: var(--bg-hover); border: 1px solid var(--border-color); border-radius: 6px; padding: 1em; margin: 0.8em 0;">
+            <label style="font-weight: 600; color: var(--text-heading); display: block; margin-bottom: 0.8em;">Amount Source</label>
+            <div style="display: flex; flex-direction: column; gap: 0.8em;">
+              <label style="display: flex; align-items: center; gap: 0.5em; cursor: pointer;">
+                <input type="radio" name="amount_mode" value="fixed" id="amountModeFixed" checked onchange="toggleAmountMode()">
+                <span><b>Fixed Amount</b> - I know the exact cost</span>
               </label>
-              <div class="form-row" id="fixedAmountRow" style="margin-left:1.5em;">
+              <div class="form-row" id="fixedAmountRow" style="margin-left: 1.5em; grid-template-columns: 1fr;">
                 <label>Amount ($)
-                  <input type="number" step="0.01" min="0" name="amount" value="0">
+                  <input type="number" step="0.01" min="0" name="amount" id="amountInput" value="0" placeholder="0.00">
                 </label>
               </div>
               
-              <label style="display:flex; align-items:center; gap:0.5em; cursor:pointer;">
-                <input type="radio" name="amount_mode" value="tracked" onchange="toggleAmountMode(this, 'add')">
-                <span><b>Tracked Average</b> - Use average from linked expense category</span>
+              <label style="display: flex; align-items: center; gap: 0.5em; cursor: pointer;">
+                <input type="radio" name="amount_mode" value="tracked" id="amountModeTracked" onchange="toggleAmountMode()">
+                <span><b>Tracked Average</b> - Use average from expense tracking</span>
               </label>
-              <div id="trackedAmountRow" style="margin-left:1.5em; display:none;">
-                <p style="font-size:0.85em; color:#667a9a; margin:0 0 0.5em 0;">
-                  Requires an expense category to be linked above.
+              <div id="trackedAmountRow" style="margin-left: 1.5em; display: none;">
+                <p style="font-size: 0.85em; color: var(--text-secondary); margin: 0 0 0.5em 0;">
+                  Select an expense category above to see rolling averages.
                 </p>
-                <div class="form-row">
+                <div class="form-row" style="grid-template-columns: 1fr;">
                   <label>Averaging Period
-                    <select name="tracking_period_months">
+                    <select name="tracking_period_months" id="trackingPeriodSelect">
                       <option value="3">3 Month Rolling Avg</option>
                       <option value="6">6 Month Rolling Avg</option>
                       <option value="12">12 Month Rolling Avg</option>
                     </select>
                   </label>
                 </div>
+                <div class="rolling-avgs" id="rollingAvgsDisplay" style="display: none;">
+                  <div>3mo: <span id="avg3mo">$0</span></div>
+                  <div>6mo: <span id="avg6mo">$0</span></div>
+                  <div>12mo: <span id="avg12mo">$0</span></div>
+                </div>
               </div>
             </div>
           </div>
           
-          <button type="submit" class="btn-primary">Add Fixed Cost</button>
+          <input type="hidden" name="use_tracked_average" id="useTrackedInput" value="false">
+          <button type="submit" class="btn-primary" style="width: 100%;">Add to Budget</button>
         </form>
         
-        {% if summary.fixed_costs_details %}
-        <table class="cost-table">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Type</th>
-              <th class="amount">Source</th>
-              <th class="monthly">Monthly</th>
-              <th class="actions"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for cost in summary.fixed_costs_details %}
-            <tr>
-              <td>
-                {{ cost.name }}
-                {% if cost.linked_category_name %}
-                <span style="font-size:0.8em; color:#667a9a; display:block;">→ {{ cost.linked_category_name }}</span>
-                {% endif %}
-              </td>
-              <td><span class="type-badge type-{{ cost.category_type }}">{{ cost.category_type.title() }}</span></td>
-              <td class="amount" style="font-size:0.85em;">
-                {% if cost.using_tracked %}
-                <span style="color:#3875e8;">{{ cost.tracking_period_months }}mo avg</span>
-                {% else %}
-                ${{ "{:,.2f}".format(cost.amount) }}/{{ cost.frequency }}
-                {% endif %}
-              </td>
-              <td class="monthly">${{ "{:,.2f}".format(cost.monthly_amount) }}</td>
-              <td class="actions">
-                <button class="btn-edit" onclick="editFixedCost({{ cost.id }})">Edit</button>
-                <button class="btn-danger" onclick="deleteFixedCost({{ cost.id }})">Delete</button>
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-          <tfoot>
-            <tr style="font-weight:600; border-top:2px solid #c5d4e8;">
-              <td colspan="3">Total Fixed Costs</td>
-              <td class="monthly">${{ "{:,.2f}".format(summary.total_fixed_monthly) }}</td>
-              <td></td>
-            </tr>
-          </tfoot>
-        </table>
-        {% else %}
-        <p style="color:#889ab0; text-align:center;">No fixed costs added yet.</p>
-        {% endif %}
+        <!-- Category Management Link -->
+        <div style="margin-top: 1em; padding-top: 1em; border-top: 1px solid var(--border-light); text-align: center;">
+          <a href="/expenses#categories" class="btn-secondary" style="text-decoration: none;">
+            ➕ Manage Categories on Expenses Page
+          </a>
+        </div>
       </div>
       
-      <!-- Variable Expenses (from Expense Tracking) -->
+      <!-- Income Summary -->
       <div class="card">
-        <h3>Variable Expenses (Budget Categories)</h3>
-        <p style="font-size:0.85em; color:var(--text-secondary); margin-bottom:1em;">
-          Link expense categories from your tracking to your budget. Use tracked averages or set specific amounts.
-        </p>
-        
-        <!-- Category Management Help -->
-        <div style="background: linear-gradient(135deg, rgba(56,117,232,0.1), rgba(56,117,232,0.15)); border-radius: 8px; padding: 1em; margin-bottom: 1.5em; border-left: 4px solid var(--accent);">
-          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.8em;">
-            <div>
-              <strong style="color: var(--text-heading);">💡 Need to add or edit categories?</strong>
-              <p style="margin: 0.3em 0 0 0; font-size: 0.85em; color: var(--text-secondary);">
-                Categories and subcategories are managed on the Expenses page. Add new ones there, then return here to add them to your budget.
-              </p>
-            </div>
-            <a href="/expenses#categories" class="btn-secondary" style="text-decoration: none; white-space: nowrap;">
-              ➕ Manage Categories
-            </a>
-          </div>
-        </div>
-        
-        <form method="post" action="/budget/item/add" style="margin-bottom:1.5em; padding:1em; background:#f8fafd; border-radius:8px;" id="addBudgetItemForm">
-          <!-- Row 1: Category, Subcategory, Type -->
-          <div class="form-row" style="grid-template-columns: 2fr 2fr 1fr;">
-            <label>Expense Category
-              <select name="expense_category_id" id="addBudgetItemCategorySelect" required onchange="loadSubcategoriesForBudgetItem('add')">
-                <option value="">Select...</option>
-                {% for cat in expense_categories %}
-                <option value="{{ cat.id }}">{{ cat.name }}</option>
-                {% endfor %}
-              </select>
-            </label>
-            <label>Sub-Category (Optional)
-              <select name="expense_subcategory_id" id="addBudgetItemSubcategorySelect">
-                <option value="">All in category</option>
-              </select>
-            </label>
-            <label>Type
-              <select name="category_type">
-                <option value="need">Need</option>
-                <option value="want">Want</option>
-              </select>
-            </label>
-          </div>
-          
-          <!-- Amount Source Section -->
-          <div style="background:#fff; border:1px solid #dde; border-radius:6px; padding:1em; margin:1em 0;">
-            <label style="font-weight:600; color:#344a7a; display:block; margin-bottom:0.8em;">Amount Source</label>
-            <div style="display:flex; flex-direction:column; gap:0.8em;">
-              <label style="display:flex; align-items:center; gap:0.5em; cursor:pointer;">
-                <input type="radio" name="amount_source" value="tracked" checked onchange="toggleBudgetItemAmountMode(this, 'add')">
-                <span><b>Tracked Average</b> - Use rolling average from expense data</span>
-              </label>
-              <div class="form-row" id="addItemTrackedRow" style="margin-left:1.5em;">
-                <label>Averaging Period
-                  <select name="tracking_period_months">
-                    <option value="3">3 Month Rolling Avg</option>
-                    <option value="6">6 Month Rolling Avg</option>
-                    <option value="12">12 Month Rolling Avg</option>
-                  </select>
-                </label>
-              </div>
-              
-              <label style="display:flex; align-items:center; gap:0.5em; cursor:pointer;">
-                <input type="radio" name="amount_source" value="fixed" onchange="toggleBudgetItemAmountMode(this, 'add')">
-                <span><b>Fixed Amount</b> - Specify a budgeted amount</span>
-              </label>
-              <div class="form-row" id="addItemFixedRow" style="margin-left:1.5em; display:none;">
-                <label>Amount ($)
-                  <input type="number" step="0.01" min="0" name="specified_amount" value="0">
-                </label>
-                <label>Frequency
-                  <select name="frequency">
-                    {% for freq in frequencies %}
-                    <option value="{{ freq }}" {% if freq == 'monthly' %}selected{% endif %}>{{ freq.replace('-', ' ').title() }}</option>
-                    {% endfor %}
-                  </select>
-                </label>
-              </div>
-            </div>
-          </div>
-          <input type="hidden" name="use_tracked_average" id="addItemUseTracked" value="true">
-          <button type="submit" class="btn-primary">Add to Budget</button>
-        </form>
-        
-        {% if summary.budget_items %}
-        <div class="budget-items">
-          {% for item in summary.budget_items %}
-          <div class="budget-item">
-            <div class="item-info">
-              <div class="item-name">{{ item.category_name }}{% if item.subcategory_name %} › {{ item.subcategory_name }}{% endif %}</div>
-              <div class="item-source">
-                {% if item.use_tracked_average %}
-                <span style="color:#3875e8;">{{ item.tracking_period_months }}mo avg</span>
-                {% else %}
-                Fixed: ${{ "{:,.2f}".format(item.specified_amount) }}/mo
-                {% endif %}
-                • <span class="type-badge type-{{ item.category_type }}">{{ item.category_type.title() }}</span>
-              </div>
-            </div>
-            <div class="item-amount">${{ "{:,.2f}".format(item.monthly_amount) }}</div>
-            <button class="btn-secondary" onclick="editBudgetItem({{ item.id }})" style="padding:0.3em 0.6em;">Edit</button>
-            <button class="btn-danger" onclick="deleteBudgetItem({{ item.id }})">×</button>
-          </div>
-          {% endfor %}
-        </div>
-        <div style="margin-top:1em; padding-top:0.8em; border-top:2px solid #e8eef8; font-weight:600; display:flex; justify-content:space-between;">
-          <span>Total Variable Expenses</span>
-          <span>${{ "{:,.2f}".format(summary.total_variable_monthly) }}</span>
-        </div>
-        {% else %}
-        <p style="color:#889ab0; text-align:center;">No expense categories linked to budget yet.</p>
-        {% endif %}
-      </div>
-    </div>
-    
-    <!-- RIGHT COLUMN - Summary & Visualizations -->
-    <div class="right-column">
-      
-      <!-- Budget Overview -->
-      <div class="card">
-        <h3>Monthly Budget Overview (% of gross monthly income)</h3>
+        <h3>📊 Monthly Income</h3>
+        {% if summary.income %}
         <div class="summary-grid">
-          <div class="summary-box">
-            <div class="summary-value">${{ "{:,.2f}".format(summary.total_needs) }}</div>
-            <div class="summary-label">Needs ({{ "%.0f"|format(summary.needs_pct) }}%)</div>
+          <div class="summary-box income">
+            <div class="summary-value positive">${{ "{:,.0f}".format(summary.gross_monthly) }}</div>
+            <div class="summary-label">Gross</div>
           </div>
-          <div class="summary-box">
-            <div class="summary-value">${{ "{:,.2f}".format(summary.total_wants) }}</div>
-            <div class="summary-label">Wants ({{ "%.0f"|format(summary.wants_pct) }}%)</div>
+          <div class="summary-box expense">
+            <div class="summary-value negative">${{ "{:,.0f}".format(summary.income.total_taxes / 12) }}</div>
+            <div class="summary-label">Taxes</div>
           </div>
-          <div class="summary-box">
-            <div class="summary-value">${{ "{:,.2f}".format(summary.total_savings) }}</div>
-            <div class="summary-label">Savings ({{ "%.0f"|format(summary.savings_pct) }}%)</div>
+          <div class="summary-box retirement">
+            <div class="summary-value">${{ "{:,.0f}".format(summary.total_retirement_monthly) }}</div>
+            <div class="summary-label">Retirement</div>
           </div>
-          <div class="summary-box">
-            <div class="summary-value">${{ "{:,.2f}".format(summary.total_debt) }}</div>
-            <div class="summary-label">Debt ({{ "%.0f"|format(summary.debt_pct) }}%)</div>
-          </div>
-        </div>
-        
-        <!-- Budget Bar -->
-        <div class="breakdown-section">
-          <h4>Where Your Money Goes</h4>
-          {% set total_pct = summary.needs_pct + summary.wants_pct + summary.savings_pct + summary.debt_pct %}
-          {% set leftover_pct = 100 - total_pct if total_pct < 100 else 0 %}
-          <div class="breakdown-bar">
-            <div class="bar-segment bar-needs" style="width:{{ summary.needs_pct }}%"></div>
-            <div class="bar-segment bar-wants" style="width:{{ summary.wants_pct }}%"></div>
-            <div class="bar-segment bar-savings" style="width:{{ summary.savings_pct }}%"></div>
-            <div class="bar-segment bar-debt" style="width:{{ summary.debt_pct }}%"></div>
-            <div class="bar-segment bar-leftover" style="width:{{ leftover_pct }}%"></div>
-          </div>
-          <div class="breakdown-legend">
-            <div class="legend-item"><span class="legend-dot bar-needs"></span> Needs</div>
-            <div class="legend-item"><span class="legend-dot bar-wants"></span> Wants</div>
-            <div class="legend-item"><span class="legend-dot bar-savings"></span> Savings</div>
-            <div class="legend-item"><span class="legend-dot bar-debt"></span> Debt</div>
-            <div class="legend-item"><span class="legend-dot bar-leftover"></span> Leftover</div>
+          <div class="summary-box income">
+            <div class="summary-value positive">${{ "{:,.0f}".format(summary.net_monthly) }}</div>
+            <div class="summary-label">Take-Home</div>
           </div>
         </div>
+        <div style="text-align: right;">
+          <a href="/income-taxes" style="color: var(--accent); font-size: 0.85em;">View details →</a>
+        </div>
+        {% else %}
+        <p style="color: var(--text-secondary); text-align: center;">
+          No income data. <a href="/income-taxes" style="color: var(--accent);">Set up income →</a>
+        </p>
+        {% endif %}
       </div>
       
       <!-- 50/30/20 Rule -->
       <div class="card rule-card">
-        <h3>50/30/20 Rule Check (% of gross monthly income)</h3>
-        <p style="font-size:0.85em; color:#667a9a; margin-bottom:1em;">
-          A popular budgeting guideline: 50% Needs, 30% Wants, 20% Savings
+        <h3>📐 50/30/20 Rule Check</h3>
+        <p style="font-size: 0.8em; color: var(--text-secondary); margin-bottom: 1em;">
+          Based on gross monthly income of ${{ "{:,.0f}".format(summary.gross_monthly) }}
         </p>
-        <div class="rule-item">
-          <span class="rule-label">Needs</span>
-          <div class="rule-values">
-            <span class="rule-actual {% if summary.needs_pct <= 50 %}rule-ok{% else %}rule-warn{% endif %}">{{ "%.0f"|format(summary.needs_pct) }}%</span>
-            <span class="rule-target">(target: ≤50%)</span>
+        <table class="rule-table">
+          <thead>
+            <tr>
+              <th>Category</th>
+              <th class="amount">Amount</th>
+              <th class="pct">Actual</th>
+              <th class="target">Target</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Needs + Debt*</td>
+              <td class="amount">${{ "{:,.0f}".format(summary.total_needs + summary.total_debt) }}</td>
+              <td class="pct {% if (summary.needs_pct + summary.debt_pct) <= 50 %}rule-ok{% else %}rule-warn{% endif %}">
+                {{ "{:.0f}".format(summary.needs_pct + summary.debt_pct) }}%
+              </td>
+              <td class="target">≤50%</td>
+            </tr>
+            <tr>
+              <td>Wants</td>
+              <td class="amount">${{ "{:,.0f}".format(summary.total_wants) }}</td>
+              <td class="pct {% if summary.wants_pct <= 30 %}rule-ok{% else %}rule-warn{% endif %}">
+                {{ "{:.0f}".format(summary.wants_pct) }}%
+              </td>
+              <td class="target">≤30%</td>
+            </tr>
+            <tr>
+              <td>Savings</td>
+              <td class="amount">${{ "{:,.0f}".format(summary.total_savings) }}</td>
+              <td class="pct {% if summary.savings_pct >= 20 %}rule-ok{% else %}rule-warn{% endif %}">
+                {{ "{:.0f}".format(summary.savings_pct) }}%
+              </td>
+              <td class="target">≥20%</td>
+            </tr>
+          </tbody>
+        </table>
+        <p style="font-size: 0.75em; color: var(--text-secondary); margin-top: 0.8em; font-style: italic;">
+          *Needs + Debt are combined as debt payments are typically considered essential obligations.
+        </p>
+      </div>
+    </div>
+    
+    <!-- RIGHT COLUMN - Budget Items & Visualizations -->
+    <div class="right-column">
+      
+      <!-- Budget Overview -->
+      <div class="card">
+        <h3>
+          💰 Budget Overview
+          <span style="font-size: 0.8em; font-weight: normal; color: var(--text-secondary);">
+            (Monthly)
+          </span>
+        </h3>
+        
+        <!-- Summary Stats -->
+        <div class="summary-grid" style="grid-template-columns: repeat(5, 1fr);">
+          <div class="summary-box">
+            <div class="summary-value">${{ "{:,.0f}".format(summary.total_needs) }}</div>
+            <div class="summary-label">Needs ({{ "{:.0f}".format(summary.needs_pct) }}%)</div>
+          </div>
+          <div class="summary-box">
+            <div class="summary-value">${{ "{:,.0f}".format(summary.total_wants) }}</div>
+            <div class="summary-label">Wants ({{ "{:.0f}".format(summary.wants_pct) }}%)</div>
+          </div>
+          <div class="summary-box">
+            <div class="summary-value">${{ "{:,.0f}".format(summary.total_savings) }}</div>
+            <div class="summary-label">Savings ({{ "{:.0f}".format(summary.savings_pct) }}%)</div>
+          </div>
+          <div class="summary-box">
+            <div class="summary-value">${{ "{:,.0f}".format(summary.total_debt) }}</div>
+            <div class="summary-label">Debt ({{ "{:.0f}".format(summary.debt_pct) }}%)</div>
+          </div>
+          <div class="summary-box {% if summary.leftover >= 0 %}leftover-positive{% else %}leftover-negative{% endif %}">
+            <div class="summary-value {% if summary.leftover >= 0 %}positive{% else %}negative{% endif %}">
+              {% if summary.leftover >= 0 %}+{% endif %}${{ "{:,.0f}".format(summary.leftover) }}
+            </div>
+            <div class="summary-label">Leftover</div>
           </div>
         </div>
-        <div class="rule-item">
-          <span class="rule-label">Wants</span>
-          <div class="rule-values">
-            <span class="rule-actual {% if summary.wants_pct <= 30 %}rule-ok{% else %}rule-warn{% endif %}">{{ "%.0f"|format(summary.wants_pct) }}%</span>
-            <span class="rule-target">(target: ≤30%)</span>
-          </div>
+        
+        <!-- Breakdown Bar -->
+        {% set total_pct = summary.needs_pct + summary.wants_pct + summary.savings_pct + summary.debt_pct %}
+        {% set leftover_pct = 100 - total_pct if total_pct < 100 else 0 %}
+        <div class="breakdown-bar">
+          <div class="bar-segment bar-needs" style="width: {{ summary.needs_pct }}%"></div>
+          <div class="bar-segment bar-wants" style="width: {{ summary.wants_pct }}%"></div>
+          <div class="bar-segment bar-savings" style="width: {{ summary.savings_pct }}%"></div>
+          <div class="bar-segment bar-debt" style="width: {{ summary.debt_pct }}%"></div>
+          <div class="bar-segment bar-leftover" style="width: {{ leftover_pct }}%"></div>
         </div>
-        <div class="rule-item">
-          <span class="rule-label">Savings + Investments</span>
-          <div class="rule-values">
-            <span class="rule-actual {% if summary.savings_pct >= 20 %}rule-ok{% else %}rule-warn{% endif %}">{{ "%.0f"|format(summary.savings_pct) }}%</span>
-            <span class="rule-target">(target: ≥20%)</span>
-          </div>
-        </div>
-        <div class="rule-item">
-          <span class="rule-label">Debt</span>
-          <div class="rule-values">
-            <span class="rule-actual {% if summary.debt_pct <= 36 %}rule-ok{% else %}rule-warn{% endif %}">{{ "%.0f"|format(summary.debt_pct) }}%</span>
-            <span class="rule-target">(target: ≤36%)</span>
-          </div>
+        <div class="breakdown-legend">
+          <div class="legend-item"><span class="legend-dot bar-needs"></span> Needs</div>
+          <div class="legend-item"><span class="legend-dot bar-wants"></span> Wants</div>
+          <div class="legend-item"><span class="legend-dot bar-savings"></span> Savings</div>
+          <div class="legend-item"><span class="legend-dot bar-debt"></span> Debt</div>
+          <div class="legend-item"><span class="legend-dot bar-leftover"></span> Leftover</div>
         </div>
       </div>
       
-      <!-- Bottom Line -->
-      <div class="card">
-        <h3>Bottom Line</h3>
-        <div class="summary-grid" style="grid-template-columns: 1fr;">
-          <div class="summary-box {% if summary.leftover >= 0 %}leftover-positive{% else %}leftover-negative{% endif %}">
-            <div class="summary-value {% if summary.leftover >= 0 %}positive{% else %}negative{% endif %}">
-              {% if summary.leftover >= 0 %}+{% endif %}${{ "{:,.2f}".format(summary.leftover) }}
+      <!-- Two-Column Expense Layout -->
+      <div class="expense-columns">
+        <!-- Fixed Expenses Column -->
+        <div class="expense-column fixed">
+          <h4>📌 Fixed/Recurring Costs</h4>
+          {% set fixed_items = summary.fixed_costs_details %}
+          {% if fixed_items %}
+            {% for cost in fixed_items %}
+            <div class="expense-item fixed">
+              <div class="item-info">
+                <div class="item-name">{{ cost.name }}</div>
+                <div class="item-meta">
+                  <span class="type-badge type-{{ cost.category_type }}">{{ cost.category_type.title() }}</span>
+                  {% if cost.using_tracked %}
+                  <span style="color: var(--accent);">{{ cost.tracking_period_months }}mo avg</span>
+                  {% else %}
+                  <span>${{ "{:,.0f}".format(cost.amount) }}/{{ cost.frequency }}</span>
+                  {% endif %}
+                </div>
+              </div>
+              <div class="item-amount">${{ "{:,.0f}".format(cost.monthly_amount) }}</div>
+              <div class="item-actions">
+                <button class="btn-edit" onclick="editFixedCost({{ cost.id }})">✏️</button>
+                <button class="btn-danger" onclick="deleteFixedCost({{ cost.id }})">×</button>
+              </div>
             </div>
-            <div class="summary-label">
-              {% if summary.leftover >= 0 %}
-              Monthly Surplus
-              {% else %}
-              Monthly Deficit
-              {% endif %}
+            {% endfor %}
+            <div class="totals-row">
+              <span>Total Fixed</span>
+              <span>${{ "{:,.0f}".format(summary.total_fixed_monthly) }}/mo</span>
             </div>
-          </div>
+          {% else %}
+            <p style="color: var(--text-secondary); text-align: center; padding: 1em;">No fixed costs yet.</p>
+          {% endif %}
         </div>
         
-        <table style="width:100%; font-size:0.9em;">
-          <tr><td>Net Income</td><td style="text-align:right;" class="positive">${{ "{:,.2f}".format(summary.net_monthly) }}</td></tr>
-          <tr><td>Fixed Costs</td><td style="text-align:right;">−${{ "{:,.2f}".format(summary.total_fixed_monthly) }}</td></tr>
-          <tr><td>Variable Expenses</td><td style="text-align:right;">−${{ "{:,.2f}".format(summary.total_variable_monthly) }}</td></tr>
-          <tr style="font-weight:600; border-top:2px solid #c5d4e8;">
-            <td>Remaining</td>
-            <td style="text-align:right;" class="{% if summary.leftover >= 0 %}positive{% else %}negative{% endif %}">
-              {% if summary.leftover >= 0 %}+{% endif %}${{ "{:,.2f}".format(summary.leftover) }}
-            </td>
-          </tr>
-        </table>
+        <!-- Variable Expenses Column -->
+        <div class="expense-column variable">
+          <h4>📊 Variable Expenses</h4>
+          {% set variable_items = summary.budget_items %}
+          {% if variable_items %}
+            {% for item in variable_items %}
+            <div class="expense-item variable">
+              <div class="item-info">
+                <div class="item-name">{{ item.category_name }}{% if item.subcategory_name %} › {{ item.subcategory_name }}{% endif %}</div>
+                <div class="item-meta">
+                  <span class="type-badge type-{{ item.category_type }}">{{ item.category_type.title() }}</span>
+                  {% if item.use_tracked_average %}
+                  <span style="color: var(--accent);">{{ item.tracking_period_months }}mo avg</span>
+                  {% else %}
+                  <span>Fixed: ${{ "{:,.0f}".format(item.specified_amount) }}</span>
+                  {% endif %}
+                </div>
+              </div>
+              <div class="item-amount">${{ "{:,.0f}".format(item.monthly_amount) }}</div>
+              <div class="item-actions">
+                <button class="btn-edit" onclick="editBudgetItem({{ item.id }})">✏️</button>
+                <button class="btn-danger" onclick="deleteBudgetItem({{ item.id }})">×</button>
+              </div>
+            </div>
+            {% endfor %}
+            <div class="totals-row">
+              <span>Total Variable</span>
+              <span>${{ "{:,.0f}".format(summary.total_variable_monthly) }}/mo</span>
+            </div>
+          {% else %}
+            <p style="color: var(--text-secondary); text-align: center; padding: 1em;">No variable expenses linked yet.</p>
+          {% endif %}
+        </div>
+      </div>
+      
+      <!-- Actual Spending vs Budget -->
+      <div class="card">
+        <h3>
+          📈 Actual Spending vs Budget
+          <select id="lookbackSelect" onchange="changeLookback()" style="font-size: 0.85em; padding: 0.3em 0.5em; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-input); color: var(--text-primary);">
+            <option value="1" {% if lookback_months == 1 %}selected{% endif %}>Last Month</option>
+            <option value="3" {% if lookback_months == 3 %}selected{% endif %}>Last 3 Months</option>
+            <option value="6" {% if lookback_months == 6 %}selected{% endif %}>Last 6 Months</option>
+            <option value="12" {% if lookback_months == 12 %}selected{% endif %}>Last 12 Months</option>
+          </select>
+        </h3>
+        <p style="font-size: 0.85em; color: var(--text-secondary); margin-bottom: 1em;">
+          Comparing actual spending to budgeted amounts for variable expenses.
+          <em>Fixed expenses are assumed spent as budgeted.</em>
+        </p>
         
-        {% if summary.leftover < 0 %}
-        <div style="background:#fff3cd; border:1px solid #ffc107; border-radius:6px; padding:0.7em 1em; margin-top:1em;">
-          <b style="color:#856404;">⚠️ Budget Warning</b>
-          <p style="margin:0.3em 0 0 0; font-size:0.9em; color:#664d03;">
-            Your expenses exceed your income by ${{ "{:,.2f}".format(summary.leftover * -1) }}/month.
+        {% if budget_vs_actual.comparisons %}
+        <table class="comparison-table">
+          <thead>
+            <tr>
+              <th>Category</th>
+              <th class="amount">Budgeted</th>
+              <th class="amount">Actual</th>
+              <th class="amount">Diff</th>
+              <th style="width: 100px;">Progress</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in budget_vs_actual.comparisons %}
+            <tr>
+              <td>
+                {{ c.name }}
+                <span class="type-badge type-{{ c.category_type }}" style="margin-left: 0.3em;">{{ c.category_type.title() }}</span>
+              </td>
+              <td class="amount">${{ "{:,.0f}".format(c.budgeted) }}</td>
+              <td class="amount">${{ "{:,.0f}".format(c.actual) }}</td>
+              <td class="amount {% if c.is_over %}over{% else %}under{% endif %}">
+                {% if c.is_over %}-{% else %}+{% endif %}${{ "{:,.0f}".format(c.difference|abs) }}
+              </td>
+              <td>
+                <div class="progress-bar">
+                  {% set pct = c.percentage if c.percentage <= 100 else 100 %}
+                  <div class="fill {% if c.percentage > 100 %}over{% elif c.percentage > 90 %}near{% else %}under{% endif %}" style="width: {{ pct }}%;"></div>
+                </div>
+                <span style="font-size: 0.75em; color: var(--text-secondary);">{{ "{:.0f}".format(c.percentage) }}%</span>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <p style="color: var(--text-secondary); text-align: center;">No variable expenses to compare yet.</p>
+        {% endif %}
+        
+        {% if budget_vs_actual.unbudgeted %}
+        <div class="unbudgeted-list">
+          <h5>⚠️ Unbudgeted Spending (${{ "{:,.0f}".format(budget_vs_actual.total_unbudgeted) }})</h5>
+          <p style="font-size: 0.85em; margin-bottom: 0.5em; color: #856404;">
+            These expense categories are not in your budget:
           </p>
+          {% for u in budget_vs_actual.unbudgeted %}
+          <div style="display: flex; justify-content: space-between; padding: 0.3em 0; border-bottom: 1px solid rgba(0,0,0,0.1);">
+            <span>{{ u.category_name }}</span>
+            <span style="font-weight: 600;">${{ "{:,.0f}".format(u.amount) }}</span>
+          </div>
+          {% endfor %}
         </div>
         {% endif %}
       </div>
       
-      <!-- Allocation Chart -->
-      <div class="card">
-        <h3>Budget Allocation</h3>
-        <div class="chart-container">
-          <canvas id="allocationChart"></canvas>
+      <!-- Charts -->
+      <div class="chart-row">
+        <div class="card">
+          <h3>Budget Allocation by Category</h3>
+          <div class="chart-container">
+            <canvas id="allocationChart"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Budget vs Actual Spending</h3>
+          <div class="chart-container">
+            <canvas id="comparisonChart"></canvas>
+          </div>
         </div>
       </div>
-      
     </div>
   </div>
   
   <!-- Edit Fixed Cost Modal -->
   <div class="modal-overlay" id="editFixedCostModal">
-    <div class="modal" style="max-width:600px;">
+    <div class="modal">
       <h4>Edit Fixed Cost</h4>
       <form id="editFixedCostForm" method="post">
         <div class="form-row">
           <label>Name
             <input type="text" name="name" id="editCostName" required>
           </label>
+        </div>
+        <div class="form-row" style="grid-template-columns: 1fr 1fr;">
           <label>Type
             <select name="category_type" id="editCostType">
               {% for key, label in category_types %}
@@ -773,49 +816,50 @@
               {% endfor %}
             </select>
           </label>
+          <label>Frequency
+            <select name="frequency" id="editCostFrequency">
+              {% for freq in frequencies %}
+              <option value="{{ freq }}">{{ freq.replace('-', ' ').title() }}</option>
+              {% endfor %}
+            </select>
+          </label>
         </div>
         
-        <div style="background:#f8fafd; border:1px solid #dde; border-radius:6px; padding:1em; margin:1em 0;">
-          <label style="font-weight:600; color:#344a7a; display:block; margin-bottom:0.8em;">Amount Source</label>
-          <div style="display:flex; flex-direction:column; gap:0.8em;">
-            <label style="display:flex; align-items:center; gap:0.5em; cursor:pointer;">
-              <input type="radio" name="amount_mode" value="fixed" id="editAmountModeFixed" onchange="toggleAmountMode(this, 'edit')">
+        <div class="form-row" style="grid-template-columns: 1fr 1fr;">
+          <label>Expense Category (Optional)
+            <select name="expense_category_id" id="editCostCategory" onchange="loadSubcategoriesForFixedCost('edit')">
+              <option value="">-- None --</option>
+              {% for cat in expense_categories %}
+              <option value="{{ cat.id }}">{{ cat.name }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label>Sub-Category
+            <select name="expense_subcategory_id" id="editCostSubcategory">
+              <option value="">All in category</option>
+            </select>
+          </label>
+        </div>
+        
+        <div style="background: var(--bg-hover); border-radius: 6px; padding: 1em; margin: 1em 0;">
+          <label style="font-weight: 600; display: block; margin-bottom: 0.8em;">Amount Source</label>
+          <div style="display: flex; flex-direction: column; gap: 0.8em;">
+            <label style="display: flex; align-items: center; gap: 0.5em; cursor: pointer;">
+              <input type="radio" name="amount_mode" value="fixed" id="editAmountModeFixed" onchange="toggleEditAmountMode()">
               <span><b>Fixed Amount</b></span>
             </label>
-            <div class="form-row" id="editFixedAmountRow" style="margin-left:1.5em;">
+            <div class="form-row" id="editFixedAmountRow" style="margin-left: 1.5em;">
               <label>Amount ($)
                 <input type="number" step="0.01" min="0" name="amount" id="editCostAmount" value="0">
               </label>
-              <label>Frequency
-                <select name="frequency" id="editCostFrequency">
-                  {% for freq in frequencies %}
-                  <option value="{{ freq }}">{{ freq.replace('-', ' ').title() }}</option>
-                  {% endfor %}
-                </select>
-              </label>
             </div>
             
-            <label style="display:flex; align-items:center; gap:0.5em; cursor:pointer;">
-              <input type="radio" name="amount_mode" value="tracked" id="editAmountModeTracked" onchange="toggleAmountMode(this, 'edit')">
+            <label style="display: flex; align-items: center; gap: 0.5em; cursor: pointer;">
+              <input type="radio" name="amount_mode" value="tracked" id="editAmountModeTracked" onchange="toggleEditAmountMode()">
               <span><b>Tracked Average</b></span>
             </label>
-            <div id="editTrackedAmountRow" style="margin-left:1.5em; display:none;">
+            <div id="editTrackedAmountRow" style="margin-left: 1.5em; display: none;">
               <div class="form-row">
-                <label>Expense Category
-                  <select name="expense_category_id" id="editCostCategory" onchange="loadSubcategoriesForFixedCost('edit')">
-                    <option value="">Select...</option>
-                    {% for cat in expense_categories %}
-                    <option value="{{ cat.id }}">{{ cat.name }}</option>
-                    {% endfor %}
-                  </select>
-                </label>
-                <label>Sub-Category (Optional)
-                  <select name="expense_subcategory_id" id="editCostSubcategory">
-                    <option value="">All in category</option>
-                  </select>
-                </label>
-              </div>
-              <div class="form-row" style="margin-top:0.5em;">
                 <label>Period
                   <select name="tracking_period_months" id="editCostTrackingPeriod">
                     <option value="3">3 Month Avg</option>
@@ -838,12 +882,12 @@
   
   <!-- Edit Budget Item Modal -->
   <div class="modal-overlay" id="editBudgetItemModal">
-    <div class="modal" style="max-width:550px;">
+    <div class="modal">
       <h4>Edit Variable Expense</h4>
       <form id="editBudgetItemForm" method="post">
-        <div class="form-row">
+        <div class="form-row" style="grid-template-columns: 1fr 1fr;">
           <label>Category
-            <input type="text" id="editItemCategoryName" readonly style="background:#f0f4fa;">
+            <input type="text" id="editItemCategoryName" readonly style="background: var(--bg-hover);">
           </label>
           <label>Type
             <select name="category_type" id="editItemCategoryType">
@@ -853,14 +897,14 @@
           </label>
         </div>
         
-        <div style="background:#f8fafd; border:1px solid #dde; border-radius:6px; padding:1em; margin:1em 0;">
-          <label style="font-weight:600; color:#344a7a; display:block; margin-bottom:0.8em;">Amount Source</label>
-          <div style="display:flex; flex-direction:column; gap:0.8em;">
-            <label style="display:flex; align-items:center; gap:0.5em; cursor:pointer;">
-              <input type="radio" name="edit_item_amount_source" value="tracked" id="editItemSourceTracked" onchange="toggleBudgetItemAmountMode(this, 'edit')">
+        <div style="background: var(--bg-hover); border-radius: 6px; padding: 1em; margin: 1em 0;">
+          <label style="font-weight: 600; display: block; margin-bottom: 0.8em;">Amount Source</label>
+          <div style="display: flex; flex-direction: column; gap: 0.8em;">
+            <label style="display: flex; align-items: center; gap: 0.5em; cursor: pointer;">
+              <input type="radio" name="edit_item_amount_source" value="tracked" id="editItemSourceTracked" onchange="toggleEditItemAmountMode()">
               <span><b>Tracked Average</b></span>
             </label>
-            <div id="editItemTrackedRow" style="margin-left:1.5em;">
+            <div id="editItemTrackedRow" style="margin-left: 1.5em;">
               <div class="form-row">
                 <label>Period
                   <select name="tracking_period_months" id="editItemTrackingPeriod">
@@ -870,14 +914,14 @@
                   </select>
                 </label>
               </div>
-              <div id="editItemTrackedAmounts" style="font-size:0.85em; color:#667a9a; margin-top:0.5em;"></div>
+              <div id="editItemTrackedAmounts" class="rolling-avgs" style="margin-top: 0.5em;"></div>
             </div>
             
-            <label style="display:flex; align-items:center; gap:0.5em; cursor:pointer;">
-              <input type="radio" name="edit_item_amount_source" value="fixed" id="editItemSourceFixed" onchange="toggleBudgetItemAmountMode(this, 'edit')">
+            <label style="display: flex; align-items: center; gap: 0.5em; cursor: pointer;">
+              <input type="radio" name="edit_item_amount_source" value="fixed" id="editItemSourceFixed" onchange="toggleEditItemAmountMode()">
               <span><b>Fixed Amount</b></span>
             </label>
-            <div class="form-row" id="editItemFixedRow" style="margin-left:1.5em; display:none;">
+            <div class="form-row" id="editItemFixedRow" style="margin-left: 1.5em; display: none;">
               <label>Monthly Amount ($)
                 <input type="number" step="0.01" min="0" name="specified_amount" id="editItemSpecifiedAmount" value="0">
               </label>
@@ -895,6 +939,109 @@
   </div>
   
   <script>
+    // ===== FORM HANDLING =====
+    
+    function toggleExpenseTypeForm() {
+      const type = document.getElementById('expenseTypeSelect').value;
+      const form = document.getElementById('unifiedBudgetForm');
+      const frequencyLabel = document.getElementById('frequencyLabel');
+      const categoryLinkLabel = document.getElementById('categoryLinkLabel');
+      const frequencySelect = document.getElementById('frequencySelect');
+      const categorySelect = document.getElementById('expenseCategorySelect');
+      
+      if (type === 'fixed') {
+        form.action = '/budget/fixed-cost/add';
+        frequencyLabel.textContent = '(payment frequency)';
+        frequencySelect.style.display = 'block';
+        frequencySelect.parentElement.style.display = 'flex';
+        categoryLinkLabel.textContent = 'Link to Expense Category (Optional)';
+        categorySelect.required = false;
+      } else {
+        form.action = '/budget/item/add';
+        frequencyLabel.textContent = '(not used for variable)';
+        frequencySelect.style.display = 'none';
+        frequencySelect.parentElement.style.display = 'none';
+        categoryLinkLabel.textContent = 'Expense Category (Required)';
+        categorySelect.required = true;
+        // Default to tracked for variable expenses
+        document.getElementById('amountModeTracked').checked = true;
+        toggleAmountMode();
+      }
+    }
+    
+    function toggleAmountMode() {
+      const isFixed = document.getElementById('amountModeFixed').checked;
+      document.getElementById('fixedAmountRow').style.display = isFixed ? 'grid' : 'none';
+      document.getElementById('trackedAmountRow').style.display = isFixed ? 'none' : 'block';
+      document.getElementById('useTrackedInput').value = isFixed ? 'false' : 'true';
+    }
+    
+    function toggleEditAmountMode() {
+      const isFixed = document.getElementById('editAmountModeFixed').checked;
+      document.getElementById('editFixedAmountRow').style.display = isFixed ? 'grid' : 'none';
+      document.getElementById('editTrackedAmountRow').style.display = isFixed ? 'none' : 'block';
+    }
+    
+    function toggleEditItemAmountMode() {
+      const isTracked = document.getElementById('editItemSourceTracked').checked;
+      document.getElementById('editItemTrackedRow').style.display = isTracked ? 'block' : 'none';
+      document.getElementById('editItemFixedRow').style.display = isTracked ? 'none' : 'grid';
+      document.getElementById('editItemUseTracked').value = isTracked ? 'true' : 'false';
+    }
+    
+    // Load subcategories for form
+    async function loadSubcategoriesForForm() {
+      const categoryId = document.getElementById('expenseCategorySelect').value;
+      const subcategorySelect = document.getElementById('expenseSubcategorySelect');
+      
+      subcategorySelect.innerHTML = '<option value="">All in category</option>';
+      
+      if (!categoryId) return;
+      
+      try {
+        const response = await fetch(`/api/subcategories/${categoryId}`);
+        const data = await response.json();
+        data.subcategories.forEach(sub => {
+          const option = document.createElement('option');
+          option.value = sub.id;
+          option.textContent = sub.name;
+          subcategorySelect.appendChild(option);
+        });
+      } catch (err) {
+        console.error('Error loading subcategories:', err);
+      }
+    }
+    
+    // Update rolling averages display
+    async function updateRollingAverages() {
+      const categoryId = document.getElementById('expenseCategorySelect').value;
+      const subcategoryId = document.getElementById('expenseSubcategorySelect').value;
+      const display = document.getElementById('rollingAvgsDisplay');
+      
+      if (!categoryId) {
+        display.style.display = 'none';
+        return;
+      }
+      
+      try {
+        let url = `/api/budget/rolling-averages?category_id=${categoryId}`;
+        if (subcategoryId) url += `&subcategory_id=${subcategoryId}`;
+        
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        document.getElementById('avg3mo').textContent = '$' + data.tracked_3mo.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0});
+        document.getElementById('avg6mo').textContent = '$' + data.tracked_6mo.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0});
+        document.getElementById('avg12mo').textContent = '$' + data.tracked_12mo.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0});
+        display.style.display = 'flex';
+      } catch (err) {
+        console.error('Error fetching rolling averages:', err);
+        display.style.display = 'none';
+      }
+    }
+    
+    // ===== FIXED COST FUNCTIONS =====
+    
     async function deleteFixedCost(costId) {
       if (!confirm('Delete this fixed cost?')) return;
       try {
@@ -902,158 +1049,6 @@
         location.reload();
       } catch (err) {
         console.error('Error:', err);
-      }
-    }
-    
-    async function deleteBudgetItem(itemId) {
-      if (!confirm('Remove this from budget?')) return;
-      try {
-        await fetch(`/budget/item/${itemId}`, { method: 'DELETE' });
-        location.reload();
-      } catch (err) {
-        console.error('Error:', err);
-      }
-    }
-    
-    // Toggle budget item amount mode (fixed vs tracked)
-    function toggleBudgetItemAmountMode(radio, formPrefix) {
-      const isTracked = radio.value === 'tracked';
-      
-      if (formPrefix === 'add') {
-        document.getElementById('addItemTrackedRow').style.display = isTracked ? 'block' : 'none';
-        document.getElementById('addItemFixedRow').style.display = isTracked ? 'none' : 'grid';
-        document.getElementById('addItemUseTracked').value = isTracked ? 'true' : 'false';
-      } else {
-        document.getElementById('editItemTrackedRow').style.display = isTracked ? 'block' : 'none';
-        document.getElementById('editItemFixedRow').style.display = isTracked ? 'none' : 'grid';
-        document.getElementById('editItemUseTracked').value = isTracked ? 'true' : 'false';
-      }
-    }
-    
-    // Edit budget item
-    async function editBudgetItem(itemId) {
-      try {
-        const response = await fetch(`/api/budget-item/${itemId}`);
-        const data = await response.json();
-        
-        if (data.error) {
-          alert(data.error);
-          return;
-        }
-        
-        // Find category name
-        const catSelect = document.querySelector('#addBudgetItemForm select[name="expense_category_id"]');
-        let catName = 'Unknown';
-        for (const opt of catSelect.options) {
-          if (opt.value == data.expense_category_id) {
-            catName = opt.textContent;
-            break;
-          }
-        }
-        
-        document.getElementById('editItemCategoryName').value = catName;
-        document.getElementById('editItemCategoryType').value = data.category_type;
-        document.getElementById('editItemTrackingPeriod').value = data.tracking_period_months;
-        document.getElementById('editItemSpecifiedAmount').value = data.specified_amount;
-        
-        // Show tracked amounts
-        const trackedAmountsDiv = document.getElementById('editItemTrackedAmounts');
-        trackedAmountsDiv.innerHTML = `
-          <div>3mo avg: $${data.tracked_3mo.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-          <div>6mo avg: $${data.tracked_6mo.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-          <div>12mo avg: $${data.tracked_12mo.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-        `;
-        
-        // Set amount mode
-        const isTracked = data.use_tracked_average;
-        document.getElementById('editItemSourceTracked').checked = isTracked;
-        document.getElementById('editItemSourceFixed').checked = !isTracked;
-        document.getElementById('editItemTrackedRow').style.display = isTracked ? 'block' : 'none';
-        document.getElementById('editItemFixedRow').style.display = isTracked ? 'none' : 'grid';
-        document.getElementById('editItemUseTracked').value = isTracked ? 'true' : 'false';
-        
-        document.getElementById('editBudgetItemForm').action = `/budget/item/update/${itemId}`;
-        document.getElementById('editBudgetItemModal').classList.add('active');
-      } catch (err) {
-        console.error('Error loading budget item:', err);
-        alert('Error loading budget item data');
-      }
-    }
-    
-    function closeEditBudgetItemModal() {
-      document.getElementById('editBudgetItemModal').classList.remove('active');
-    }
-    
-    // Load subcategories for fixed cost forms
-    async function loadSubcategoriesForFixedCost(formPrefix) {
-      let categorySelect, subcategorySelect;
-      if (formPrefix === 'add') {
-        categorySelect = document.getElementById('addExpenseCategorySelect');
-        subcategorySelect = document.getElementById('addExpenseSubcategorySelect');
-      } else {
-        categorySelect = document.getElementById('editCostCategory');
-        subcategorySelect = document.getElementById('editCostSubcategory');
-      }
-      
-      const categoryId = categorySelect.value;
-      subcategorySelect.innerHTML = '<option value="">All in category</option>';
-      
-      if (!categoryId) return;
-      
-      try {
-        const response = await fetch(`/api/subcategories/${categoryId}`);
-        const data = await response.json();
-        data.subcategories.forEach(sub => {
-          const option = document.createElement('option');
-          option.value = sub.id;
-          option.textContent = sub.name;
-          subcategorySelect.appendChild(option);
-        });
-      } catch (err) {
-        console.error('Error loading subcategories:', err);
-      }
-    }
-    
-    // Load subcategories for budget item forms
-    async function loadSubcategoriesForBudgetItem(formPrefix) {
-      let categorySelect, subcategorySelect;
-      if (formPrefix === 'add') {
-        categorySelect = document.getElementById('addBudgetItemCategorySelect');
-        subcategorySelect = document.getElementById('addBudgetItemSubcategorySelect');
-      } else {
-        categorySelect = document.getElementById('editBudgetItemCategorySelect');
-        subcategorySelect = document.getElementById('editBudgetItemSubcategorySelect');
-      }
-      
-      const categoryId = categorySelect.value;
-      subcategorySelect.innerHTML = '<option value="">All in category</option>';
-      
-      if (!categoryId) return;
-      
-      try {
-        const response = await fetch(`/api/subcategories/${categoryId}`);
-        const data = await response.json();
-        data.subcategories.forEach(sub => {
-          const option = document.createElement('option');
-          option.value = sub.id;
-          option.textContent = sub.name;
-          subcategorySelect.appendChild(option);
-        });
-      } catch (err) {
-        console.error('Error loading subcategories:', err);
-      }
-    }
-    
-    // Toggle fixed cost amount mode (fixed vs tracked)
-    function toggleAmountMode(radio, formPrefix) {
-      const isFixed = radio.value === 'fixed';
-      
-      if (formPrefix === 'add') {
-        document.getElementById('fixedAmountRow').style.display = isFixed ? 'grid' : 'none';
-        document.getElementById('trackedAmountRow').style.display = isFixed ? 'none' : 'grid';
-      } else {
-        document.getElementById('editFixedAmountRow').style.display = isFixed ? 'grid' : 'none';
-        document.getElementById('editTrackedAmountRow').style.display = isFixed ? 'none' : 'grid';
       }
     }
     
@@ -1074,7 +1069,6 @@
         document.getElementById('editCostCategory').value = data.expense_category_id || '';
         document.getElementById('editCostTrackingPeriod').value = data.tracking_period_months || 3;
         
-        // Load subcategories if category is set, then set subcategory value
         if (data.expense_category_id) {
           await loadSubcategoriesForFixedCost('edit');
           if (data.expense_subcategory_id) {
@@ -1082,7 +1076,6 @@
           }
         }
         
-        // Set amount mode
         const isTracked = data.amount_mode === 'tracked';
         document.getElementById('editAmountModeFixed').checked = !isTracked;
         document.getElementById('editAmountModeTracked').checked = isTracked;
@@ -1101,6 +1094,100 @@
       document.getElementById('editFixedCostModal').classList.remove('active');
     }
     
+    async function loadSubcategoriesForFixedCost(formPrefix) {
+      const categorySelect = document.getElementById(formPrefix === 'edit' ? 'editCostCategory' : 'expenseCategorySelect');
+      const subcategorySelect = document.getElementById(formPrefix === 'edit' ? 'editCostSubcategory' : 'expenseSubcategorySelect');
+      
+      const categoryId = categorySelect.value;
+      subcategorySelect.innerHTML = '<option value="">All in category</option>';
+      
+      if (!categoryId) return;
+      
+      try {
+        const response = await fetch(`/api/subcategories/${categoryId}`);
+        const data = await response.json();
+        data.subcategories.forEach(sub => {
+          const option = document.createElement('option');
+          option.value = sub.id;
+          option.textContent = sub.name;
+          subcategorySelect.appendChild(option);
+        });
+      } catch (err) {
+        console.error('Error loading subcategories:', err);
+      }
+    }
+    
+    // ===== BUDGET ITEM FUNCTIONS =====
+    
+    async function deleteBudgetItem(itemId) {
+      if (!confirm('Remove this from budget?')) return;
+      try {
+        await fetch(`/budget/item/${itemId}`, { method: 'DELETE' });
+        location.reload();
+      } catch (err) {
+        console.error('Error:', err);
+      }
+    }
+    
+    async function editBudgetItem(itemId) {
+      try {
+        const response = await fetch(`/api/budget-item/${itemId}`);
+        const data = await response.json();
+        
+        if (data.error) {
+          alert(data.error);
+          return;
+        }
+        
+        // Find category name
+        const catSelect = document.getElementById('expenseCategorySelect');
+        let catName = 'Unknown';
+        for (const opt of catSelect.options) {
+          if (opt.value == data.expense_category_id) {
+            catName = opt.textContent;
+            break;
+          }
+        }
+        
+        document.getElementById('editItemCategoryName').value = catName;
+        document.getElementById('editItemCategoryType').value = data.category_type;
+        document.getElementById('editItemTrackingPeriod').value = data.tracking_period_months;
+        document.getElementById('editItemSpecifiedAmount').value = data.specified_amount;
+        
+        // Show tracked amounts
+        const trackedAmountsDiv = document.getElementById('editItemTrackedAmounts');
+        trackedAmountsDiv.innerHTML = `
+          <div>3mo: <span>$${data.tracked_3mo.toLocaleString(undefined, {minimumFractionDigits: 0})}</span></div>
+          <div>6mo: <span>$${data.tracked_6mo.toLocaleString(undefined, {minimumFractionDigits: 0})}</span></div>
+          <div>12mo: <span>$${data.tracked_12mo.toLocaleString(undefined, {minimumFractionDigits: 0})}</span></div>
+        `;
+        
+        const isTracked = data.use_tracked_average;
+        document.getElementById('editItemSourceTracked').checked = isTracked;
+        document.getElementById('editItemSourceFixed').checked = !isTracked;
+        document.getElementById('editItemTrackedRow').style.display = isTracked ? 'block' : 'none';
+        document.getElementById('editItemFixedRow').style.display = isTracked ? 'none' : 'grid';
+        document.getElementById('editItemUseTracked').value = isTracked ? 'true' : 'false';
+        
+        document.getElementById('editBudgetItemForm').action = `/budget/item/update/${itemId}`;
+        document.getElementById('editBudgetItemModal').classList.add('active');
+      } catch (err) {
+        console.error('Error loading budget item:', err);
+        alert('Error loading budget item data');
+      }
+    }
+    
+    function closeEditBudgetItemModal() {
+      document.getElementById('editBudgetItemModal').classList.remove('active');
+    }
+    
+    // ===== LOOKBACK & UI =====
+    
+    function changeLookback() {
+      const lookback = document.getElementById('lookbackSelect').value;
+      window.location.href = '/budget?lookback=' + lookback;
+    }
+    
     // Close modals on overlay click
     document.querySelectorAll('.modal-overlay').forEach(overlay => {
       overlay.addEventListener('click', (e) => {
@@ -1110,10 +1197,26 @@
       });
     });
     
+    // Profile dropdown toggle
+    function toggleProfileDropdown() {
+      document.getElementById('profileDropdown').classList.toggle('active');
+    }
+    document.addEventListener('click', function(e) {
+      const dropdown = document.querySelector('.profile-dropdown');
+      if (dropdown && !dropdown.contains(e.target)) {
+        document.getElementById('profileDropdown').classList.remove('active');
+      }
+    });
+    
+    // Initialize form
+    toggleExpenseTypeForm();
+    
+    // ===== CHARTS =====
+    
     // Allocation Chart
-    const ctx = document.getElementById('allocationChart');
-    if (ctx) {
-      new Chart(ctx, {
+    const allocationCtx = document.getElementById('allocationChart');
+    if (allocationCtx) {
+      new Chart(allocationCtx, {
         type: 'doughnut',
         data: {
           labels: ['Needs', 'Wants', 'Savings', 'Debt', 'Leftover'],
@@ -1148,17 +1251,72 @@
       });
     }
     
-    // Profile dropdown toggle
-    function toggleProfileDropdown() {
-      document.getElementById('profileDropdown').classList.toggle('active');
-    }
-    document.addEventListener('click', function(e) {
-      const dropdown = document.querySelector('.profile-dropdown');
-      if (dropdown && !dropdown.contains(e.target)) {
-        document.getElementById('profileDropdown').classList.remove('active');
+    // Comparison Chart - Budget vs Actual
+    const comparisonCtx = document.getElementById('comparisonChart');
+    if (comparisonCtx) {
+      const comparisons = {{ budget_vs_actual.comparisons | tojson if budget_vs_actual else '[]' }};
+      
+      if (comparisons && comparisons.length > 0) {
+        const labels = comparisons.slice(0, 8).map(c => c.name.length > 15 ? c.name.substring(0, 15) + '...' : c.name);
+        const budgetedData = comparisons.slice(0, 8).map(c => c.budgeted);
+        const actualData = comparisons.slice(0, 8).map(c => c.actual);
+        
+        new Chart(comparisonCtx, {
+          type: 'bar',
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                label: 'Budgeted',
+                data: budgetedData,
+                backgroundColor: '#3875e8',
+                borderRadius: 4
+              },
+              {
+                label: 'Actual',
+                data: actualData,
+                backgroundColor: actualData.map((val, i) => val > budgetedData[i] ? '#f44336' : '#4caf50'),
+                borderRadius: 4
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            indexAxis: 'y',
+            plugins: {
+              legend: { position: 'top', labels: { boxWidth: 12 } },
+              tooltip: {
+                callbacks: {
+                  label: function(context) {
+                    return `${context.dataset.label}: $${context.parsed.x.toLocaleString()}`;
+                  }
+                }
+              }
+            },
+            scales: {
+              x: {
+                beginAtZero: true,
+                ticks: { callback: v => '$' + v.toLocaleString() }
+              }
+            }
+          }
+        });
+      } else {
+        new Chart(comparisonCtx, {
+          type: 'bar',
+          data: { labels: ['No Data'], datasets: [{ data: [0] }] },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              title: { display: true, text: 'Add variable expenses to see comparison', font: { size: 12 }, color: '#889ab0' }
+            }
+          }
+        });
       }
-    });
+    }
   </script>
 </body>
 </html>
-
