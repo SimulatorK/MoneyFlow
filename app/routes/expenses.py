@@ -356,9 +356,9 @@ def expenses_page(
             if part == "uncategorized":
                 filter_uncategorized = True
             else:
-        try:
+                try:
                     category_filters.append(int(part))
-        except ValueError:
+                except ValueError:
                     pass
     
     # Parse vendor filters (comma-separated IDs or special values like "no_vendor")
@@ -370,9 +370,9 @@ def expenses_page(
             if part == "no_vendor":
                 filter_no_vendor = True
             else:
-        try:
+                try:
                     vendor_filters.append(int(part))
-        except ValueError:
+                except ValueError:
                     pass
     
     # Get recent expenses
