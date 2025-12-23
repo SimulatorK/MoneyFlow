@@ -1,39 +1,144 @@
-Month,Gas,Water,Electricity,Trash,Sewar
-Average/Month,$85.22,$39.18,$111.89,$25.40,$48.82
-Jan-23,,,,,
-Feb-23,,,,$67.25,
-Mar-23,,,,$0.00,
-Apr-23,$144.08,$40.44,$21.74,$0.00,
-May-23,$58.81,$13.67,$35.66,$0.00,
-Jun-23,$33.18,$11.49,$35.55,$46.50,
-Jul-23,$26.17,$14.14,$58.15,$0.00,
-Aug-23,$29.69,$21.62,$149.97,$0.00,
-Sep-23,$32.05,$17.13,$161.34,$46.50,
-Oct-23,$32.18,$26.52,$163.86,$0.00,
-Nov-23,$53.81,$22.44,$102.51,$0.00,$34.84
-Dec-23,$147.45,$28.97,$58.96,$46.50,$34.84
-Jan-24,$157.58,$32.24,$67.76,$0.00,$34.84
-Feb-24,$262.47,$34.28,$75.75,$0.00,$34.84
-Mar-24,$160.05,$44.77,$66.39,$84.33,$34.84
-Apr-24,$113.17,$33.20,$58.03,$0.00,$34.84
-May-24,$68.73,$33.20,$56.33,$0.00,$34.84
-Jun-24,$37.80,$34.09,$63.25,$81.63,$34.84
-Jul-24,$36.91,$38.54,$96.52,$0.00,$34.84
-Aug-24,$39.29,$37.48,$226.39,$0.00,$34.84
-Sep-24,$41.68,$48.64,$212.93,$84.33,$54.86
-Oct-24,$38.63,$60.90,$215.21,$0.00,$54.86
-Nov-24,$64.81,$69.41,$138.66,$0.00,$54.86
-Dec-24,$94.05,$37.30,$69.87,$84.33,$54.86
-Jan-25,$173.74,$39.20,$80.24,$0.00,$54.86
-Feb-25,$241.85,$44.86,$78.37,$0.00,$54.86
-Mar-25,$198.14,$50.48,$74.00,$86.88,$54.86
-Apr-25,$94.41,$45.28,$65.46,$0.00,$54.86
-May-25,$88.31,$40.36,$63.15,$0.00,$54.86
-Jun-25,$47.14,$48.23,$77.88,$86.88,$54.86
-Jul-25,$42.56,$47.98,$120.02,$0.00,$54.86
-Aug-25,$36.67,$53.28,$271.94,$0.00,$54.86
-Sep-25,$38.63,$43.45,$276.80,$86.88,$65.66
-Oct-25,$36.38,$76.21,$225.37,$0.00,$65.66
-Nov-25,$49.34,$59.83,$156.93,$0.00,$65.66
-Dec-25,$92.52,$43.45,$77.14,$86.88,$65.66
-Jan-26,,,$102.08,,
+type,name,amount,frequency,category_type,is_active,amount_mode,tracking_period_months,expense_category,expense_subcategory,use_tracked_average,utility_type,notes,payment_date,parent_subscription
+subscription,Gas Bill,,,need,TRUE,,6,Utilities,Gas,utility,Tracked utility - variable by season,,
+subscription_payment,,144.08,,,,,,,,,,April 2023 payment,2023-04-15,Gas Bill
+subscription_payment,,58.81,,,,,,,,,,May 2023 payment,2023-05-15,Gas Bill
+subscription_payment,,33.18,,,,,,,,,,June 2023 payment,2023-06-15,Gas Bill
+subscription_payment,,26.17,,,,,,,,,,July 2023 payment,2023-07-15,Gas Bill
+subscription_payment,,29.69,,,,,,,,,,August 2023 payment,2023-08-15,Gas Bill
+subscription_payment,,32.05,,,,,,,,,,September 2023 payment,2023-09-15,Gas Bill
+subscription_payment,,32.18,,,,,,,,,,October 2023 payment,2023-10-15,Gas Bill
+subscription_payment,,53.81,,,,,,,,,,November 2023 payment,2023-11-15,Gas Bill
+subscription_payment,,147.45,,,,,,,,,,December 2023 payment,2023-12-15,Gas Bill
+subscription_payment,,157.58,,,,,,,,,,January 2024 payment,2024-01-15,Gas Bill
+subscription_payment,,262.47,,,,,,,,,,February 2024 payment,2024-02-15,Gas Bill
+subscription_payment,,160.05,,,,,,,,,,March 2024 payment,2024-03-15,Gas Bill
+subscription_payment,,113.17,,,,,,,,,,April 2024 payment,2024-04-15,Gas Bill
+subscription_payment,,68.73,,,,,,,,,,May 2024 payment,2024-05-15,Gas Bill
+subscription_payment,,37.80,,,,,,,,,,June 2024 payment,2024-06-15,Gas Bill
+subscription_payment,,36.91,,,,,,,,,,July 2024 payment,2024-07-15,Gas Bill
+subscription_payment,,39.29,,,,,,,,,,August 2024 payment,2024-08-15,Gas Bill
+subscription_payment,,41.68,,,,,,,,,,September 2024 payment,2024-09-15,Gas Bill
+subscription_payment,,38.63,,,,,,,,,,October 2024 payment,2024-10-15,Gas Bill
+subscription_payment,,64.81,,,,,,,,,,November 2024 payment,2024-11-15,Gas Bill
+subscription_payment,,94.05,,,,,,,,,,December 2024 payment,2024-12-15,Gas Bill
+subscription_payment,,173.74,,,,,,,,,,January 2025 payment,2025-01-15,Gas Bill
+subscription_payment,,241.85,,,,,,,,,,February 2025 payment,2025-02-15,Gas Bill
+subscription_payment,,198.14,,,,,,,,,,March 2025 payment,2025-03-15,Gas Bill
+subscription_payment,,94.41,,,,,,,,,,April 2025 payment,2025-04-15,Gas Bill
+subscription_payment,,88.31,,,,,,,,,,May 2025 payment,2025-05-15,Gas Bill
+subscription_payment,,47.14,,,,,,,,,,June 2025 payment,2025-06-15,Gas Bill
+subscription_payment,,42.56,,,,,,,,,,July 2025 payment,2025-07-15,Gas Bill
+subscription_payment,,36.67,,,,,,,,,,August 2025 payment,2025-08-15,Gas Bill
+subscription_payment,,38.63,,,,,,,,,,September 2025 payment,2025-09-15,Gas Bill
+subscription_payment,,36.38,,,,,,,,,,October 2025 payment,2025-10-15,Gas Bill
+subscription_payment,,49.34,,,,,,,,,,November 2025 payment,2025-11-15,Gas Bill
+subscription_payment,,92.52,,,,,,,,,,December 2025 payment,2025-12-15,Gas Bill
+subscription,Water Bill,,,need,TRUE,,6,Utilities,Water,utility,City water service,,
+subscription_payment,,40.44,,,,,,,,,,April 2023 payment,2023-04-12,Water Bill
+subscription_payment,,13.67,,,,,,,,,,May 2023 payment,2023-05-12,Water Bill
+subscription_payment,,11.49,,,,,,,,,,June 2023 payment,2023-06-12,Water Bill
+subscription_payment,,14.14,,,,,,,,,,July 2023 payment,2023-07-12,Water Bill
+subscription_payment,,21.62,,,,,,,,,,August 2023 payment,2023-08-12,Water Bill
+subscription_payment,,17.13,,,,,,,,,,September 2023 payment,2023-09-12,Water Bill
+subscription_payment,,26.52,,,,,,,,,,October 2023 payment,2023-10-12,Water Bill
+subscription_payment,,22.44,,,,,,,,,,November 2023 payment,2023-11-12,Water Bill
+subscription_payment,,28.97,,,,,,,,,,December 2023 payment,2023-12-12,Water Bill
+subscription_payment,,32.24,,,,,,,,,,January 2024 payment,2024-01-12,Water Bill
+subscription_payment,,34.28,,,,,,,,,,February 2024 payment,2024-02-12,Water Bill
+subscription_payment,,44.77,,,,,,,,,,March 2024 payment,2024-03-12,Water Bill
+subscription_payment,,33.20,,,,,,,,,,April 2024 payment,2024-04-12,Water Bill
+subscription_payment,,33.20,,,,,,,,,,May 2024 payment,2024-05-12,Water Bill
+subscription_payment,,34.09,,,,,,,,,,June 2024 payment,2024-06-12,Water Bill
+subscription_payment,,38.54,,,,,,,,,,July 2024 payment,2024-07-12,Water Bill
+subscription_payment,,37.48,,,,,,,,,,August 2024 payment,2024-08-12,Water Bill
+subscription_payment,,48.64,,,,,,,,,,September 2024 payment,2024-09-12,Water Bill
+subscription_payment,,60.90,,,,,,,,,,October 2024 payment,2024-10-12,Water Bill
+subscription_payment,,69.41,,,,,,,,,,November 2024 payment,2024-11-12,Water Bill
+subscription_payment,,37.30,,,,,,,,,,December 2024 payment,2024-12-12,Water Bill
+subscription_payment,,39.20,,,,,,,,,,January 2025 payment,2025-01-12,Water Bill
+subscription_payment,,44.86,,,,,,,,,,February 2025 payment,2025-02-12,Water Bill
+subscription_payment,,50.48,,,,,,,,,,March 2025 payment,2025-03-12,Water Bill
+subscription_payment,,45.28,,,,,,,,,,April 2025 payment,2025-04-12,Water Bill
+subscription_payment,,40.36,,,,,,,,,,May 2025 payment,2025-05-12,Water Bill
+subscription_payment,,48.23,,,,,,,,,,June 2025 payment,2025-06-12,Water Bill
+subscription_payment,,47.98,,,,,,,,,,July 2025 payment,2025-07-12,Water Bill
+subscription_payment,,53.28,,,,,,,,,,August 2025 payment,2025-08-12,Water Bill
+subscription_payment,,43.45,,,,,,,,,,September 2025 payment,2025-09-12,Water Bill
+subscription_payment,,76.21,,,,,,,,,,October 2025 payment,2025-10-12,Water Bill
+subscription_payment,,59.83,,,,,,,,,,November 2025 payment,2025-11-12,Water Bill
+subscription_payment,,43.45,,,,,,,,,,December 2025 payment,2025-12-12,Water Bill
+subscription,Electricity Bill,,,need,TRUE,,6,Utilities,Electric,utility,Tracked utility - variable by season,,
+subscription_payment,,21.74,,,,,,,,,,April 2023 payment,2023-04-08,Electricity Bill
+subscription_payment,,35.66,,,,,,,,,,May 2023 payment,2023-05-08,Electricity Bill
+subscription_payment,,35.55,,,,,,,,,,June 2023 payment,2023-06-08,Electricity Bill
+subscription_payment,,58.15,,,,,,,,,,July 2023 payment,2023-07-08,Electricity Bill
+subscription_payment,,149.97,,,,,,,,,,August 2023 payment,2023-08-08,Electricity Bill
+subscription_payment,,161.34,,,,,,,,,,September 2023 payment,2023-09-08,Electricity Bill
+subscription_payment,,163.86,,,,,,,,,,October 2023 payment,2023-10-08,Electricity Bill
+subscription_payment,,102.51,,,,,,,,,,November 2023 payment,2023-11-08,Electricity Bill
+subscription_payment,,58.96,,,,,,,,,,December 2023 payment,2023-12-08,Electricity Bill
+subscription_payment,,67.76,,,,,,,,,,January 2024 payment,2024-01-08,Electricity Bill
+subscription_payment,,75.75,,,,,,,,,,February 2024 payment,2024-02-08,Electricity Bill
+subscription_payment,,66.39,,,,,,,,,,March 2024 payment,2024-03-08,Electricity Bill
+subscription_payment,,58.03,,,,,,,,,,April 2024 payment,2024-04-08,Electricity Bill
+subscription_payment,,56.33,,,,,,,,,,May 2024 payment,2024-05-08,Electricity Bill
+subscription_payment,,63.25,,,,,,,,,,June 2024 payment,2024-06-08,Electricity Bill
+subscription_payment,,96.52,,,,,,,,,,July 2024 payment,2024-07-08,Electricity Bill
+subscription_payment,,226.39,,,,,,,,,,August 2024 payment,2024-08-08,Electricity Bill
+subscription_payment,,212.93,,,,,,,,,,September 2024 payment,2024-09-08,Electricity Bill
+subscription_payment,,215.21,,,,,,,,,,October 2024 payment,2024-10-08,Electricity Bill
+subscription_payment,,138.66,,,,,,,,,,November 2024 payment,2024-11-08,Electricity Bill
+subscription_payment,,69.87,,,,,,,,,,December 2024 payment,2024-12-08,Electricity Bill
+subscription_payment,,80.24,,,,,,,,,,January 2025 payment,2025-01-08,Electricity Bill
+subscription_payment,,78.37,,,,,,,,,,February 2025 payment,2025-02-08,Electricity Bill
+subscription_payment,,74.00,,,,,,,,,,March 2025 payment,2025-03-08,Electricity Bill
+subscription_payment,,65.46,,,,,,,,,,April 2025 payment,2025-04-08,Electricity Bill
+subscription_payment,,63.15,,,,,,,,,,May 2025 payment,2025-05-08,Electricity Bill
+subscription_payment,,77.88,,,,,,,,,,June 2025 payment,2025-06-08,Electricity Bill
+subscription_payment,,120.02,,,,,,,,,,July 2025 payment,2025-07-08,Electricity Bill
+subscription_payment,,271.94,,,,,,,,,,August 2025 payment,2025-08-08,Electricity Bill
+subscription_payment,,276.80,,,,,,,,,,September 2025 payment,2025-09-08,Electricity Bill
+subscription_payment,,225.37,,,,,,,,,,October 2025 payment,2025-10-08,Electricity Bill
+subscription_payment,,156.93,,,,,,,,,,November 2025 payment,2025-11-08,Electricity Bill
+subscription_payment,,77.14,,,,,,,,,,December 2025 payment,2025-12-08,Electricity Bill
+subscription_payment,,102.08,,,,,,,,,,January 2026 payment,2026-01-08,Electricity Bill
+subscription,Trash Bill,,,need,TRUE,,6,Utilities,Trash,utility,Waste collection service,,
+subscription_payment,,67.25,,,,,,,,,,February 2023 payment,2023-02-20,Trash Bill
+subscription_payment,,46.50,,,,,,,,,,June 2023 payment,2023-06-20,Trash Bill
+subscription_payment,,46.50,,,,,,,,,,September 2023 payment,2023-09-20,Trash Bill
+subscription_payment,,46.50,,,,,,,,,,December 2023 payment,2023-12-20,Trash Bill
+subscription_payment,,84.33,,,,,,,,,,March 2024 payment,2024-03-20,Trash Bill
+subscription_payment,,81.63,,,,,,,,,,June 2024 payment,2024-06-20,Trash Bill
+subscription_payment,,84.33,,,,,,,,,,September 2024 payment,2024-09-20,Trash Bill
+subscription_payment,,84.33,,,,,,,,,,December 2024 payment,2024-12-20,Trash Bill
+subscription_payment,,86.88,,,,,,,,,,March 2025 payment,2025-03-20,Trash Bill
+subscription_payment,,86.88,,,,,,,,,,June 2025 payment,2025-06-20,Trash Bill
+subscription_payment,,86.88,,,,,,,,,,September 2025 payment,2025-09-20,Trash Bill
+subscription_payment,,86.88,,,,,,,,,,December 2025 payment,2025-12-20,Trash Bill
+subscription,Sewer Bill,,,need,TRUE,,6,Utilities,Sewer,utility,City sewer service,,
+subscription_payment,,34.84,,,,,,,,,,November 2023 payment,2023-11-18,Sewer Bill
+subscription_payment,,34.84,,,,,,,,,,December 2023 payment,2023-12-18,Sewer Bill
+subscription_payment,,34.84,,,,,,,,,,January 2024 payment,2024-01-18,Sewer Bill
+subscription_payment,,34.84,,,,,,,,,,February 2024 payment,2024-02-18,Sewer Bill
+subscription_payment,,34.84,,,,,,,,,,March 2024 payment,2024-03-18,Sewer Bill
+subscription_payment,,34.84,,,,,,,,,,April 2024 payment,2024-04-18,Sewer Bill
+subscription_payment,,34.84,,,,,,,,,,May 2024 payment,2024-05-18,Sewer Bill
+subscription_payment,,34.84,,,,,,,,,,June 2024 payment,2024-06-18,Sewer Bill
+subscription_payment,,34.84,,,,,,,,,,July 2024 payment,2024-07-18,Sewer Bill
+subscription_payment,,34.84,,,,,,,,,,August 2024 payment,2024-08-18,Sewer Bill
+subscription_payment,,54.86,,,,,,,,,,September 2024 payment,2024-09-18,Sewer Bill
+subscription_payment,,54.86,,,,,,,,,,October 2024 payment,2024-10-18,Sewer Bill
+subscription_payment,,54.86,,,,,,,,,,November 2024 payment,2024-11-18,Sewer Bill
+subscription_payment,,54.86,,,,,,,,,,December 2024 payment,2024-12-18,Sewer Bill
+subscription_payment,,54.86,,,,,,,,,,January 2025 payment,2025-01-18,Sewer Bill
+subscription_payment,,54.86,,,,,,,,,,February 2025 payment,2025-02-18,Sewer Bill
+subscription_payment,,54.86,,,,,,,,,,March 2025 payment,2025-03-18,Sewer Bill
+subscription_payment,,54.86,,,,,,,,,,April 2025 payment,2025-04-18,Sewer Bill
+subscription_payment,,54.86,,,,,,,,,,May 2025 payment,2025-05-18,Sewer Bill
+subscription_payment,,54.86,,,,,,,,,,June 2025 payment,2025-06-18,Sewer Bill
+subscription_payment,,54.86,,,,,,,,,,July 2025 payment,2025-07-18,Sewer Bill
+subscription_payment,,54.86,,,,,,,,,,August 2025 payment,2025-08-18,Sewer Bill
+subscription_payment,,65.66,,,,,,,,,,September 2025 payment,2025-09-18,Sewer Bill
+subscription_payment,,65.66,,,,,,,,,,October 2025 payment,2025-10-18,Sewer Bill
+subscription_payment,,65.66,,,,,,,,,,November 2025 payment,2025-11-18,Sewer Bill
+subscription_payment,,65.66,,,,,,,,,,December 2025 payment,2025-12-18,Sewer Bill
