@@ -532,7 +532,7 @@
         <!-- Budget CSV -->
         <div class="api-endpoint">
           <h4 style="margin: 0 0 0.5em 0; color: var(--text-heading);">Budget CSV Upload</h4>
-          <p class="desc">Import budget items at <code>/budget</code> → Import button. Supports fixed costs, variable items, subscriptions, and subscription payments.</p>
+          <p class="desc">Import budget items at <code>/budget</code> → Import button. Supports fixed costs, variable items, subscriptions, and subscription payments. Subscriptions are automatically added to variable expense tracking with BudgetItems created for tracked averages.</p>
           <table class="api-table">
             <thead><tr><th>Column</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
             <tbody>
@@ -541,16 +541,18 @@
               <tr><td><code>category_type</code></td><td><span class="type-badge enum">enum</span></td><td>No</td><td>"need" or "want" for 50/30/20 rule</td></tr>
               <tr><td><code>amount</code></td><td><span class="type-badge number">number</span></td><td>Yes*</td><td>Dollar amount (* for fixed_cost, budget_item, subscription_payment)</td></tr>
               <tr><td><code>frequency</code></td><td><span class="type-badge enum">enum</span></td><td>No</td><td>Payment frequency for fixed costs</td></tr>
-              <tr><td><code>expense_category</code></td><td><span class="type-badge string">string</span></td><td>No</td><td>Expense category name to link to (for budget_item)</td></tr>
-              <tr><td><code>expense_subcategory</code></td><td><span class="type-badge string">string</span></td><td>No</td><td>Expense subcategory name (for budget_item)</td></tr>
+              <tr><td><code>expense_category</code></td><td><span class="type-badge string">string</span></td><td>No</td><td>Expense category name to link to (for budget_item and subscription). Creates/links to existing category.</td></tr>
+              <tr><td><code>expense_subcategory</code></td><td><span class="type-badge string">string</span></td><td>No</td><td>Expense subcategory name (for budget_item and subscription). Creates/links to existing subcategory.</td></tr>
               <tr><td><code>use_tracked_average</code></td><td><span class="type-badge boolean">boolean</span></td><td>No</td><td>"true" to use expense average, "false" for fixed amount</td></tr>
-              <tr><td><code>tracking_period_months</code></td><td><span class="type-badge number">number</span></td><td>No</td><td>3, 6, or 12 months for rolling average</td></tr>
+              <tr><td><code>tracking_period_months</code></td><td><span class="type-badge number">number</span></td><td>No</td><td>3, 6, or 12 months for rolling average (default: 6 for subscriptions)</td></tr>
+              <tr><td><code>add_to_budget</code></td><td><span class="type-badge boolean">boolean</span></td><td>No</td><td>"true" to create BudgetItem for subscriptions (default: true). Enables variable expense tracking.</td></tr>
               <tr><td><code>subscription_name</code></td><td><span class="type-badge string">string</span></td><td>Yes**</td><td>Which subscription for payments (** for subscription_payment)</td></tr>
               <tr><td><code>payment_date</code></td><td><span class="type-badge date">date</span></td><td>Yes**</td><td>YYYY-MM-DD format (** for subscription_payment)</td></tr>
               <tr><td><code>utility_type</code></td><td><span class="type-badge enum">enum</span></td><td>No</td><td>"subscription", "utility", or "service"</td></tr>
               <tr><td><code>notes</code></td><td><span class="type-badge string">string</span></td><td>No</td><td>Optional notes</td></tr>
             </tbody>
           </table>
+          <p class="desc" style="margin-top: 1em;"><strong>Note:</strong> When importing subscriptions with <code>add_to_budget=true</code> (default), the system automatically creates BudgetItems and links them to expense categories. Tracked averages will include both regular expenses AND subscription payment history for accurate budget calculations.</p>
         </div>
       </div>
       

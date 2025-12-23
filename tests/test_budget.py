@@ -7,11 +7,13 @@ Tests CRUD operations, category relationships, and budget calculations.
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
+import io
 
 from app.models.user import User
-from app.models.budget import BudgetItem, FixedCost
+from app.models.budget import BudgetItem, FixedCost, SubscriptionUtility, SubscriptionPayment
 from app.models.expense import Category, SubCategory
+from app.routes.budget import get_expense_averages_multi
 
 
 class TestBudgetItemCRUD:
@@ -351,7 +353,286 @@ class TestBudgetAPI:
         """Test getting budget summary data."""
         response = client.get("/api/budget/summary")
         assert response.status_code == 200
-        
+
         data = response.json()
         assert "fixed_costs" in data or "summary" in data or response.status_code == 200
 
+
+class TestSubscriptionCSVImport:
+    """Test suite for subscription CSV import with BudgetItem creation."""
+
+    def test_csv_import_creates_budget_item_for_subscription(
+        self,
+        client: TestClient,
+        test_user_with_auth: User,
+        db_session: Session
+    ):
+        """Test that CSV import creates BudgetItem for subscription with category."""
+        csv_content = """type,name,expense_category,expense_subcategory,tracking_period_months,category_type,utility_type,is_active
+subscription,Electric Bill,Utilities,Electric,6,need,utility,TRUE"""
+
+        csv_file = io.BytesIO(csv_content.encode('utf-8'))
+
+        response = client.post(
+            "/budget/csv-import",
+            files={"file": ("test.csv", csv_file, "text/csv")}
+        )
+
+        assert response.status_code in [200, 303]  # Redirect or OK
+
+        # Verify subscription was created
+        subscription = db_session.query(SubscriptionUtility).filter(
+            SubscriptionUtility.user_id == test_user_with_auth.id,
+            SubscriptionUtility.name == "Electric Bill"
+        ).first()
+
+        assert subscription is not None
+        assert subscription.utility_type == "utility"
+        assert subscription.expense_category_id is not None
+        assert subscription.expense_subcategory_id is not None
+
+        # Verify category was created
+        category = db_session.query(Category).filter(
+            Category.user_id == test_user_with_auth.id,
+            Category.name == "Utilities"
+        ).first()
+
+        assert category is not None
+        assert subscription.expense_category_id == category.id
+
+        # Verify subcategory was created
+        subcategory = db_session.query(SubCategory).filter(
+            SubCategory.category_id == category.id,
+            SubCategory.name == "Electric"
+        ).first()
+
+        assert subcategory is not None
+        assert subscription.expense_subcategory_id == subcategory.id
+
+        # Verify BudgetItem was created
+        budget_item = db_session.query(BudgetItem).filter(
+            BudgetItem.user_id == test_user_with_auth.id,
+            BudgetItem.expense_category_id == category.id,
+            BudgetItem.expense_subcategory_id == subcategory.id
+        ).first()
+
+        assert budget_item is not None
+        assert budget_item.use_tracked_average is True
+        assert budget_item.tracking_period_months == 6
+        assert budget_item.category_type == "need"
+
+    def test_csv_import_reuses_existing_categories(
+        self,
+        client: TestClient,
+        test_user_with_auth: User,
+        db_session: Session
+    ):
+        """Test that CSV import reuses existing categories instead of creating duplicates."""
+        # Create existing category and subcategory
+        existing_category = Category(
+            user_id=test_user_with_auth.id,
+            name="Utilities"
+        )
+        db_session.add(existing_category)
+        db_session.commit()
+
+        existing_subcategory = SubCategory(
+            category_id=existing_category.id,
+            name="Gas"
+        )
+        db_session.add(existing_subcategory)
+        db_session.commit()
+
+        csv_content = """type,name,expense_category,expense_subcategory,tracking_period_months,category_type,utility_type,is_active
+subscription,Gas Bill,Utilities,Gas,6,need,utility,TRUE"""
+
+        csv_file = io.BytesIO(csv_content.encode('utf-8'))
+
+        response = client.post(
+            "/budget/csv-import",
+            files={"file": ("test.csv", csv_file, "text/csv")}
+        )
+
+        assert response.status_code in [200, 303]
+
+        # Verify only one category exists
+        category_count = db_session.query(Category).filter(
+            Category.user_id == test_user_with_auth.id,
+            Category.name == "Utilities"
+        ).count()
+
+        assert category_count == 1
+
+        # Verify only one subcategory exists
+        subcategory_count = db_session.query(SubCategory).filter(
+            SubCategory.category_id == existing_category.id,
+            SubCategory.name == "Gas"
+        ).count()
+
+        assert subcategory_count == 1
+
+        # Verify subscription uses existing category
+        subscription = db_session.query(SubscriptionUtility).filter(
+            SubscriptionUtility.user_id == test_user_with_auth.id,
+            SubscriptionUtility.name == "Gas Bill"
+        ).first()
+
+        assert subscription.expense_category_id == existing_category.id
+        assert subscription.expense_subcategory_id == existing_subcategory.id
+
+    def test_csv_import_add_to_budget_false_skips_budget_item(
+        self,
+        client: TestClient,
+        test_user_with_auth: User,
+        db_session: Session
+    ):
+        """Test that add_to_budget=FALSE skips BudgetItem creation."""
+        csv_content = """type,name,expense_category,expense_subcategory,add_to_budget,category_type,utility_type,is_active
+subscription,Water Bill,Utilities,Water,FALSE,need,utility,TRUE"""
+
+        csv_file = io.BytesIO(csv_content.encode('utf-8'))
+
+        response = client.post(
+            "/budget/csv-import",
+            files={"file": ("test.csv", csv_file, "text/csv")}
+        )
+
+        assert response.status_code in [200, 303]
+
+        # Verify subscription was created
+        subscription = db_session.query(SubscriptionUtility).filter(
+            SubscriptionUtility.user_id == test_user_with_auth.id,
+            SubscriptionUtility.name == "Water Bill"
+        ).first()
+
+        assert subscription is not None
+
+        # Verify NO BudgetItem was created
+        budget_item_count = db_session.query(BudgetItem).filter(
+            BudgetItem.user_id == test_user_with_auth.id
+        ).count()
+
+        assert budget_item_count == 0
+
+    def test_csv_import_default_add_to_budget_creates_budget_item(
+        self,
+        client: TestClient,
+        test_user_with_auth: User,
+        db_session: Session
+    ):
+        """Test that omitting add_to_budget defaults to TRUE and creates BudgetItem."""
+        csv_content = """type,name,expense_category,expense_subcategory,category_type,utility_type,is_active
+subscription,Trash Bill,Utilities,Trash,need,utility,TRUE"""
+
+        csv_file = io.BytesIO(csv_content.encode('utf-8'))
+
+        response = client.post(
+            "/budget/csv-import",
+            files={"file": ("test.csv", csv_file, "text/csv")}
+        )
+
+        assert response.status_code in [200, 303]
+
+        # Verify BudgetItem was created (default behavior)
+        budget_item = db_session.query(BudgetItem).filter(
+            BudgetItem.user_id == test_user_with_auth.id
+        ).first()
+
+        assert budget_item is not None
+        assert budget_item.use_tracked_average is True
+
+    def test_tracked_averages_include_subscription_payments(
+        self,
+        db_session: Session,
+        test_user: User,
+        test_category: Category
+    ):
+        """Test that get_expense_averages_multi includes subscription payments."""
+        # Create subcategory
+        subcategory = SubCategory(
+            category_id=test_category.id,
+            name="Test Utility"
+        )
+        db_session.add(subcategory)
+        db_session.commit()
+
+        # Create subscription linked to category
+        subscription = SubscriptionUtility(
+            user_id=test_user.id,
+            name="Test Utility Service",
+            utility_type="utility",
+            category_type="need",
+            is_active=True,
+            expense_category_id=test_category.id,
+            expense_subcategory_id=subcategory.id
+        )
+        db_session.add(subscription)
+        db_session.commit()
+
+        # Create subscription payments over the last 6 months
+        today = date.today()
+        for i in range(6):
+            payment_date = today - timedelta(days=30 * i)
+            payment = SubscriptionPayment(
+                subscription_id=subscription.id,
+                amount=100.00,
+                payment_date=payment_date,
+                notes=f"Payment {i+1}"
+            )
+            db_session.add(payment)
+
+        db_session.commit()
+
+        # Get expense averages
+        averages = get_expense_averages_multi(db_session, test_user.id)
+
+        # Check that 6-month average includes subscription payments
+        # 6 payments * $100 / 6 months = $100/month
+        assert averages[6]["category"].get(test_category.id, 0) == pytest.approx(100.00, abs=0.01)
+        assert averages[6]["subcategory"].get((test_category.id, subcategory.id), 0) == pytest.approx(100.00, abs=0.01)
+
+    def test_csv_import_with_payments(
+        self,
+        client: TestClient,
+        test_user_with_auth: User,
+        db_session: Session
+    ):
+        """Test CSV import with subscription and payment records."""
+        csv_content = """type,name,expense_category,expense_subcategory,tracking_period_months,category_type,utility_type,is_active,amount,payment_date,parent_subscription
+subscription,Sewer Bill,Utilities,Sewer,6,need,utility,TRUE,,,,
+subscription_payment,,,,,,,,,54.86,2024-09-18,Sewer Bill
+subscription_payment,,,,,,,,,54.86,2024-10-18,Sewer Bill
+subscription_payment,,,,,,,,,54.86,2024-11-18,Sewer Bill"""
+
+        csv_file = io.BytesIO(csv_content.encode('utf-8'))
+
+        response = client.post(
+            "/budget/csv-import",
+            files={"file": ("test.csv", csv_file, "text/csv")}
+        )
+
+        assert response.status_code in [200, 303]
+
+        # Verify subscription was created
+        subscription = db_session.query(SubscriptionUtility).filter(
+            SubscriptionUtility.user_id == test_user_with_auth.id,
+            SubscriptionUtility.name == "Sewer Bill"
+        ).first()
+
+        assert subscription is not None
+
+        # Verify payments were created
+        payment_count = db_session.query(SubscriptionPayment).filter(
+            SubscriptionPayment.subscription_id == subscription.id
+        ).count()
+
+        assert payment_count == 3
+
+        # Verify BudgetItem was created
+        budget_item = db_session.query(BudgetItem).filter(
+            BudgetItem.user_id == test_user_with_auth.id,
+            BudgetItem.expense_category_id == subscription.expense_category_id
+        ).first()
+
+        assert budget_item is not None
+        assert budget_item.use_tracked_average is True

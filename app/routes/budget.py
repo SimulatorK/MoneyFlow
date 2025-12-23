@@ -133,17 +133,40 @@ def get_expense_averages_multi(db: Session, user_id: int):
         for expense in expenses:
             cat_id = expense.category_id
             subcat_id = expense.subcategory_id
-            
+
             if cat_id:
                 category_totals[cat_id] = category_totals.get(cat_id, 0) + expense.amount
-                
+
                 if subcat_id:
                     key = (cat_id, subcat_id)
                     subcategory_totals[key] = subcategory_totals.get(key, 0) + expense.amount
                 else:
                     # Track expenses in category without subcategory
                     category_only_totals[cat_id] = category_only_totals.get(cat_id, 0) + expense.amount
-        
+
+        # Also include subscription payments in the totals
+        subscriptions = db.query(SubscriptionUtility).filter(
+            SubscriptionUtility.user_id == user_id,
+            SubscriptionUtility.expense_category_id.isnot(None)
+        ).all()
+
+        for sub in subscriptions:
+            cat_id = sub.expense_category_id
+            subcat_id = sub.expense_subcategory_id
+
+            if cat_id:
+                for payment in sub.payments:
+                    if payment.payment_date >= start_date:
+                        amount = payment.amount
+                        category_totals[cat_id] = category_totals.get(cat_id, 0) + amount
+
+                        if subcat_id:
+                            key = (cat_id, subcat_id)
+                            subcategory_totals[key] = subcategory_totals.get(key, 0) + amount
+                        else:
+                            # Track subscription payments in category without subcategory
+                            category_only_totals[cat_id] = category_only_totals.get(cat_id, 0) + amount
+
         # Convert to monthly averages
         result[months]["category"] = {k: v / months for k, v in category_totals.items()}
         result[months]["subcategory"] = {k: v / months for k, v in subcategory_totals.items()}
@@ -1245,13 +1268,15 @@ def add_subscription(
     db.add(subscription)
     db.flush()  # Get the ID
     
-    # Add initial payment if provided
+    # Parse initial payment date if provided
+    initial_payment_date = None
     if initial_amount and initial_date:
         from datetime import datetime
+        initial_payment_date = datetime.strptime(initial_date, "%Y-%m-%d").date()
         payment = SubscriptionPayment(
             subscription_id=subscription.id,
             amount=initial_amount,
-            payment_date=datetime.strptime(initial_date, "%Y-%m-%d").date()
+            payment_date=initial_payment_date
         )
         db.add(payment)
     
@@ -1293,6 +1318,21 @@ def add_subscription(
             category_type=category_type
         )
         db.add(budget_item)
+        
+        # If initial payment was provided, also create an Expense record
+        # This ensures the budget vs actual comparison works correctly
+        if initial_amount and initial_payment_date:
+            expense = Expense(
+                user_id=user.id,
+                category_id=exp_category.id,
+                subcategory_id=subcategory.id,
+                amount=initial_amount,
+                expense_date=initial_payment_date,
+                notes=f"[Subscription: {name.strip()}] Initial payment",
+                is_recurring="yes",
+                frequency="monthly"
+            )
+            db.add(expense)
     
     db.commit()
     return RedirectResponse("/budget?tab=subscriptions", status_code=303)
@@ -1307,7 +1347,7 @@ def add_subscription_payment(
     payment_date: str = Form(...),
     notes: str = Form(None)
 ):
-    """Add a payment record to a subscription."""
+    """Add a payment record to a subscription and create corresponding expense."""
     user = get_current_user(request, db)
     if not user:
         return RedirectResponse("/login")
@@ -1322,13 +1362,31 @@ def add_subscription_payment(
         return RedirectResponse("/budget?tab=subscriptions&error=not_found", status_code=303)
     
     from datetime import datetime
+    parsed_date = datetime.strptime(payment_date, "%Y-%m-%d").date()
+    
     payment = SubscriptionPayment(
         subscription_id=subscription_id,
         amount=amount,
-        payment_date=datetime.strptime(payment_date, "%Y-%m-%d").date(),
+        payment_date=parsed_date,
         notes=notes.strip() if notes else None
     )
     db.add(payment)
+    
+    # Also create an Expense record for variable expense tracking
+    # This ensures the budget vs actual comparison works correctly
+    if subscription.expense_category_id:
+        expense = Expense(
+            user_id=user.id,
+            category_id=subscription.expense_category_id,
+            subcategory_id=subscription.expense_subcategory_id,
+            amount=amount,
+            expense_date=parsed_date,
+            notes=f"[Subscription: {subscription.name}] {notes.strip() if notes else ''}".strip(),
+            is_recurring="yes",
+            frequency="monthly"
+        )
+        db.add(expense)
+    
     db.commit()
     
     return RedirectResponse("/budget?tab=subscriptions", status_code=303)
@@ -1830,6 +1888,13 @@ async def import_budget_csv(
                         imported["budget_items"] += 1
                     
                 elif row_type == "subscription":
+                    # Parse expense category info
+                    exp_cat_name = row.get("expense_category", "").strip()
+                    exp_subcat_name = row.get("expense_subcategory", "").strip()
+                    add_to_budget_str = row.get("add_to_budget", "TRUE").strip().upper()
+                    add_to_budget = add_to_budget_str in ("TRUE", "1", "YES", "")
+                    tracking_period_months = int(row.get("tracking_period_months", 6) or 6)
+
                     sub = SubscriptionUtility(
                         user_id=user.id,
                         name=row.get("name", "Imported Subscription").strip(),
@@ -1842,20 +1907,122 @@ async def import_budget_csv(
                     db.flush()  # Get ID
                     subscription_map[sub.name.lower()] = sub.id
                     imported["subscriptions"] += 1
+
+                    # Handle expense category linking and BudgetItem creation
+                    if add_to_budget:
+                        exp_cat_id = None
+                        exp_subcat_id = None
+
+                        # Determine category name
+                        if exp_cat_name:
+                            # Use specified category from CSV
+                            category_name = exp_cat_name
+                        else:
+                            # Default to "Subscriptions & Utilities" like UI does
+                            category_name = "Subscriptions & Utilities"
+
+                        # Find or create expense category
+                        exp_category = db.query(ExpenseCategory).filter(
+                            ExpenseCategory.user_id == user.id,
+                            ExpenseCategory.name == category_name
+                        ).first()
+
+                        if not exp_category:
+                            exp_category = ExpenseCategory(user_id=user.id, name=category_name)
+                            db.add(exp_category)
+                            db.flush()
+
+                        exp_cat_id = exp_category.id
+
+                        # Handle subcategory
+                        if exp_subcat_name:
+                            # Find or create specific subcategory
+                            subcategory = db.query(SubCategory).filter(
+                                SubCategory.category_id == exp_category.id,
+                                SubCategory.name == exp_subcat_name
+                            ).first()
+
+                            if not subcategory:
+                                subcategory = SubCategory(
+                                    category_id=exp_category.id,
+                                    name=exp_subcat_name
+                                )
+                                db.add(subcategory)
+                                db.flush()
+
+                            exp_subcat_id = subcategory.id
+                        else:
+                            # Create subcategory using subscription name (like UI does)
+                            subcategory = SubCategory(
+                                category_id=exp_category.id,
+                                name=sub.name
+                            )
+                            db.add(subcategory)
+                            db.flush()
+                            exp_subcat_id = subcategory.id
+
+                        # Link subscription to category/subcategory
+                        sub.expense_category_id = exp_cat_id
+                        sub.expense_subcategory_id = exp_subcat_id
+
+                        # Check if BudgetItem already exists for this category/subcategory
+                        existing_budget_item = db.query(BudgetItem).filter(
+                            BudgetItem.user_id == user.id,
+                            BudgetItem.expense_category_id == exp_cat_id,
+                            BudgetItem.expense_subcategory_id == exp_subcat_id
+                        ).first()
+
+                        if not existing_budget_item:
+                            # Create BudgetItem with tracked average
+                            budget_item = BudgetItem(
+                                user_id=user.id,
+                                expense_category_id=exp_cat_id,
+                                expense_subcategory_id=exp_subcat_id,
+                                use_tracked_average=True,
+                                specified_amount=0,  # Will use tracked average from payments
+                                tracking_period_months=tracking_period_months,
+                                category_type=sub.category_type
+                            )
+                            db.add(budget_item)
+                            imported["budget_items"] += 1
                     
                 elif row_type == "subscription_payment":
                     parent_name = row.get("parent_subscription", "").strip().lower()
                     if parent_name and parent_name in subscription_map:
                         payment_date_str = row.get("payment_date", "").strip()
                         if payment_date_str:
+                            sub_id = subscription_map[parent_name]
+                            payment_amount = float(row.get("amount", 0) or 0)
+                            payment_date = datetime.strptime(payment_date_str, "%Y-%m-%d").date()
+                            payment_notes = row.get("notes", "").strip() or None
+                            
                             payment = SubscriptionPayment(
-                                subscription_id=subscription_map[parent_name],
-                                amount=float(row.get("amount", 0) or 0),
-                                payment_date=datetime.strptime(payment_date_str, "%Y-%m-%d").date(),
-                                notes=row.get("notes", "").strip() or None
+                                subscription_id=sub_id,
+                                amount=payment_amount,
+                                payment_date=payment_date,
+                                notes=payment_notes
                             )
                             db.add(payment)
                             imported["payments"] += 1
+                            
+                            # Also create Expense record for variable expense tracking
+                            # Find the subscription to get its category/subcategory IDs
+                            parent_sub = db.query(SubscriptionUtility).filter(
+                                SubscriptionUtility.id == sub_id
+                            ).first()
+                            
+                            if parent_sub and parent_sub.expense_category_id:
+                                expense = Expense(
+                                    user_id=user.id,
+                                    category_id=parent_sub.expense_category_id,
+                                    subcategory_id=parent_sub.expense_subcategory_id,
+                                    amount=payment_amount,
+                                    expense_date=payment_date,
+                                    notes=f"[Subscription: {parent_sub.name}] {payment_notes or ''}".strip(),
+                                    is_recurring="yes",
+                                    frequency="monthly"
+                                )
+                                db.add(expense)
                     else:
                         errors.append(f"Row {row_num}: Subscription '{parent_name}' not found for payment")
                         
