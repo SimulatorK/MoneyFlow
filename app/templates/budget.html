@@ -640,7 +640,9 @@
       </div>
       
       <!-- Two-Column Expense Layout -->
-      <div class="expense-columns">
+      <div class="expense-columns" style="display: flex; flex-direction: column; gap: 1.5em;">
+        <details default-open>
+          <summary>Fixed and Variable Expenses</summary>
         <!-- Fixed Expenses Column -->
         <div class="expense-column fixed">
           <h4>📌 Fixed/Recurring Costs</h4>
@@ -708,6 +710,7 @@
             <p style="color: var(--text-secondary); text-align: center; padding: 1em;">No variable expenses linked yet.</p>
           {% endif %}
         </div>
+        </details>
       </div>
       
       <!-- Actual Spending vs Budget -->
