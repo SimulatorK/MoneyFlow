@@ -640,78 +640,83 @@
       </div>
       
       <!-- Two-Column Expense Layout -->
-      <div class="expense-columns" style="display: flex; flex-direction: column; gap: 1.5em;">
-        <details default-open>
-          <summary>Fixed and Variable Expenses</summary>
-        <!-- Fixed Expenses Column -->
-        <div class="expense-column fixed">
-          <h4>📌 Fixed/Recurring Costs</h4>
-          {% set fixed_items = summary.fixed_costs_details %}
-          {% if fixed_items %}
-            {% for cost in fixed_items %}
-            <div class="expense-item fixed">
-              <div class="item-info">
-                <div class="item-name">{{ cost.name }}</div>
-                <div class="item-meta">
-                  <span class="type-badge type-{{ cost.category_type }}">{{ cost.category_type.title() }}</span>
-                  {% if cost.using_tracked %}
-                  <span style="color: var(--accent);">{{ cost.tracking_period_months }}mo avg</span>
-                  {% else %}
-                  <span>${{ "{:,.0f}".format(cost.amount) }}/{{ cost.frequency }}</span>
-                  {% endif %}
+       <!-- Force two column layout -->
+       
+       <details open default-open>
+        <summary>Fixed and Variable Expenses</summary>
+        <div class="expense-columns style="grid-column: span 2;" class="two-column-layout">
+          <!-- <details open default-open>
+            <summary>Fixed and Variable Expenses</summary> -->
+          <!-- Fixed Expenses Column -->
+          <div class="expense-column fixed"> 
+            <h4>📌 Fixed/Recurring Costs</h4>
+            {% set fixed_items = summary.fixed_costs_details %}
+            {% if fixed_items %}
+              {% for cost in fixed_items %}
+              <div class="expense-item fixed">
+                <div class="item-info">
+                  <div class="item-name">{{ cost.name }}</div>
+                  <div class="item-meta">
+                    <span class="type-badge type-{{ cost.category_type }}">{{ cost.category_type.title() }}</span>
+                    {% if cost.using_tracked %}
+                    <span style="color: var(--accent);">{{ cost.tracking_period_months }}mo avg</span>
+                    {% else %}
+                    <span>${{ "{:,.0f}".format(cost.amount) }}/{{ cost.frequency }}</span>
+                    {% endif %}
+                  </div>
+                </div>
+                <div class="item-amount">${{ "{:,.0f}".format(cost.monthly_amount) }}</div>
+                <div class="item-actions">
+                  <button class="btn-edit" onclick="editFixedCost({{ cost.id }})">✏️</button>
+                  <button class="btn-danger" onclick="deleteFixedCost({{ cost.id }})">×</button>
                 </div>
               </div>
-              <div class="item-amount">${{ "{:,.0f}".format(cost.monthly_amount) }}</div>
-              <div class="item-actions">
-                <button class="btn-edit" onclick="editFixedCost({{ cost.id }})">✏️</button>
-                <button class="btn-danger" onclick="deleteFixedCost({{ cost.id }})">×</button>
+              {% endfor %}
+              <div class="totals-row">
+                <span>Total Fixed</span>
+                <span>${{ "{:,.0f}".format(summary.total_fixed_monthly) }}/mo</span>
               </div>
-            </div>
-            {% endfor %}
-            <div class="totals-row">
-              <span>Total Fixed</span>
-              <span>${{ "{:,.0f}".format(summary.total_fixed_monthly) }}/mo</span>
-            </div>
-          {% else %}
-            <p style="color: var(--text-secondary); text-align: center; padding: 1em;">No fixed costs yet.</p>
-          {% endif %}
-        </div>
-        
-        <!-- Variable Expenses Column -->
-        <div class="expense-column variable">
-          <h4>📊 Variable Expenses</h4>
-          {% set variable_items = summary.budget_items %}
-          {% if variable_items %}
-            {% for item in variable_items %}
-            <div class="expense-item variable">
-              <div class="item-info">
-                <div class="item-name">{{ item.category_name }}{% if item.subcategory_name %} › {{ item.subcategory_name }}{% endif %}</div>
-                <div class="item-meta">
-                  <span class="type-badge type-{{ item.category_type }}">{{ item.category_type.title() }}</span>
-                  {% if item.use_tracked_average %}
-                  <span style="color: var(--accent);">{{ item.tracking_period_months }}mo avg</span>
-                  {% else %}
-                  <span>Fixed: ${{ "{:,.0f}".format(item.specified_amount) }}</span>
-                  {% endif %}
+            {% else %}
+              <p style="color: var(--text-secondary); text-align: center; padding: 1em;">No fixed costs yet.</p>
+            {% endif %}
+          </div>
+
+          <!-- Variable Expenses Column -->
+          <div class="expense-column variable">
+            <h4>📊 Variable Expenses</h4>
+            {% set variable_items = summary.budget_items %}
+            {% if variable_items %}
+              {% for item in variable_items %}
+              <div class="expense-item variable">
+                <div class="item-info">
+                  <div class="item-name">{{ item.category_name }}{% if item.subcategory_name %} › {{ item.subcategory_name }}{% endif %}</div>
+                  <div class="item-meta">
+                    <span class="type-badge type-{{ item.category_type }}">{{ item.category_type.title() }}</span>
+                    {% if item.use_tracked_average %}
+                    <span style="color: var(--accent);">{{ item.tracking_period_months }}mo avg</span>
+                    {% else %}
+                    <span>Fixed: ${{ "{:,.0f}".format(item.specified_amount) }}</span>
+                    {% endif %}
+                  </div>
+                </div>
+                <div class="item-amount">${{ "{:,.0f}".format(item.monthly_amount) }}</div>
+                <div class="item-actions">
+                  <button class="btn-edit" onclick="editBudgetItem({{ item.id }})">✏️</button>
+                  <button class="btn-danger" onclick="deleteBudgetItem({{ item.id }})">×</button>
                 </div>
               </div>
-              <div class="item-amount">${{ "{:,.0f}".format(item.monthly_amount) }}</div>
-              <div class="item-actions">
-                <button class="btn-edit" onclick="editBudgetItem({{ item.id }})">✏️</button>
-                <button class="btn-danger" onclick="deleteBudgetItem({{ item.id }})">×</button>
+              {% endfor %}
+              <div class="totals-row">
+                <span>Total Variable</span>
+                <span>${{ "{:,.0f}".format(summary.total_variable_monthly) }}/mo</span>
               </div>
-            </div>
-            {% endfor %}
-            <div class="totals-row">
-              <span>Total Variable</span>
-              <span>${{ "{:,.0f}".format(summary.total_variable_monthly) }}/mo</span>
-            </div>
-          {% else %}
-            <p style="color: var(--text-secondary); text-align: center; padding: 1em;">No variable expenses linked yet.</p>
-          {% endif %}
+            {% else %}
+              <p style="color: var(--text-secondary); text-align: center; padding: 1em;">No variable expenses linked yet.</p>
+            {% endif %}
+          </div>
+          <!-- </details> -->
         </div>
-        </details>
-      </div>
+      </details>
       
       <!-- Actual Spending vs Budget -->
       <div class="card">
