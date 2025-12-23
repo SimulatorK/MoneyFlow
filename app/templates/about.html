@@ -250,7 +250,9 @@
   <div class="page-content">
     <div class="page-header">
       <h1>📚 About MoneyFlow</h1>
-      <p>A comprehensive personal finance management application to help you track income, expenses, budgets, and taxes all in one place.</p>
+      <p>MoneyFlow is a comprehensive personal finance suite designed to give you complete control over your financial life. 
+         Track every dollar, plan your budget with precision, monitor your net worth growth, and optimize your taxes—all in a single, 
+         beautifully designed application built for real-world financial management.</p>
     </div>
     
     <!-- Tab Navigation -->
@@ -394,20 +396,39 @@
         <img src="/static/apple-touch-icon.png" alt="" style="width: 48px; height: 48px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
         <div>
           <p style="margin: 0; font-size: 1.2em;"><strong>MoneyFlow</strong> <span style="background: var(--accent); color: #fff; padding: 0.2em 0.6em; border-radius: 12px; font-size: 0.7em; font-weight: 700;">v2.0.0</span></p>
-          <p style="margin: 0.2em 0 0 0; font-size: 0.85em; color: var(--text-secondary);">Comprehensive Personal Finance Suite</p>
+          <p style="margin: 0.2em 0 0 0; font-size: 0.85em; color: var(--text-secondary);">Your Complete Personal Finance Command Center</p>
         </div>
       </div>
-      <p style="margin: 0.5em 0;"><strong>What's New in v2.0.0:</strong></p>
-      <ul style="text-align: left; display: inline-block; margin: 0.5em 0; font-size: 0.9em;">
-        <li>📊 Utilities & Subscriptions Tracker - track spending over time</li>
-        <li>📈 Net Worth monthly averaging for cleaner charts</li>
-        <li>🎯 Customizable budget rule targets (beyond 50/30/20)</li>
-        <li>💰 Budget vs Actual spending on Dashboard</li>
-        <li>✨ Refreshed professional UI with enhanced visuals</li>
-        <li>🔍 Improved expense filtering with check/uncheck all</li>
-      </ul>
-      <p style="margin: 1em 0 0.5em 0;">Built with ❤️ for personal finance management</p>
-      <p style="margin: 0;">Questions or feedback? Email <a href="mailto:mason.j.kelchner@gmail.com">mason.j.kelchner@gmail.com</a></p>
+      
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5em; margin: 1.5em 0; text-align: left;">
+        <div>
+          <p style="margin: 0 0 0.5em 0; font-weight: 700; color: var(--accent);">🚀 What's New in v2.0.0:</p>
+          <ul style="margin: 0; font-size: 0.88em; padding-left: 1.2em;">
+            <li><strong>Utilities & Subscriptions Tracker</strong> - Monitor recurring costs with spending trends over time, seasonal analysis, and multi-account filtering</li>
+            <li><strong>Budget vs Actual Dashboard</strong> - Real-time comparison of budgeted vs actual spending with variance tracking</li>
+            <li><strong>Unbudgeted Expense Detection</strong> - Automatic flagging of spending in untracked categories</li>
+            <li><strong>Customizable Budget Rules</strong> - Configure your own allocation targets beyond the standard 50/30/20</li>
+            <li><strong>Budget Data Import/Export</strong> - Bulk manage your budget with CSV templates</li>
+            <li><strong>Professional UI Refresh</strong> - Enhanced visuals with improved header design and dark mode support</li>
+          </ul>
+        </div>
+        <div>
+          <p style="margin: 0 0 0.5em 0; font-weight: 700; color: var(--accent);">✨ Key Features:</p>
+          <ul style="margin: 0; font-size: 0.88em; padding-left: 1.2em;">
+            <li><strong>Interactive Dashboard</strong> - Sankey chart money flow visualization</li>
+            <li><strong>Smart Expense Tracking</strong> - Autocomplete categories, optional vendor tracking, recurring expense support</li>
+            <li><strong>Net Worth Manager</strong> - Track assets, liabilities, investment accounts with tax treatment analysis</li>
+            <li><strong>Tax Calculator</strong> - Federal, state, and FICA with multi-year bracket support (2023-2026)</li>
+            <li><strong>Monte Carlo Simulator</strong> - Retirement projections with probability analysis</li>
+            <li><strong>CSV Import/Export</strong> - Bulk data management for expenses, net worth, and budget</li>
+          </ul>
+        </div>
+      </div>
+      
+      <div style="border-top: 1px solid var(--border-light); padding-top: 1em; margin-top: 1em; text-align: center;">
+        <p style="margin: 0 0 0.5em 0; font-size: 0.9em;">Built with ❤️ using FastAPI, SQLAlchemy, and Chart.js</p>
+        <p style="margin: 0; font-size: 0.85em; color: var(--text-secondary);">Questions or feedback? Email <a href="mailto:mason.j.kelchner@gmail.com" style="color: var(--accent);">mason.j.kelchner@gmail.com</a></p>
+      </div>
     </div>
     </div><!-- End Overview Tab -->
     
@@ -507,19 +528,68 @@
             </tbody>
           </table>
         </div>
+        
+        <!-- Budget CSV -->
+        <div class="api-endpoint">
+          <h4 style="margin: 0 0 0.5em 0; color: var(--text-heading);">Budget CSV Upload</h4>
+          <p class="desc">Import budget items at <code>/budget</code> → Import button. Supports fixed costs, variable items, subscriptions, and subscription payments.</p>
+          <table class="api-table">
+            <thead><tr><th>Column</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>type</code></td><td><span class="type-badge enum">enum</span></td><td>Yes</td><td>"fixed_cost", "budget_item", "subscription", or "subscription_payment"</td></tr>
+              <tr><td><code>name</code></td><td><span class="type-badge string">string</span></td><td>Yes*</td><td>Name of the item (* for fixed_cost, budget_item, subscription)</td></tr>
+              <tr><td><code>category_type</code></td><td><span class="type-badge enum">enum</span></td><td>No</td><td>"need" or "want" for 50/30/20 rule</td></tr>
+              <tr><td><code>amount</code></td><td><span class="type-badge number">number</span></td><td>Yes*</td><td>Dollar amount (* for fixed_cost, budget_item, subscription_payment)</td></tr>
+              <tr><td><code>frequency</code></td><td><span class="type-badge enum">enum</span></td><td>No</td><td>Payment frequency for fixed costs</td></tr>
+              <tr><td><code>expense_category</code></td><td><span class="type-badge string">string</span></td><td>No</td><td>Expense category name to link to (for budget_item)</td></tr>
+              <tr><td><code>expense_subcategory</code></td><td><span class="type-badge string">string</span></td><td>No</td><td>Expense subcategory name (for budget_item)</td></tr>
+              <tr><td><code>use_tracked_average</code></td><td><span class="type-badge boolean">boolean</span></td><td>No</td><td>"true" to use expense average, "false" for fixed amount</td></tr>
+              <tr><td><code>tracking_period_months</code></td><td><span class="type-badge number">number</span></td><td>No</td><td>3, 6, or 12 months for rolling average</td></tr>
+              <tr><td><code>subscription_name</code></td><td><span class="type-badge string">string</span></td><td>Yes**</td><td>Which subscription for payments (** for subscription_payment)</td></tr>
+              <tr><td><code>payment_date</code></td><td><span class="type-badge date">date</span></td><td>Yes**</td><td>YYYY-MM-DD format (** for subscription_payment)</td></tr>
+              <tr><td><code>utility_type</code></td><td><span class="type-badge enum">enum</span></td><td>No</td><td>"subscription", "utility", or "service"</td></tr>
+              <tr><td><code>notes</code></td><td><span class="type-badge string">string</span></td><td>No</td><td>Optional notes</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
       
       <div class="api-section">
-        <h3>🔗 API Endpoints</h3>
-        
-        <div class="api-endpoint">
-          <span class="method get">GET</span><span class="path">/api/subcategories/{category_id}</span>
-          <p class="desc">Get all subcategories for a category</p>
-        </div>
+        <h3>🔗 API Endpoints - Expenses</h3>
         
         <div class="api-endpoint">
           <span class="method get">GET</span><span class="path">/api/categories</span>
-          <p class="desc">Get all categories for current user</p>
+          <p class="desc">Get all expense categories for current user</p>
+        </div>
+        
+        <div class="api-endpoint">
+          <span class="method get">GET</span><span class="path">/api/subcategories/{category_id}</span>
+          <p class="desc">Get all subcategories for a specific category</p>
+        </div>
+        
+        <div class="api-endpoint">
+          <span class="method get">GET</span><span class="path">/api/vendors</span>
+          <p class="desc">Get all vendors for current user</p>
+        </div>
+        
+        <div class="api-endpoint">
+          <span class="method get">GET</span><span class="path">/api/expense/{expense_id}</span>
+          <p class="desc">Get details of a specific expense</p>
+        </div>
+        
+        <div class="api-endpoint">
+          <span class="method post">POST</span><span class="path">/expenses/add</span>
+          <p class="desc">Add a new expense (form data: date, amount, category_id, subcategory_id, vendor_id, notes, is_recurring, recurring_frequency)</p>
+        </div>
+        
+        <div class="api-endpoint">
+          <span class="method post">POST</span><span class="path">/expenses/update/{expense_id}</span>
+          <p class="desc">Update an existing expense</p>
+        </div>
+        
+        <div class="api-endpoint">
+          <span class="method delete">DELETE</span><span class="path">/expenses/{expense_id}</span>
+          <p class="desc">Delete an expense by ID</p>
         </div>
         
         <div class="api-endpoint">
@@ -528,18 +598,159 @@
         </div>
         
         <div class="api-endpoint">
+          <span class="method post">POST</span><span class="path">/expenses/csv-upload</span>
+          <p class="desc">Import expenses from CSV file</p>
+        </div>
+      </div>
+      
+      <div class="api-section">
+        <h3>🔗 API Endpoints - Budget</h3>
+        
+        <div class="api-endpoint">
+          <span class="method get">GET</span><span class="path">/api/budget-item/{item_id}</span>
+          <p class="desc">Get details of a budget item including tracked averages</p>
+        </div>
+        
+        <div class="api-endpoint">
+          <span class="method get">GET</span><span class="path">/api/fixed-cost/{cost_id}</span>
+          <p class="desc">Get details of a fixed cost budget item</p>
+        </div>
+        
+        <div class="api-endpoint">
+          <span class="method get">GET</span><span class="path">/api/rolling-averages/{category_id}/{subcategory_id}</span>
+          <p class="desc">Get rolling expense averages (3/6/12 months) for a category/subcategory. Use 0 for subcategory_id to get all subcategories.</p>
+        </div>
+        
+        <div class="api-endpoint">
+          <span class="method post">POST</span><span class="path">/budget/fixed-cost/add</span>
+          <p class="desc">Add a fixed cost to the budget</p>
+        </div>
+        
+        <div class="api-endpoint">
+          <span class="method post">POST</span><span class="path">/budget/item/add</span>
+          <p class="desc">Add a variable expense budget item</p>
+        </div>
+        
+        <div class="api-endpoint">
+          <span class="method post">POST</span><span class="path">/budget/item/update/{item_id}</span>
+          <p class="desc">Update a budget item including tracking period</p>
+        </div>
+        
+        <div class="api-endpoint">
+          <span class="method delete">DELETE</span><span class="path">/budget/fixed-cost/{cost_id}</span>
+          <p class="desc">Delete a fixed cost</p>
+        </div>
+        
+        <div class="api-endpoint">
+          <span class="method delete">DELETE</span><span class="path">/budget/item/{item_id}</span>
+          <p class="desc">Delete a budget item</p>
+        </div>
+        
+        <div class="api-endpoint">
+          <span class="method get">GET</span><span class="path">/budget/csv-export</span>
+          <p class="desc">Export all budget data (fixed costs, variable items, subscriptions) as CSV</p>
+        </div>
+        
+        <div class="api-endpoint">
+          <span class="method post">POST</span><span class="path">/budget/csv-import</span>
+          <p class="desc">Import budget data from CSV file</p>
+        </div>
+      </div>
+      
+      <div class="api-section">
+        <h3>🔗 API Endpoints - Subscriptions & Utilities</h3>
+        
+        <div class="api-endpoint">
+          <span class="method get">GET</span><span class="path">/api/subscriptions</span>
+          <p class="desc">Get all subscriptions/utilities with statistics</p>
+        </div>
+        
+        <div class="api-endpoint">
+          <span class="method get">GET</span><span class="path">/api/subscription/{subscription_id}</span>
+          <p class="desc">Get details of a subscription including payment history and monthly chart data</p>
+        </div>
+        
+        <div class="api-endpoint">
+          <span class="method post">POST</span><span class="path">/budget/subscription/add</span>
+          <p class="desc">Add a new subscription/utility (optionally creates a variable expense budget item)</p>
+        </div>
+        
+        <div class="api-endpoint">
+          <span class="method post">POST</span><span class="path">/budget/subscription/update/{subscription_id}</span>
+          <p class="desc">Update a subscription/utility</p>
+        </div>
+        
+        <div class="api-endpoint">
+          <span class="method delete">DELETE</span><span class="path">/budget/subscription/{subscription_id}</span>
+          <p class="desc">Delete a subscription and all its payments</p>
+        </div>
+        
+        <div class="api-endpoint">
+          <span class="method post">POST</span><span class="path">/budget/subscription/payment/add</span>
+          <p class="desc">Record a payment for a subscription</p>
+        </div>
+        
+        <div class="api-endpoint">
+          <span class="method delete">DELETE</span><span class="path">/budget/subscription/payment/{payment_id}</span>
+          <p class="desc">Delete a subscription payment</p>
+        </div>
+      </div>
+      
+      <div class="api-section">
+        <h3>🔗 API Endpoints - Net Worth & Tools</h3>
+        
+        <div class="api-endpoint">
+          <span class="method get">GET</span><span class="path">/api/accounts</span>
+          <p class="desc">Get all net worth accounts for current user</p>
+        </div>
+        
+        <div class="api-endpoint">
+          <span class="method get">GET</span><span class="path">/api/account/{account_id}</span>
+          <p class="desc">Get details of a net worth account</p>
+        </div>
+        
+        <div class="api-endpoint">
+          <span class="method post">POST</span><span class="path">/tools/account/add</span>
+          <p class="desc">Add a new net worth account</p>
+        </div>
+        
+        <div class="api-endpoint">
+          <span class="method post">POST</span><span class="path">/tools/balance/add</span>
+          <p class="desc">Add a balance entry for an account</p>
+        </div>
+        
+        <div class="api-endpoint">
           <span class="method get">GET</span><span class="path">/tools/networth/csv-export</span>
           <p class="desc">Export all net worth data as CSV file</p>
         </div>
         
         <div class="api-endpoint">
-          <span class="method post">POST</span><span class="path">/tools/montecarlo/run</span>
-          <p class="desc">Run Monte Carlo simulation with JSON body: <code>{"years": 30, "num_simulations": 1000, "show_todays_dollars": true}</code></p>
+          <span class="method post">POST</span><span class="path">/tools/networth/csv-upload</span>
+          <p class="desc">Import net worth data from CSV file</p>
         </div>
         
         <div class="api-endpoint">
-          <span class="method delete">DELETE</span><span class="path">/expenses/{expense_id}</span>
-          <p class="desc">Delete an expense by ID</p>
+          <span class="method post">POST</span><span class="path">/tools/montecarlo/run</span>
+          <p class="desc">Run Monte Carlo retirement simulation. Body: <code>{"years": 30, "num_simulations": 1000, "show_todays_dollars": true}</code></p>
+        </div>
+      </div>
+      
+      <div class="api-section">
+        <h3>🔗 API Endpoints - Income & Taxes</h3>
+        
+        <div class="api-endpoint">
+          <span class="method get">GET</span><span class="path">/api/income-taxes</span>
+          <p class="desc">Get income and tax configuration for current user</p>
+        </div>
+        
+        <div class="api-endpoint">
+          <span class="method post">POST</span><span class="path">/income-taxes/save</span>
+          <p class="desc">Save income and tax configuration (salary, deductions, tax year, etc.)</p>
+        </div>
+        
+        <div class="api-endpoint">
+          <span class="method get">GET</span><span class="path">/income-taxes/csv-export</span>
+          <p class="desc">Export income and tax data as CSV</p>
         </div>
       </div>
       

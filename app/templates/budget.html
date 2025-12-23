@@ -1233,14 +1233,55 @@
         {% endif %}
       </div>
       
-      <!-- Chart placeholder -->
+      <!-- Spending Breakdown Chart -->
       <div class="card">
-        <h3>📈 Spending Over Time</h3>
+        <h3>📊 Monthly Breakdown</h3>
         <div class="chart-container">
+          <canvas id="subscriptionBreakdownChart"></canvas>
+        </div>
+        <p style="font-size: 0.8em; color: var(--text-secondary); text-align: center; margin-top: 0.5em;">
+          Monthly spending breakdown by subscription/utility.
+        </p>
+      </div>
+      
+      <!-- Spending Over Time Line Chart -->
+      <div class="card" style="grid-column: span 2;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1em;">
+          <h3 style="margin: 0;">📈 Spending Over Time</h3>
+          <div style="display: flex; align-items: center; gap: 0.5em;">
+            <label style="font-size: 0.85em; color: var(--text-secondary);">Filter:</label>
+            <div class="subscription-filter-container" style="position: relative;">
+              <button type="button" class="btn-secondary" onclick="toggleSubscriptionFilter()" style="padding: 0.4em 0.8em; font-size: 0.85em;">
+                Select Items ▼
+              </button>
+              <div id="subscriptionFilterDropdown" class="subscription-filter-dropdown" style="display: none; position: absolute; right: 0; top: 100%; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.5em; min-width: 200px; max-height: 250px; overflow-y: auto; z-index: 100; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
+                <div style="padding: 0.3em 0.5em; border-bottom: 1px solid var(--border-light); margin-bottom: 0.3em;">
+                  <label style="display: flex; align-items: center; gap: 0.5em; cursor: pointer; font-weight: 600;">
+                    <input type="checkbox" id="subscriptionSelectAll" onchange="toggleAllSubscriptions(this.checked)" checked>
+                    Select All
+                  </label>
+                </div>
+                {% if subscription_stats and subscription_stats.subscriptions %}
+                {% for sub in subscription_stats.subscriptions %}
+                <div style="padding: 0.3em 0.5em;">
+                  <label style="display: flex; align-items: center; gap: 0.5em; cursor: pointer; font-size: 0.9em;">
+                    <input type="checkbox" class="subscription-filter-cb" data-sub-id="{{ sub.id }}" data-sub-name="{{ sub.name }}" checked onchange="updateSpendingChart()">
+                    {% if sub.utility_type == 'utility' %}⚡{% elif sub.utility_type == 'service' %}🔧{% else %}📺{% endif %}
+                    {{ sub.name }}
+                  </label>
+                </div>
+                {% endfor %}
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="chart-container" style="height: 300px; margin-top: 1em;">
           <canvas id="subscriptionTrendChart"></canvas>
         </div>
         <p style="font-size: 0.8em; color: var(--text-secondary); text-align: center; margin-top: 0.5em;">
           Track how your utility and subscription costs change month to month, seasonally, and year over year.
+          <em>Each line represents a different subscription/utility.</em>
         </p>
       </div>
     </div>
@@ -2008,48 +2049,219 @@
       }
     }
     
-    // Initialize subscription trend chart
-    const subTrendCtx = document.getElementById('subscriptionTrendChart');
-    if (subTrendCtx) {
-      const subscriptionData = {{ subscription_stats.subscriptions | tojson if subscription_stats else '[]' }};
+    // ===== SUBSCRIPTION CHARTS =====
+    const subscriptionData = {{ subscription_stats.subscriptions | tojson if subscription_stats else '[]' }};
+    const chartColors = [
+      '#3875e8', '#28a745', '#ffc107', '#dc3545', '#6f42c1',
+      '#17a2b8', '#fd7e14', '#20c997', '#e83e8c', '#6c757d',
+      '#5c6bc0', '#66bb6a', '#ffca28', '#ef5350', '#ab47bc'
+    ];
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    
+    // Initialize subscription breakdown chart (doughnut)
+    const subBreakdownCtx = document.getElementById('subscriptionBreakdownChart');
+    if (subBreakdownCtx && subscriptionData.length > 0) {
+      const labels = subscriptionData.map(s => s.name);
+      const data = subscriptionData.map(s => s.avg_3m);
       
-      // Aggregate all subscription spending by type
-      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-      
-      // For now, show a simple placeholder or aggregate data
-      if (subscriptionData.length > 0) {
-        const labels = subscriptionData.map(s => s.name);
-        const data = subscriptionData.map(s => s.avg_3m);
-        
-        new Chart(subTrendCtx, {
-          type: 'doughnut',
-          data: {
-            labels: labels,
-            datasets: [{
-              data: data,
-              backgroundColor: [
-                '#3875e8', '#28a745', '#ffc107', '#dc3545', '#6f42c1',
-                '#17a2b8', '#fd7e14', '#20c997', '#e83e8c', '#6c757d'
-              ],
-              borderWidth: 0
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: { position: 'right', labels: { color: isDark ? '#e4e6eb' : '#333' } },
-              tooltip: {
-                callbacks: {
-                  label: function(context) {
-                    return `$${context.parsed.toLocaleString()}/mo`;
-                  }
+      new Chart(subBreakdownCtx, {
+        type: 'doughnut',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: data,
+            backgroundColor: chartColors.slice(0, labels.length),
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'right', labels: { color: isDark ? '#e4e6eb' : '#333', boxWidth: 12, font: { size: 10 } } },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return `$${context.parsed.toLocaleString()}/mo`;
                 }
               }
             }
           }
-        });
+        }
+      });
+    }
+    
+    // Initialize spending over time line chart
+    let spendingTrendChart = null;
+    const subTrendCtx = document.getElementById('subscriptionTrendChart');
+    
+    function buildSpendingTrendChart(filteredSubs) {
+      if (!subTrendCtx) return;
+      
+      // Destroy existing chart
+      if (spendingTrendChart) {
+        spendingTrendChart.destroy();
       }
+      
+      if (!filteredSubs || filteredSubs.length === 0) {
+        spendingTrendChart = new Chart(subTrendCtx, {
+          type: 'line',
+          data: { labels: ['No Data'], datasets: [] },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              title: { display: true, text: 'Select subscriptions to view trends', font: { size: 12 }, color: '#889ab0' }
+            }
+          }
+        });
+        return;
+      }
+      
+      // Get all unique months from all subscriptions
+      const allMonths = new Set();
+      filteredSubs.forEach(sub => {
+        if (sub.payments && sub.payments.length > 0) {
+          sub.payments.forEach(p => {
+            const date = new Date(p.payment_date);
+            const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+            allMonths.add(monthKey);
+          });
+        }
+      });
+      
+      // Sort months chronologically
+      const sortedMonths = Array.from(allMonths).sort();
+      
+      // Create labels from months
+      const labels = sortedMonths.map(m => {
+        const [year, month] = m.split('-');
+        return new Date(year, month - 1).toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+      });
+      
+      // Create datasets for each subscription
+      const datasets = filteredSubs.map((sub, index) => {
+        // Aggregate payments by month
+        const monthlyData = {};
+        if (sub.payments && sub.payments.length > 0) {
+          sub.payments.forEach(p => {
+            const date = new Date(p.payment_date);
+            const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+            monthlyData[monthKey] = (monthlyData[monthKey] || 0) + p.amount;
+          });
+        }
+        
+        // Create data array matching sorted months
+        const data = sortedMonths.map(m => monthlyData[m] || null);
+        
+        return {
+          label: sub.name,
+          data: data,
+          borderColor: chartColors[index % chartColors.length],
+          backgroundColor: chartColors[index % chartColors.length] + '33',
+          fill: false,
+          tension: 0.3,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+          spanGaps: true
+        };
+      });
+      
+      spendingTrendChart = new Chart(subTrendCtx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: datasets
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: {
+            intersect: false,
+            mode: 'index'
+          },
+          plugins: {
+            legend: { 
+              position: 'bottom', 
+              labels: { 
+                color: isDark ? '#e4e6eb' : '#333',
+                boxWidth: 12,
+                font: { size: 11 },
+                padding: 15
+              }
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  if (context.parsed.y === null) return null;
+                  return `${context.dataset.label}: $${context.parsed.y.toFixed(2)}`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { color: isDark ? '#3d4450' : '#e8eef8' },
+              ticks: { color: isDark ? '#98a3b8' : '#667a9a' }
+            },
+            y: {
+              beginAtZero: true,
+              grid: { color: isDark ? '#3d4450' : '#e8eef8' },
+              ticks: { 
+                color: isDark ? '#98a3b8' : '#667a9a',
+                callback: v => '$' + v.toLocaleString()
+              }
+            }
+          }
+        }
+      });
+    }
+    
+    // Filter dropdown toggle
+    function toggleSubscriptionFilter() {
+      const dropdown = document.getElementById('subscriptionFilterDropdown');
+      dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+    }
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+      const container = document.querySelector('.subscription-filter-container');
+      const dropdown = document.getElementById('subscriptionFilterDropdown');
+      if (container && dropdown && !container.contains(e.target)) {
+        dropdown.style.display = 'none';
+      }
+    });
+    
+    // Toggle all subscriptions
+    function toggleAllSubscriptions(checked) {
+      document.querySelectorAll('.subscription-filter-cb').forEach(cb => {
+        cb.checked = checked;
+      });
+      updateSpendingChart();
+    }
+    
+    // Update chart based on selected subscriptions
+    function updateSpendingChart() {
+      const checkboxes = document.querySelectorAll('.subscription-filter-cb:checked');
+      const selectedIds = Array.from(checkboxes).map(cb => parseInt(cb.dataset.subId));
+      
+      // Update select all checkbox state
+      const allCheckboxes = document.querySelectorAll('.subscription-filter-cb');
+      const selectAll = document.getElementById('subscriptionSelectAll');
+      if (selectAll) {
+        selectAll.checked = checkboxes.length === allCheckboxes.length;
+        selectAll.indeterminate = checkboxes.length > 0 && checkboxes.length < allCheckboxes.length;
+      }
+      
+      // Filter subscription data and rebuild chart
+      const filteredSubs = subscriptionData.filter(s => selectedIds.includes(s.id));
+      buildSpendingTrendChart(filteredSubs);
+    }
+    
+    // Initialize chart with all subscriptions
+    if (subscriptionData.length > 0) {
+      buildSpendingTrendChart(subscriptionData);
     }
   </script>
 </body>

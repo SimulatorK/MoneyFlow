@@ -299,10 +299,17 @@ def calculate_budget_vs_actual(db: Session, user_id: int, summary: dict, actual_
     # Sort comparisons by how over budget they are
     comparisons.sort(key=lambda x: x["percentage"], reverse=True)
     
+    # Calculate totals
+    total_budgeted = sum(c["budgeted"] for c in comparisons)
+    total_actual = sum(c["actual"] for c in comparisons)
+    total_unbudgeted = sum(u["amount"] for u in unbudgeted_expenses)
+    
     return {
         "comparisons": comparisons,
         "unbudgeted": unbudgeted_expenses,
-        "total_unbudgeted": sum(u["amount"] for u in unbudgeted_expenses),
+        "total_unbudgeted": total_unbudgeted,
+        "total_budgeted": total_budgeted,
+        "total_actual": total_actual,
         "lookback_months": lookback_months
     }
 
@@ -1091,6 +1098,14 @@ def get_subscription_stats(db: Session, user_id: int) -> dict:
                 "notes": payments[0].notes
             }
         
+        # Serialize all payments for charts
+        all_payments_data = [{
+            "id": p.id,
+            "amount": p.amount,
+            "payment_date": p.payment_date.isoformat(),
+            "notes": p.notes
+        } for p in payments]
+        
         results.append({
             "id": sub.id,
             "name": sub.name,
@@ -1099,6 +1114,7 @@ def get_subscription_stats(db: Session, user_id: int) -> dict:
             "is_active": sub.is_active,
             "notes": sub.notes,
             "last_payment": last_payment_data,
+            "payments": all_payments_data,  # Full payments list for charts
             "payment_count": len(payments),
             "total_1m": avg_1m,
             "avg_3m": avg_3m,

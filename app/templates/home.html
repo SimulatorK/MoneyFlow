@@ -469,7 +469,10 @@
         {% endif %}
         
         <!-- Budget vs Actual Spending Card -->
-        {% if budget_vs_actual and budget_vs_actual.comparisons %}
+        {% if budget_vs_actual and budget_vs_actual.get('comparisons') %}
+        {% set bva_budgeted = budget_vs_actual.get('total_budgeted', 0) %}
+        {% set bva_actual = budget_vs_actual.get('total_actual', 0) %}
+        {% set bva_remaining = bva_budgeted - bva_actual %}
         <div class="card" style="margin-top: 1em;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8em;">
             <h3 style="margin: 0;">📊 Budget vs Actual (This Month)</h3>
@@ -479,16 +482,16 @@
           <div class="quick-stats" style="margin-bottom: 1em;">
             <div class="stat-card" style="border-left-color: var(--accent);">
               <div class="label">Total Budgeted</div>
-              <div class="value">${{ "{:,.0f}".format(budget_vs_actual.total_budgeted) }}</div>
+              <div class="value">${{ "{:,.0f}".format(bva_budgeted) }}</div>
             </div>
-            <div class="stat-card" style="border-left-color: {% if budget_vs_actual.total_actual <= budget_vs_actual.total_budgeted %}#28a745{% else %}#dc3545{% endif %};">
+            <div class="stat-card" style="border-left-color: {% if bva_actual <= bva_budgeted %}#28a745{% else %}#dc3545{% endif %};">
               <div class="label">Actual Spending</div>
-              <div class="value">${{ "{:,.0f}".format(budget_vs_actual.total_actual) }}</div>
+              <div class="value">${{ "{:,.0f}".format(bva_actual) }}</div>
             </div>
-            <div class="stat-card" style="border-left-color: {% if (budget_vs_actual.total_budgeted - budget_vs_actual.total_actual) >= 0 %}#28a745{% else %}#dc3545{% endif %};">
+            <div class="stat-card" style="border-left-color: {% if bva_remaining >= 0 %}#28a745{% else %}#dc3545{% endif %};">
               <div class="label">Remaining</div>
-              <div class="value {% if (budget_vs_actual.total_budgeted - budget_vs_actual.total_actual) >= 0 %}positive{% else %}negative{% endif %}">
-                ${{ "{:,.0f}".format(budget_vs_actual.total_budgeted - budget_vs_actual.total_actual) }}
+              <div class="value {% if bva_remaining >= 0 %}positive{% else %}negative{% endif %}">
+                ${{ "{:,.0f}".format(bva_remaining) }}
               </div>
             </div>
           </div>
@@ -496,7 +499,7 @@
           <!-- Top Variances -->
           <div style="font-size: 0.9em;">
             <div style="font-weight: 600; margin-bottom: 0.5em; color: var(--text-secondary);">Top Categories by Variance</div>
-            {% for item in budget_vs_actual.comparisons[:5] %}
+            {% for item in budget_vs_actual.get('comparisons', [])[:5] %}
             <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.4em 0; border-bottom: 1px solid var(--border-light);">
               <span style="flex: 1;">{{ item.name }}</span>
               <span style="width: 80px; text-align: right; font-weight: 500;">${{ "{:,.0f}".format(item.actual) }}</span>
@@ -508,18 +511,18 @@
             {% endfor %}
           </div>
           
-          {% if budget_vs_actual.unallocated_expenses %}
+          {% if budget_vs_actual.get('unbudgeted') %}
           <div style="margin-top: 1em; padding-top: 0.8em; border-top: 1px solid var(--border-light);">
             <div style="font-weight: 600; margin-bottom: 0.5em; color: #ffc107;">⚠️ Unbudgeted Spending</div>
-            {% for item in budget_vs_actual.unallocated_expenses[:3] %}
+            {% for item in budget_vs_actual.get('unbudgeted', [])[:3] %}
             <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.3em 0; font-size: 0.85em;">
-              <span>{{ item.category_name }}{% if item.subcategory_name %} › {{ item.subcategory_name }}{% endif %}</span>
+              <span>{{ item.category_name }}{% if item.get('subcategory_name') %} › {{ item.subcategory_name }}{% endif %}</span>
               <span style="font-weight: 500; color: #ffc107;">${{ "{:,.0f}".format(item.amount) }}</span>
             </div>
             {% endfor %}
-            {% if budget_vs_actual.unallocated_expenses | length > 3 %}
+            {% if budget_vs_actual.get('unbudgeted', []) | length > 3 %}
             <div style="font-size: 0.8em; color: var(--text-secondary); margin-top: 0.3em;">
-              +{{ budget_vs_actual.unallocated_expenses | length - 3 }} more categories
+              +{{ budget_vs_actual.get('unbudgeted', []) | length - 3 }} more categories
             </div>
             {% endif %}
           </div>
