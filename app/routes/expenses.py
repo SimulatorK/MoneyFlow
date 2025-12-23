@@ -356,9 +356,9 @@ def expenses_page(
             if part == "uncategorized":
                 filter_uncategorized = True
             else:
-                try:
+        try:
                     category_filters.append(int(part))
-                except ValueError:
+        except ValueError:
                     pass
     
     # Parse vendor filters (comma-separated IDs or special values like "no_vendor")
@@ -370,9 +370,9 @@ def expenses_page(
             if part == "no_vendor":
                 filter_no_vendor = True
             else:
-                try:
+        try:
                     vendor_filters.append(int(part))
-                except ValueError:
+        except ValueError:
                     pass
     
     # Get recent expenses
@@ -526,11 +526,11 @@ def add_expense(
     
     # Verify category belongs to user (if provided)
     if category_id_parsed and category_id_parsed > 0:
-        category = db.query(Category).filter(
+    category = db.query(Category).filter(
             Category.id == category_id_parsed,
-            Category.user_id == user.id
-        ).first()
-        if not category:
+        Category.user_id == user.id
+    ).first()
+    if not category:
             category_id_parsed = None
     
     # Verify vendor belongs to user (if provided)
@@ -714,11 +714,11 @@ def update_expense(
     
     # Verify category belongs to user (if provided)
     if category_id_parsed and category_id_parsed > 0:
-        category = db.query(Category).filter(
+    category = db.query(Category).filter(
             Category.id == category_id_parsed,
-            Category.user_id == user.id
-        ).first()
-        if not category:
+        Category.user_id == user.id
+    ).first()
+    if not category:
             category_id_parsed = None
     
     # Verify vendor belongs to user (if provided)

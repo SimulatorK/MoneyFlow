@@ -109,7 +109,13 @@ def get_profile_picture_data(user):
 
 
 def get_expense_averages_multi(db: Session, user_id: int):
-    """Get average monthly expenses by category over 3, 6, and 12 months."""
+    """
+    Get average monthly expenses by category over 3, 6, and 12 months.
+    
+    Note: Subscription payments are now automatically added as Expense records
+    when they are created (via UI or CSV import), so they are included in the
+    Expense query below. No need to separately add them from subscription_payments.
+    """
     today = date.today()
     
     result = {
@@ -143,29 +149,6 @@ def get_expense_averages_multi(db: Session, user_id: int):
                 else:
                     # Track expenses in category without subcategory
                     category_only_totals[cat_id] = category_only_totals.get(cat_id, 0) + expense.amount
-
-        # Also include subscription payments in the totals
-        subscriptions = db.query(SubscriptionUtility).filter(
-            SubscriptionUtility.user_id == user_id,
-            SubscriptionUtility.expense_category_id.isnot(None)
-        ).all()
-
-        for sub in subscriptions:
-            cat_id = sub.expense_category_id
-            subcat_id = sub.expense_subcategory_id
-
-            if cat_id:
-                for payment in sub.payments:
-                    if payment.payment_date >= start_date:
-                        amount = payment.amount
-                        category_totals[cat_id] = category_totals.get(cat_id, 0) + amount
-
-                        if subcat_id:
-                            key = (cat_id, subcat_id)
-                            subcategory_totals[key] = subcategory_totals.get(key, 0) + amount
-                        else:
-                            # Track subscription payments in category without subcategory
-                            category_only_totals[cat_id] = category_only_totals.get(cat_id, 0) + amount
 
         # Convert to monthly averages
         result[months]["category"] = {k: v / months for k, v in category_totals.items()}
@@ -1477,7 +1460,7 @@ def update_subscription(
 
 @router.delete("/budget/subscription/{sub_id}")
 def delete_subscription(sub_id: int, request: Request, db: Session = Depends(get_db)):
-    """Delete a subscription and all its payments."""
+    """Delete a subscription, all its payments, and corresponding expenses."""
     user = get_current_user(request, db)
     if not user:
         return JSONResponse({"error": "Not authenticated"}, status_code=401)
@@ -1488,6 +1471,18 @@ def delete_subscription(sub_id: int, request: Request, db: Session = Depends(get
     ).first()
     
     if subscription:
+        # Delete all corresponding expenses for this subscription's payments
+        if subscription.expense_category_id:
+            # Find and delete all expenses with subscription name in notes
+            matching_expenses = db.query(Expense).filter(
+                Expense.user_id == user.id,
+                Expense.notes.like(f"%[Subscription: {subscription.name}]%")
+            ).all()
+            
+            for expense in matching_expenses:
+                db.delete(expense)
+        
+        # Delete the subscription (payments are cascade deleted)
         db.delete(subscription)
         db.commit()
         return JSONResponse({"success": True})
@@ -1497,7 +1492,7 @@ def delete_subscription(sub_id: int, request: Request, db: Session = Depends(get
 
 @router.delete("/budget/subscription/payment/{payment_id}")
 def delete_subscription_payment(payment_id: int, request: Request, db: Session = Depends(get_db)):
-    """Delete a specific payment."""
+    """Delete a specific payment and corresponding expense."""
     user = get_current_user(request, db)
     if not user:
         return JSONResponse({"error": "Not authenticated"}, status_code=401)
@@ -1512,6 +1507,20 @@ def delete_subscription_payment(payment_id: int, request: Request, db: Session =
         ).first()
         
         if subscription:
+            # Also delete corresponding expense if it exists
+            # Find expense by matching date, amount, category, and subscription name in notes
+            if subscription.expense_category_id:
+                matching_expense = db.query(Expense).filter(
+                    Expense.user_id == user.id,
+                    Expense.category_id == subscription.expense_category_id,
+                    Expense.amount == payment.amount,
+                    Expense.expense_date == payment.payment_date,
+                    Expense.notes.like(f"%[Subscription: {subscription.name}]%")
+                ).first()
+                
+                if matching_expense:
+                    db.delete(matching_expense)
+            
             db.delete(payment)
             db.commit()
             return JSONResponse({"success": True})
