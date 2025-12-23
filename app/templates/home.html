@@ -76,16 +76,45 @@
             align-items: center;
             gap: 1em;
         }
-        .app-title {
-            margin: 0; font-size: 2.2em; font-weight: 700; color: #fff;
-            letter-spacing: -0.02em; text-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        /* Professional Header - Logo on left, partially overlayed */
+        .app-header-brand {
+            display: inline-flex;
+            align-items: center;
+            position: relative;
+            padding-left: 30px;
         }
-        .app-title .icon { margin-right: 0.3em; }
-        .app-subtitle { margin: 0.3em 0 0 0; font-size: 0.9em; color: rgba(255,255,255,0.75); }
-        .app-version {
-            display: inline-block; background: rgba(255,255,255,0.15);
-            padding: 0.15em 0.6em; border-radius: 12px; font-size: 0.75em;
-            color: rgba(255,255,255,0.9); margin-left: 0.5em;
+        .app-header-logo {
+            position: absolute;
+            left: 0;
+            width: 56px;
+            height: 56px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.25);
+            opacity: 0.85;
+            z-index: 1;
+        }
+        .app-header-text {
+            position: relative;
+            z-index: 2;
+            padding-left: 35px;
+            text-align: left;
+            white-space: nowrap;
+        }
+        .app-title {
+            margin: 0;
+            font-size: 2.2em;
+            font-weight: 800;
+            color: #fff;
+            text-shadow: 2px 2px 8px rgba(0,0,0,0.5), 0 0 25px rgba(56,117,232,0.3);
+            letter-spacing: -0.01em;
+            line-height: 1.1;
+        }
+        .app-subtitle {
+            font-size: 0.8em;
+            color: rgba(255,255,255,0.9);
+            text-shadow: 1px 1px 4px rgba(0,0,0,0.4);
+            margin-top: 0.15em;
+            margin-left: 2px;
         }
         .about-link {
             color: rgba(255,255,255,0.8); text-decoration: none;
@@ -265,16 +294,13 @@
   <header class="app-header">
     <div class="header-left"></div>
     <div class="header-center">
-      <h1 class="app-title">
-        <img
-          src="/static/apple-touch-icon.png"
-          alt="MoneyFlow"
-          class="app-icon"
-        />
-        MoneyFlow
-        <span class="app-version">v1.2.0</span>
-      </h1>
-      <p class="app-subtitle">Your personal finance command center — Track income, expenses, budgets, and taxes in one place</p>
+      <div class="app-header-brand">
+        <img src="/static/apple-touch-icon.png" alt="" class="app-header-logo">
+        <div class="app-header-text">
+          <h1 class="app-title">MoneyFlow</h1>
+          <p class="app-subtitle">Your personal finance command center</p>
+        </div>
+      </div>
     </div>
     <div class="header-right">
       <a href="/about" class="about-link">ℹ️ About</a>

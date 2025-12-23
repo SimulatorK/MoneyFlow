@@ -26,18 +26,20 @@ Routes:
     GET  /api/budget/summary       - Get full budget summary JSON
 """
 
-from fastapi import APIRouter, Request, Form, Depends, Query
-from fastapi.responses import RedirectResponse, JSONResponse
+from fastapi import APIRouter, Request, Form, Depends, Query, UploadFile, File
+from fastapi.responses import RedirectResponse, JSONResponse, Response
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 from typing import Optional
+import csv
+import io
 from app.db import get_db
 from app.models.user import User
 from app.models.income_taxes import IncomeTaxes
 from app.models.expense import Category as ExpenseCategory, SubCategory, Expense
-from app.models.budget import BudgetCategory, FixedCost, BudgetItem
+from app.models.budget import BudgetCategory, FixedCost, BudgetItem, SubscriptionUtility, SubscriptionPayment
 from app.routes.income_taxes import calculate_taxes, PAY_PERIODS_PER_YEAR
 from app.logging_config import get_logger
 import base64
@@ -492,8 +494,63 @@ def calculate_budget_summary(db: Session, user_id: int, income_data):
     total_debt = fixed_costs_by_type["debt"]
     
     total_expenses = total_fixed_monthly + total_variable_monthly
-    leftover = net_monthly - total_expenses
-    total_savings += leftover
+    
+    # Calculate unbudgeted expenses from last month
+    # Get all budgeted category/subcategory combinations
+    budgeted_category_keys = set()
+    for cost in fixed_costs:
+        if cost.expense_category_id:
+            budgeted_category_keys.add((cost.expense_category_id, cost.expense_subcategory_id))
+    for item in budget_item_details:
+        if item.get("expense_category_id"):
+            budgeted_category_keys.add((item.get("expense_category_id"), item.get("expense_subcategory_id")))
+    
+    # Get last month's expenses
+    today = date.today()
+    one_month_ago = today - timedelta(days=30)
+    recent_expenses = db.query(Expense).filter(
+        Expense.user_id == user_id,
+        Expense.expense_date >= one_month_ago
+    ).all()
+    
+    # Calculate unbudgeted spending
+    unbudgeted_monthly = 0
+    unbudgeted_details = []
+    category_unbudgeted = {}
+    
+    for expense in recent_expenses:
+        cat_id = expense.category_id
+        subcat_id = expense.subcategory_id
+        
+        # Check if this expense is covered by budget
+        is_budgeted = False
+        if cat_id:
+            # Check if whole category is budgeted
+            if (cat_id, None) in budgeted_category_keys:
+                is_budgeted = True
+            # Check if specific subcategory is budgeted
+            elif (cat_id, subcat_id) in budgeted_category_keys:
+                is_budgeted = True
+        
+        if not is_budgeted and expense.amount > 0:
+            unbudgeted_monthly += expense.amount
+            key = (cat_id, subcat_id)
+            if key not in category_unbudgeted:
+                cat_name = expense.category.name if expense.category else "Uncategorized"
+                subcat_name = expense.subcategory.name if expense.subcategory else None
+                category_unbudgeted[key] = {
+                    "category_name": cat_name,
+                    "subcategory_name": subcat_name,
+                    "amount": 0
+                }
+            category_unbudgeted[key]["amount"] += expense.amount
+    
+    unbudgeted_details = sorted(category_unbudgeted.values(), key=lambda x: -x["amount"])
+    
+    # Calculate leftover including unbudgeted expenses
+    leftover_before_unbudgeted = net_monthly - total_expenses
+    leftover = leftover_before_unbudgeted - unbudgeted_monthly
+    total_savings += max(0, leftover)  # Only add positive leftover to savings
     
     # Percentages
     needs_pct = (total_needs / gross_monthly * 100) if gross_monthly > 0 else 0
@@ -520,6 +577,9 @@ def calculate_budget_summary(db: Session, user_id: int, income_data):
         "total_debt": total_debt,
         "total_expenses": total_expenses,
         "leftover": leftover,
+        "leftover_before_unbudgeted": leftover_before_unbudgeted,
+        "unbudgeted_monthly": unbudgeted_monthly,
+        "unbudgeted_details": unbudgeted_details,
         "needs_pct": needs_pct,
         "wants_pct": wants_pct,
         "savings_pct": savings_pct,
@@ -531,7 +591,7 @@ def calculate_budget_summary(db: Session, user_id: int, income_data):
 
 
 @router.get("/budget")
-def budget_page(request: Request, db: Session = Depends(get_db), lookback: int = Query(1), error: Optional[str] = Query(None)):
+def budget_page(request: Request, db: Session = Depends(get_db), lookback: int = Query(1), error: Optional[str] = Query(None), success: Optional[str] = Query(None), tab: str = Query("budget")):
     user = get_current_user(request, db)
     if not user:
         return RedirectResponse("/login")
@@ -560,6 +620,12 @@ def budget_page(request: Request, db: Session = Depends(get_db), lookback: int =
     # Calculate budget vs actual comparison
     budget_vs_actual = calculate_budget_vs_actual(db, user.id, summary, actual_spending, lookback)
     
+    # Get subscription/utility data
+    subscription_stats = get_subscription_stats(db, user.id)
+    subscriptions = db.query(SubscriptionUtility).filter(
+        SubscriptionUtility.user_id == user.id
+    ).order_by(SubscriptionUtility.name).all()
+    
     profile_picture_b64, profile_picture_type = get_profile_picture_data(user)
     
     return templates.TemplateResponse("budget.html", {
@@ -580,7 +646,12 @@ def budget_page(request: Request, db: Session = Depends(get_db), lookback: int =
         "profile_picture_b64": profile_picture_b64,
         "profile_picture_type": profile_picture_type,
         "dark_mode": user.dark_mode,
-        "error": error
+        "error": error,
+        "success": success,
+        "active_tab": tab,
+        "subscriptions": subscriptions,
+        "subscription_stats": subscription_stats,
+        "utility_types": UTILITY_TYPES
     })
 
 
@@ -966,4 +1037,779 @@ def get_budget_summary_api(request: Request, db: Session = Depends(get_db)):
         "savings_pct": summary["savings_pct"],
         "debt_pct": summary["debt_pct"]
     })
+
+
+# ===== SUBSCRIPTION/UTILITY TRACKING =====
+
+UTILITY_TYPES = [
+    ("subscription", "Subscription"),
+    ("utility", "Utility"),
+    ("service", "Service"),
+]
+
+
+def get_subscription_stats(db: Session, user_id: int) -> dict:
+    """Calculate statistics for subscriptions/utilities."""
+    subscriptions = db.query(SubscriptionUtility).filter(
+        SubscriptionUtility.user_id == user_id,
+        SubscriptionUtility.is_active == True
+    ).all()
+    
+    today = date.today()
+    one_month_ago = today - timedelta(days=30)
+    three_months_ago = today - timedelta(days=90)
+    one_year_ago = today - timedelta(days=365)
+    
+    results = []
+    for sub in subscriptions:
+        # Get all payments
+        payments = sorted(sub.payments, key=lambda p: p.payment_date, reverse=True)
+        
+        # Calculate averages
+        payments_1m = [p for p in payments if p.payment_date >= one_month_ago]
+        payments_3m = [p for p in payments if p.payment_date >= three_months_ago]
+        payments_12m = [p for p in payments if p.payment_date >= one_year_ago]
+        
+        avg_1m = sum(p.amount for p in payments_1m) if payments_1m else 0
+        avg_3m = sum(p.amount for p in payments_3m) / 3 if payments_3m else 0
+        avg_12m = sum(p.amount for p in payments_12m) / 12 if payments_12m else 0
+        
+        # Monthly trend (compare last 3 months to previous 3 months)
+        six_months_ago = today - timedelta(days=180)
+        payments_prev_3m = [p for p in payments if three_months_ago > p.payment_date >= six_months_ago]
+        current_avg = avg_3m
+        prev_avg = sum(p.amount for p in payments_prev_3m) / 3 if payments_prev_3m else 0
+        trend = ((current_avg - prev_avg) / prev_avg * 100) if prev_avg > 0 else 0
+        
+        # Serialize last payment for JSON compatibility
+        last_payment_data = None
+        if payments:
+            last_payment_data = {
+                "id": payments[0].id,
+                "amount": payments[0].amount,
+                "date": payments[0].payment_date.isoformat(),
+                "notes": payments[0].notes
+            }
+        
+        results.append({
+            "id": sub.id,
+            "name": sub.name,
+            "utility_type": sub.utility_type,
+            "category_type": sub.category_type,
+            "is_active": sub.is_active,
+            "notes": sub.notes,
+            "last_payment": last_payment_data,
+            "payment_count": len(payments),
+            "total_1m": avg_1m,
+            "avg_3m": avg_3m,
+            "avg_12m": avg_12m,
+            "trend_pct": trend
+        })
+    
+    return {
+        "subscriptions": results,
+        "total_monthly": sum(r["avg_3m"] for r in results),
+        "count_active": len([r for r in results if r["is_active"]])
+    }
+
+
+@router.get("/api/subscriptions")
+def get_subscriptions_api(request: Request, db: Session = Depends(get_db)):
+    """Get all subscriptions/utilities for current user."""
+    user = get_current_user(request, db)
+    if not user:
+        return JSONResponse({"error": "Not authenticated"}, status_code=401)
+    
+    stats = get_subscription_stats(db, user.id)
+    
+    # Serialize for JSON
+    serialized = []
+    for sub in stats["subscriptions"]:
+        serialized.append({
+            "id": sub["id"],
+            "name": sub["name"],
+            "utility_type": sub["utility_type"],
+            "category_type": sub["category_type"],
+            "is_active": sub["is_active"],
+            "notes": sub["notes"],
+            "last_payment_date": sub["last_payment"].payment_date.isoformat() if sub["last_payment"] else None,
+            "last_payment_amount": sub["last_payment"].amount if sub["last_payment"] else None,
+            "payment_count": sub["payment_count"],
+            "total_1m": sub["total_1m"],
+            "avg_3m": sub["avg_3m"],
+            "avg_12m": sub["avg_12m"],
+            "trend_pct": sub["trend_pct"]
+        })
+    
+    return JSONResponse({
+        "subscriptions": serialized,
+        "total_monthly": stats["total_monthly"],
+        "count_active": stats["count_active"]
+    })
+
+
+@router.post("/budget/subscription/add")
+def add_subscription(
+    request: Request,
+    db: Session = Depends(get_db),
+    name: str = Form(...),
+    utility_type: str = Form("subscription"),
+    category_type: str = Form("need"),
+    notes: str = Form(None),
+    initial_amount: float = Form(None),
+    initial_date: str = Form(None),
+    add_to_budget: bool = Form(True),
+    tracking_period_months: int = Form(6)
+):
+    """Add a new subscription/utility to track."""
+    user = get_current_user(request, db)
+    if not user:
+        return RedirectResponse("/login")
+    
+    subscription = SubscriptionUtility(
+        user_id=user.id,
+        name=name.strip(),
+        utility_type=utility_type,
+        category_type=category_type,
+        notes=notes.strip() if notes else None,
+        is_active=True
+    )
+    db.add(subscription)
+    db.flush()  # Get the ID
+    
+    # Add initial payment if provided
+    if initial_amount and initial_date:
+        from datetime import datetime
+        payment = SubscriptionPayment(
+            subscription_id=subscription.id,
+            amount=initial_amount,
+            payment_date=datetime.strptime(initial_date, "%Y-%m-%d").date()
+        )
+        db.add(payment)
+    
+    # Also add to budget as a variable expense (BudgetItem) if requested
+    # This uses tracked average from the subscription payments
+    if add_to_budget:
+        # Find or create an expense category for subscriptions/utilities
+        sub_category_name = f"Subscriptions & Utilities"
+        exp_category = db.query(ExpenseCategory).filter(
+            ExpenseCategory.user_id == user.id,
+            ExpenseCategory.name == sub_category_name
+        ).first()
+        
+        if not exp_category:
+            exp_category = ExpenseCategory(user_id=user.id, name=sub_category_name)
+            db.add(exp_category)
+            db.flush()
+        
+        # Create a subcategory for this specific subscription
+        subcategory = SubCategory(
+            category_id=exp_category.id,
+            name=name.strip()
+        )
+        db.add(subcategory)
+        db.flush()
+        
+        # Link the subscription to this category/subcategory for tracking
+        subscription.expense_category_id = exp_category.id
+        subscription.expense_subcategory_id = subcategory.id
+        
+        # Create budget item using tracked average
+        budget_item = BudgetItem(
+            user_id=user.id,
+            expense_category_id=exp_category.id,
+            expense_subcategory_id=subcategory.id,
+            use_tracked_average=True,
+            specified_amount=initial_amount if initial_amount else 0,
+            tracking_period_months=tracking_period_months,
+            category_type=category_type
+        )
+        db.add(budget_item)
+    
+    db.commit()
+    return RedirectResponse("/budget?tab=subscriptions", status_code=303)
+
+
+@router.post("/budget/subscription/payment/add")
+def add_subscription_payment(
+    request: Request,
+    db: Session = Depends(get_db),
+    subscription_id: int = Form(...),
+    amount: float = Form(...),
+    payment_date: str = Form(...),
+    notes: str = Form(None)
+):
+    """Add a payment record to a subscription."""
+    user = get_current_user(request, db)
+    if not user:
+        return RedirectResponse("/login")
+    
+    # Verify subscription belongs to user
+    subscription = db.query(SubscriptionUtility).filter(
+        SubscriptionUtility.id == subscription_id,
+        SubscriptionUtility.user_id == user.id
+    ).first()
+    
+    if not subscription:
+        return RedirectResponse("/budget?tab=subscriptions&error=not_found", status_code=303)
+    
+    from datetime import datetime
+    payment = SubscriptionPayment(
+        subscription_id=subscription_id,
+        amount=amount,
+        payment_date=datetime.strptime(payment_date, "%Y-%m-%d").date(),
+        notes=notes.strip() if notes else None
+    )
+    db.add(payment)
+    db.commit()
+    
+    return RedirectResponse("/budget?tab=subscriptions", status_code=303)
+
+
+@router.get("/api/subscription/{sub_id}")
+def get_subscription_detail(sub_id: int, request: Request, db: Session = Depends(get_db)):
+    """Get detailed subscription info with payment history."""
+    user = get_current_user(request, db)
+    if not user:
+        return JSONResponse({"error": "Not authenticated"}, status_code=401)
+    
+    subscription = db.query(SubscriptionUtility).filter(
+        SubscriptionUtility.id == sub_id,
+        SubscriptionUtility.user_id == user.id
+    ).first()
+    
+    if not subscription:
+        return JSONResponse({"error": "Not found"}, status_code=404)
+    
+    payments = sorted(subscription.payments, key=lambda p: p.payment_date, reverse=True)
+    
+    # Group payments by month for chart
+    from collections import defaultdict
+    monthly_data = defaultdict(float)
+    for p in payments:
+        month_key = p.payment_date.strftime("%Y-%m")
+        monthly_data[month_key] += p.amount
+    
+    sorted_months = sorted(monthly_data.keys())
+    
+    return JSONResponse({
+        "id": subscription.id,
+        "name": subscription.name,
+        "utility_type": subscription.utility_type,
+        "category_type": subscription.category_type,
+        "is_active": subscription.is_active,
+        "notes": subscription.notes,
+        "payments": [
+            {
+                "id": p.id,
+                "amount": p.amount,
+                "date": p.payment_date.isoformat(),
+                "notes": p.notes
+            }
+            for p in payments[:50]  # Last 50 payments
+        ],
+        "monthly_chart": {
+            "labels": sorted_months,
+            "data": [monthly_data[m] for m in sorted_months]
+        }
+    })
+
+
+@router.post("/budget/subscription/update/{sub_id}")
+def update_subscription(
+    sub_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    name: str = Form(...),
+    utility_type: str = Form("subscription"),
+    category_type: str = Form("need"),
+    notes: str = Form(None),
+    is_active: bool = Form(True)
+):
+    """Update a subscription."""
+    user = get_current_user(request, db)
+    if not user:
+        return RedirectResponse("/login")
+    
+    subscription = db.query(SubscriptionUtility).filter(
+        SubscriptionUtility.id == sub_id,
+        SubscriptionUtility.user_id == user.id
+    ).first()
+    
+    if not subscription:
+        return RedirectResponse("/budget?tab=subscriptions", status_code=303)
+    
+    subscription.name = name.strip()
+    subscription.utility_type = utility_type
+    subscription.category_type = category_type
+    subscription.notes = notes.strip() if notes else None
+    subscription.is_active = is_active
+    
+    db.commit()
+    return RedirectResponse("/budget?tab=subscriptions", status_code=303)
+
+
+@router.delete("/budget/subscription/{sub_id}")
+def delete_subscription(sub_id: int, request: Request, db: Session = Depends(get_db)):
+    """Delete a subscription and all its payments."""
+    user = get_current_user(request, db)
+    if not user:
+        return JSONResponse({"error": "Not authenticated"}, status_code=401)
+    
+    subscription = db.query(SubscriptionUtility).filter(
+        SubscriptionUtility.id == sub_id,
+        SubscriptionUtility.user_id == user.id
+    ).first()
+    
+    if subscription:
+        db.delete(subscription)
+        db.commit()
+        return JSONResponse({"success": True})
+    
+    return JSONResponse({"error": "Not found"}, status_code=404)
+
+
+@router.delete("/budget/subscription/payment/{payment_id}")
+def delete_subscription_payment(payment_id: int, request: Request, db: Session = Depends(get_db)):
+    """Delete a specific payment."""
+    user = get_current_user(request, db)
+    if not user:
+        return JSONResponse({"error": "Not authenticated"}, status_code=401)
+    
+    payment = db.query(SubscriptionPayment).filter(SubscriptionPayment.id == payment_id).first()
+    
+    if payment:
+        # Verify user owns the subscription
+        subscription = db.query(SubscriptionUtility).filter(
+            SubscriptionUtility.id == payment.subscription_id,
+            SubscriptionUtility.user_id == user.id
+        ).first()
+        
+        if subscription:
+            db.delete(payment)
+            db.commit()
+            return JSONResponse({"success": True})
+    
+    return JSONResponse({"error": "Not found"}, status_code=404)
+
+
+# ===== BUDGET IMPORT/EXPORT =====
+
+@router.get("/budget/csv-export")
+def export_budget_csv(request: Request, db: Session = Depends(get_db)):
+    """Export all budget data as CSV."""
+    user = get_current_user(request, db)
+    if not user:
+        return RedirectResponse("/login")
+    
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # Header row with all fields
+    writer.writerow([
+        "type",  # fixed_cost, budget_item, subscription, subscription_payment
+        "name",
+        "amount",
+        "frequency",
+        "category_type",
+        "is_active",
+        "amount_mode",
+        "tracking_period_months",
+        "expense_category",
+        "expense_subcategory",
+        "use_tracked_average",
+        "utility_type",  # For subscriptions
+        "notes",
+        "payment_date",  # For subscription payments
+        "parent_subscription"  # Name of subscription for payments
+    ])
+    
+    # Export fixed costs
+    fixed_costs = db.query(FixedCost).filter(FixedCost.user_id == user.id).all()
+    for cost in fixed_costs:
+        # Get linked category names
+        exp_cat = ""
+        exp_subcat = ""
+        if cost.expense_category_id:
+            cat = db.query(ExpenseCategory).filter(ExpenseCategory.id == cost.expense_category_id).first()
+            exp_cat = cat.name if cat else ""
+        if cost.expense_subcategory_id:
+            subcat = db.query(SubCategory).filter(SubCategory.id == cost.expense_subcategory_id).first()
+            exp_subcat = subcat.name if subcat else ""
+        
+        writer.writerow([
+            "fixed_cost",
+            cost.name,
+            cost.amount,
+            cost.frequency,
+            cost.category_type,
+            cost.is_active,
+            cost.amount_mode or "fixed",
+            cost.tracking_period_months or 3,
+            exp_cat,
+            exp_subcat,
+            "",  # use_tracked_average (not used for fixed costs)
+            "",  # utility_type
+            "",  # notes
+            "",  # payment_date
+            ""   # parent_subscription
+        ])
+    
+    # Export budget items
+    budget_items = db.query(BudgetItem).filter(BudgetItem.user_id == user.id).all()
+    for item in budget_items:
+        exp_cat = ""
+        exp_subcat = ""
+        if item.expense_category_id:
+            cat = db.query(ExpenseCategory).filter(ExpenseCategory.id == item.expense_category_id).first()
+            exp_cat = cat.name if cat else ""
+        if item.expense_subcategory_id:
+            subcat = db.query(SubCategory).filter(SubCategory.id == item.expense_subcategory_id).first()
+            exp_subcat = subcat.name if subcat else ""
+        
+        writer.writerow([
+            "budget_item",
+            "",  # name (not used for budget items)
+            item.specified_amount or 0,
+            "",  # frequency
+            item.category_type,
+            "",  # is_active
+            "",  # amount_mode
+            item.tracking_period_months or 3,
+            exp_cat,
+            exp_subcat,
+            item.use_tracked_average,
+            "",  # utility_type
+            "",  # notes
+            "",  # payment_date
+            ""   # parent_subscription
+        ])
+    
+    # Export subscriptions
+    subscriptions = db.query(SubscriptionUtility).filter(SubscriptionUtility.user_id == user.id).all()
+    for sub in subscriptions:
+        writer.writerow([
+            "subscription",
+            sub.name,
+            "",  # amount (tracked via payments)
+            "",  # frequency
+            sub.category_type,
+            sub.is_active,
+            "",  # amount_mode
+            "",  # tracking_period_months
+            "",  # expense_category
+            "",  # expense_subcategory
+            "",  # use_tracked_average
+            sub.utility_type,
+            sub.notes or "",
+            "",  # payment_date
+            ""   # parent_subscription
+        ])
+        
+        # Export payments for this subscription
+        for payment in sub.payments:
+            writer.writerow([
+                "subscription_payment",
+                "",  # name
+                payment.amount,
+                "",  # frequency
+                "",  # category_type
+                "",  # is_active
+                "",  # amount_mode
+                "",  # tracking_period_months
+                "",  # expense_category
+                "",  # expense_subcategory
+                "",  # use_tracked_average
+                "",  # utility_type
+                payment.notes or "",
+                payment.payment_date.isoformat(),
+                sub.name  # parent_subscription
+            ])
+    
+    output.seek(0)
+    
+    return Response(
+        content=output.getvalue(),
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": f"attachment; filename=moneyflow_budget_{date.today().isoformat()}.csv"
+        }
+    )
+
+
+@router.get("/budget/csv-template")
+def get_budget_csv_template(request: Request):
+    """Download a template CSV for budget import."""
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # Header row
+    writer.writerow([
+        "type",
+        "name",
+        "amount",
+        "frequency",
+        "category_type",
+        "is_active",
+        "amount_mode",
+        "tracking_period_months",
+        "expense_category",
+        "expense_subcategory",
+        "use_tracked_average",
+        "utility_type",
+        "notes",
+        "payment_date",
+        "parent_subscription"
+    ])
+    
+    # Example rows
+    writer.writerow([
+        "fixed_cost",
+        "Rent",
+        "1500",
+        "monthly",
+        "need",
+        "TRUE",
+        "fixed",
+        "3",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+    ])
+    writer.writerow([
+        "fixed_cost",
+        "Electric Bill",
+        "150",
+        "monthly",
+        "need",
+        "TRUE",
+        "tracked",
+        "3",
+        "Utilities",
+        "Electric",
+        "",
+        "",
+        "",
+        "",
+        ""
+    ])
+    writer.writerow([
+        "budget_item",
+        "",
+        "400",
+        "",
+        "need",
+        "",
+        "",
+        "3",
+        "Groceries",
+        "",
+        "TRUE",
+        "",
+        "",
+        "",
+        ""
+    ])
+    writer.writerow([
+        "subscription",
+        "Netflix",
+        "",
+        "",
+        "want",
+        "TRUE",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "subscription",
+        "Streaming service",
+        "",
+        ""
+    ])
+    writer.writerow([
+        "subscription_payment",
+        "",
+        "15.99",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "December payment",
+        "2024-12-01",
+        "Netflix"
+    ])
+    
+    output.seek(0)
+    
+    return Response(
+        content=output.getvalue(),
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": "attachment; filename=moneyflow_budget_template.csv"
+        }
+    )
+
+
+@router.post("/budget/csv-import")
+async def import_budget_csv(
+    request: Request,
+    db: Session = Depends(get_db),
+    csv_file: UploadFile = File(...)
+):
+    """Import budget data from CSV."""
+    user = get_current_user(request, db)
+    if not user:
+        return RedirectResponse("/login")
+    
+    try:
+        content = await csv_file.read()
+        decoded = content.decode("utf-8")
+        reader = csv.DictReader(io.StringIO(decoded))
+        
+        imported = {"fixed_costs": 0, "budget_items": 0, "subscriptions": 0, "payments": 0}
+        errors = []
+        subscription_map = {}  # Map subscription names to IDs for payment linking
+        
+        # First pass: collect existing subscriptions
+        existing_subs = db.query(SubscriptionUtility).filter(SubscriptionUtility.user_id == user.id).all()
+        for sub in existing_subs:
+            subscription_map[sub.name.lower()] = sub.id
+        
+        for row_num, row in enumerate(reader, start=2):
+            try:
+                row_type = row.get("type", "").strip().lower()
+                
+                if row_type == "fixed_cost":
+                    # Get or create linked expense category
+                    exp_cat_id = None
+                    exp_subcat_id = None
+                    exp_cat_name = row.get("expense_category", "").strip()
+                    exp_subcat_name = row.get("expense_subcategory", "").strip()
+                    
+                    if exp_cat_name:
+                        cat = db.query(ExpenseCategory).filter(
+                            ExpenseCategory.user_id == user.id,
+                            ExpenseCategory.name == exp_cat_name
+                        ).first()
+                        if cat:
+                            exp_cat_id = cat.id
+                            if exp_subcat_name:
+                                subcat = db.query(SubCategory).filter(
+                                    SubCategory.category_id == cat.id,
+                                    SubCategory.name == exp_subcat_name
+                                ).first()
+                                if subcat:
+                                    exp_subcat_id = subcat.id
+                    
+                    cost = FixedCost(
+                        user_id=user.id,
+                        name=row.get("name", "Imported Cost").strip(),
+                        amount=float(row.get("amount", 0) or 0),
+                        frequency=row.get("frequency", "monthly").strip() or "monthly",
+                        category_type=row.get("category_type", "need").strip() or "need",
+                        is_active=row.get("is_active", "TRUE").strip().upper() in ("TRUE", "1", "YES"),
+                        amount_mode=row.get("amount_mode", "fixed").strip() or "fixed",
+                        tracking_period_months=int(row.get("tracking_period_months", 3) or 3),
+                        expense_category_id=exp_cat_id,
+                        expense_subcategory_id=exp_subcat_id
+                    )
+                    db.add(cost)
+                    imported["fixed_costs"] += 1
+                    
+                elif row_type == "budget_item":
+                    # Get linked expense category
+                    exp_cat_id = None
+                    exp_subcat_id = None
+                    exp_cat_name = row.get("expense_category", "").strip()
+                    exp_subcat_name = row.get("expense_subcategory", "").strip()
+                    
+                    if exp_cat_name:
+                        cat = db.query(ExpenseCategory).filter(
+                            ExpenseCategory.user_id == user.id,
+                            ExpenseCategory.name == exp_cat_name
+                        ).first()
+                        if cat:
+                            exp_cat_id = cat.id
+                            if exp_subcat_name:
+                                subcat = db.query(SubCategory).filter(
+                                    SubCategory.category_id == cat.id,
+                                    SubCategory.name == exp_subcat_name
+                                ).first()
+                                if subcat:
+                                    exp_subcat_id = subcat.id
+                    
+                    if exp_cat_id:  # Only create if we have a valid category
+                        item = BudgetItem(
+                            user_id=user.id,
+                            expense_category_id=exp_cat_id,
+                            expense_subcategory_id=exp_subcat_id,
+                            specified_amount=float(row.get("amount", 0) or 0),
+                            category_type=row.get("category_type", "need").strip() or "need",
+                            use_tracked_average=row.get("use_tracked_average", "FALSE").strip().upper() in ("TRUE", "1", "YES"),
+                            tracking_period_months=int(row.get("tracking_period_months", 3) or 3)
+                        )
+                        db.add(item)
+                        imported["budget_items"] += 1
+                    
+                elif row_type == "subscription":
+                    sub = SubscriptionUtility(
+                        user_id=user.id,
+                        name=row.get("name", "Imported Subscription").strip(),
+                        utility_type=row.get("utility_type", "subscription").strip() or "subscription",
+                        category_type=row.get("category_type", "need").strip() or "need",
+                        is_active=row.get("is_active", "TRUE").strip().upper() in ("TRUE", "1", "YES"),
+                        notes=row.get("notes", "").strip() or None
+                    )
+                    db.add(sub)
+                    db.flush()  # Get ID
+                    subscription_map[sub.name.lower()] = sub.id
+                    imported["subscriptions"] += 1
+                    
+                elif row_type == "subscription_payment":
+                    parent_name = row.get("parent_subscription", "").strip().lower()
+                    if parent_name and parent_name in subscription_map:
+                        payment_date_str = row.get("payment_date", "").strip()
+                        if payment_date_str:
+                            payment = SubscriptionPayment(
+                                subscription_id=subscription_map[parent_name],
+                                amount=float(row.get("amount", 0) or 0),
+                                payment_date=datetime.strptime(payment_date_str, "%Y-%m-%d").date(),
+                                notes=row.get("notes", "").strip() or None
+                            )
+                            db.add(payment)
+                            imported["payments"] += 1
+                    else:
+                        errors.append(f"Row {row_num}: Subscription '{parent_name}' not found for payment")
+                        
+            except Exception as e:
+                errors.append(f"Row {row_num}: {str(e)}")
+        
+        db.commit()
+        
+        # Build success message
+        msg_parts = []
+        if imported["fixed_costs"]: msg_parts.append(f"{imported['fixed_costs']} fixed costs")
+        if imported["budget_items"]: msg_parts.append(f"{imported['budget_items']} budget items")
+        if imported["subscriptions"]: msg_parts.append(f"{imported['subscriptions']} subscriptions")
+        if imported["payments"]: msg_parts.append(f"{imported['payments']} payments")
+        
+        success_msg = "Imported: " + ", ".join(msg_parts) if msg_parts else "No data imported"
+        if errors:
+            success_msg += f" ({len(errors)} errors)"
+        
+        return RedirectResponse(f"/budget?success={success_msg.replace(' ', '+')}", status_code=303)
+        
+    except Exception as e:
+        logger.error(f"Budget import error: {e}")
+        return RedirectResponse(f"/budget?error=Import+failed:+{str(e)[:50]}", status_code=303)
 

@@ -501,6 +501,32 @@
                         </div>
                     </div>
                 </form>
+                
+                <!-- Profile Picture Section -->
+                <div style="margin-top: 2em; padding-top: 1.5em; border-top: 2px solid #e8eef8;">
+                    <h3 style="margin: 0 0 0.5em 0; color: var(--text-heading);">📷 Personalize Your Profile (Optional)</h3>
+                    <p style="color: var(--text-secondary); font-size: 0.9em; margin-bottom: 1em;">
+                        Add a profile picture to make your account feel more personal.
+                    </p>
+                    <form id="profilePictureForm" enctype="multipart/form-data" style="display: flex; align-items: center; gap: 1.5em;">
+                        <div style="flex-shrink: 0;">
+                            <div id="profilePreview" style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), #5c9aff); display: flex; align-items: center; justify-content: center; font-size: 2em; color: #fff; overflow: hidden; border: 3px solid #fff; box-shadow: 0 2px 10px rgba(0,0,0,0.15);">
+                                {{ user.name[0].upper() if user else '?' }}
+                            </div>
+                        </div>
+                        <div style="flex: 1;">
+                            <div style="position: relative; display: inline-block;">
+                                <input type="file" id="profilePicInput" name="profile_picture" accept="image/*" 
+                                       style="position: absolute; inset: 0; opacity: 0; cursor: pointer;" 
+                                       onchange="previewProfilePicture(this)">
+                                <button type="button" style="background: linear-gradient(135deg, var(--accent), #5c9aff); color: #fff; padding: 0.6em 1.2em; border-radius: 8px; font-weight: 600; cursor: pointer; border: none;">
+                                    Choose Photo
+                                </button>
+                            </div>
+                            <div id="profilePicStatus" style="font-size: 0.85em; color: var(--text-secondary); margin-top: 0.5em;"></div>
+                        </div>
+                    </form>
+                </div>
             </div>
             
             <!-- Step 2: First Expense -->
@@ -801,6 +827,26 @@
                     });
                     
                     if (!response.ok) throw new Error('Failed to save income');
+                    
+                    // Also save profile picture if one was selected
+                    const profilePicInput = document.getElementById('profilePicInput');
+                    if (profilePicInput.files.length > 0) {
+                        const picFormData = new FormData();
+                        picFormData.append('picture', profilePicInput.files[0]);
+                        
+                        try {
+                            const picResponse = await fetch('/profile/upload-picture', {
+                                method: 'POST',
+                                body: picFormData
+                            });
+                            if (picResponse.ok) {
+                                document.getElementById('profilePicStatus').textContent = '✅ Photo uploaded!';
+                            }
+                        } catch (err) {
+                            console.log('Profile picture upload optional');
+                        }
+                    }
+                    
                     document.getElementById('step1Success').classList.remove('hidden');
                     
                 } else if (step === 2) {
@@ -886,6 +932,27 @@
             if (currentStep > 1) {
                 currentStep--;
                 updateProgress();
+            }
+        }
+        
+        function previewProfilePicture(input) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                
+                // Check file size (max 5MB)
+                if (file.size > 5 * 1024 * 1024) {
+                    document.getElementById('profilePicStatus').textContent = '⚠️ File too large (max 5MB)';
+                    input.value = '';
+                    return;
+                }
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('profilePreview');
+                    preview.innerHTML = `<img src="${e.target.result}" style="width: 100%; height: 100%; object-fit: cover;">`;
+                    document.getElementById('profilePicStatus').textContent = `Selected: ${file.name}`;
+                };
+                reader.readAsDataURL(file);
             }
         }
         

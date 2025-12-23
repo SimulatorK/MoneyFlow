@@ -1,0 +1,110 @@
+account_name,account_type,is_asset,institution,balance_date,balance,notes
+401k Retirement,401k,true,Fidelity,2024-01-31,85000.00,Employer 401k
+401k Retirement,401k,true,Fidelity,2024-02-29,87500.00,Employer 401k
+401k Retirement,401k,true,Fidelity,2024-03-31,89200.00,Employer 401k
+401k Retirement,401k,true,Fidelity,2024-04-30,88100.00,Employer 401k - market dip
+401k Retirement,401k,true,Fidelity,2024-05-31,91500.00,Employer 401k
+401k Retirement,401k,true,Fidelity,2024-06-30,94200.00,Employer 401k
+401k Retirement,401k,true,Fidelity,2024-07-31,96800.00,Employer 401k
+401k Retirement,401k,true,Fidelity,2024-08-31,95500.00,Employer 401k
+401k Retirement,401k,true,Fidelity,2024-09-30,97200.00,Employer 401k
+401k Retirement,401k,true,Fidelity,2024-10-31,99500.00,Employer 401k
+401k Retirement,401k,true,Fidelity,2024-11-30,102000.00,Employer 401k
+401k Retirement,401k,true,Fidelity,2024-12-31,105000.00,Employer 401k
+Roth IRA,roth_ira,true,Vanguard,2024-01-31,32000.00,Personal Roth IRA
+Roth IRA,roth_ira,true,Vanguard,2024-02-29,32800.00,Personal Roth IRA
+Roth IRA,roth_ira,true,Vanguard,2024-03-31,33500.00,Personal Roth IRA
+Roth IRA,roth_ira,true,Vanguard,2024-04-30,33100.00,Personal Roth IRA
+Roth IRA,roth_ira,true,Vanguard,2024-05-31,34200.00,Personal Roth IRA
+Roth IRA,roth_ira,true,Vanguard,2024-06-30,35100.00,Personal Roth IRA
+Roth IRA,roth_ira,true,Vanguard,2024-07-31,36000.00,Personal Roth IRA
+Roth IRA,roth_ira,true,Vanguard,2024-08-31,35600.00,Personal Roth IRA
+Roth IRA,roth_ira,true,Vanguard,2024-09-30,36500.00,Personal Roth IRA
+Roth IRA,roth_ira,true,Vanguard,2024-10-31,37200.00,Personal Roth IRA
+Roth IRA,roth_ira,true,Vanguard,2024-11-30,38000.00,Personal Roth IRA
+Roth IRA,roth_ira,true,Vanguard,2024-12-31,39000.00,Personal Roth IRA
+HSA Account,hsa,true,HealthEquity,2024-01-31,8500.00,Health Savings Account
+HSA Account,hsa,true,HealthEquity,2024-02-29,8800.00,Health Savings Account
+HSA Account,hsa,true,HealthEquity,2024-03-31,9100.00,Health Savings Account
+HSA Account,hsa,true,HealthEquity,2024-04-30,9400.00,Health Savings Account
+HSA Account,hsa,true,HealthEquity,2024-05-31,9700.00,Health Savings Account
+HSA Account,hsa,true,HealthEquity,2024-06-30,10000.00,Health Savings Account
+HSA Account,hsa,true,HealthEquity,2024-07-31,10300.00,Health Savings Account
+HSA Account,hsa,true,HealthEquity,2024-08-31,10600.00,Health Savings Account
+HSA Account,hsa,true,HealthEquity,2024-09-30,10900.00,Health Savings Account
+HSA Account,hsa,true,HealthEquity,2024-10-31,11200.00,Health Savings Account
+HSA Account,hsa,true,HealthEquity,2024-11-30,11500.00,Health Savings Account
+HSA Account,hsa,true,HealthEquity,2024-12-31,12000.00,Health Savings Account
+Brokerage Account,brokerage,true,Charles Schwab,2024-01-31,25000.00,Taxable investment account
+Brokerage Account,brokerage,true,Charles Schwab,2024-02-29,25800.00,Taxable investment account
+Brokerage Account,brokerage,true,Charles Schwab,2024-03-31,26400.00,Taxable investment account
+Brokerage Account,brokerage,true,Charles Schwab,2024-04-30,25900.00,Taxable investment account
+Brokerage Account,brokerage,true,Charles Schwab,2024-05-31,27200.00,Taxable investment account
+Brokerage Account,brokerage,true,Charles Schwab,2024-06-30,28100.00,Taxable investment account
+Brokerage Account,brokerage,true,Charles Schwab,2024-07-31,29000.00,Taxable investment account
+Brokerage Account,brokerage,true,Charles Schwab,2024-08-31,28500.00,Taxable investment account
+Brokerage Account,brokerage,true,Charles Schwab,2024-09-30,29500.00,Taxable investment account
+Brokerage Account,brokerage,true,Charles Schwab,2024-10-31,30200.00,Taxable investment account
+Brokerage Account,brokerage,true,Charles Schwab,2024-11-30,31000.00,Taxable investment account
+Brokerage Account,brokerage,true,Charles Schwab,2024-12-31,32500.00,Taxable investment account
+Emergency Fund,savings,true,Ally Bank,2024-01-31,15000.00,Emergency savings - 3 months expenses
+Emergency Fund,savings,true,Ally Bank,2024-02-29,15500.00,Emergency savings
+Emergency Fund,savings,true,Ally Bank,2024-03-31,16000.00,Emergency savings
+Emergency Fund,savings,true,Ally Bank,2024-04-30,16500.00,Emergency savings
+Emergency Fund,savings,true,Ally Bank,2024-05-31,17000.00,Emergency savings
+Emergency Fund,savings,true,Ally Bank,2024-06-30,17500.00,Emergency savings
+Emergency Fund,savings,true,Ally Bank,2024-07-31,18000.00,Emergency savings
+Emergency Fund,savings,true,Ally Bank,2024-08-31,18500.00,Emergency savings
+Emergency Fund,savings,true,Ally Bank,2024-09-30,19000.00,Emergency savings
+Emergency Fund,savings,true,Ally Bank,2024-10-31,19500.00,Emergency savings
+Emergency Fund,savings,true,Ally Bank,2024-11-30,20000.00,Emergency savings
+Emergency Fund,savings,true,Ally Bank,2024-12-31,20000.00,Emergency savings
+Checking Account,checking,true,Chase,2024-01-31,4500.00,Primary checking
+Checking Account,checking,true,Chase,2024-02-29,5200.00,Primary checking
+Checking Account,checking,true,Chase,2024-03-31,4800.00,Primary checking
+Checking Account,checking,true,Chase,2024-04-30,5100.00,Primary checking
+Checking Account,checking,true,Chase,2024-05-31,4600.00,Primary checking
+Checking Account,checking,true,Chase,2024-06-30,5300.00,Primary checking
+Checking Account,checking,true,Chase,2024-07-31,4900.00,Primary checking
+Checking Account,checking,true,Chase,2024-08-31,5400.00,Primary checking
+Checking Account,checking,true,Chase,2024-09-30,5000.00,Primary checking
+Checking Account,checking,true,Chase,2024-10-31,5500.00,Primary checking
+Checking Account,checking,true,Chase,2024-11-30,4200.00,Primary checking - holiday spending
+Checking Account,checking,true,Chase,2024-12-31,4800.00,Primary checking
+Auto Loan,car_loan,false,Toyota Financial,2024-01-31,18500.00,2022 Toyota Camry
+Auto Loan,car_loan,false,Toyota Financial,2024-02-29,18100.00,2022 Toyota Camry
+Auto Loan,car_loan,false,Toyota Financial,2024-03-31,17700.00,2022 Toyota Camry
+Auto Loan,car_loan,false,Toyota Financial,2024-04-30,17300.00,2022 Toyota Camry
+Auto Loan,car_loan,false,Toyota Financial,2024-05-31,16900.00,2022 Toyota Camry
+Auto Loan,car_loan,false,Toyota Financial,2024-06-30,16500.00,2022 Toyota Camry
+Auto Loan,car_loan,false,Toyota Financial,2024-07-31,16100.00,2022 Toyota Camry
+Auto Loan,car_loan,false,Toyota Financial,2024-08-31,15700.00,2022 Toyota Camry
+Auto Loan,car_loan,false,Toyota Financial,2024-09-30,15300.00,2022 Toyota Camry
+Auto Loan,car_loan,false,Toyota Financial,2024-10-31,14900.00,2022 Toyota Camry
+Auto Loan,car_loan,false,Toyota Financial,2024-11-30,14500.00,2022 Toyota Camry
+Auto Loan,car_loan,false,Toyota Financial,2024-12-31,14100.00,2022 Toyota Camry
+Credit Card,credit_card,false,Chase Sapphire,2024-01-31,2500.00,Monthly balance - paid in full
+Credit Card,credit_card,false,Chase Sapphire,2024-02-29,1800.00,Monthly balance
+Credit Card,credit_card,false,Chase Sapphire,2024-03-31,2200.00,Monthly balance
+Credit Card,credit_card,false,Chase Sapphire,2024-04-30,1500.00,Monthly balance
+Credit Card,credit_card,false,Chase Sapphire,2024-05-31,2800.00,Monthly balance
+Credit Card,credit_card,false,Chase Sapphire,2024-06-30,3200.00,Monthly balance - travel
+Credit Card,credit_card,false,Chase Sapphire,2024-07-31,2100.00,Monthly balance
+Credit Card,credit_card,false,Chase Sapphire,2024-08-31,1900.00,Monthly balance
+Credit Card,credit_card,false,Chase Sapphire,2024-09-30,2400.00,Monthly balance
+Credit Card,credit_card,false,Chase Sapphire,2024-10-31,2000.00,Monthly balance
+Credit Card,credit_card,false,Chase Sapphire,2024-11-30,3500.00,Monthly balance - holiday
+Credit Card,credit_card,false,Chase Sapphire,2024-12-31,2800.00,Monthly balance
+Student Loan,student_loan,false,Navient,2024-01-31,22000.00,Federal student loans
+Student Loan,student_loan,false,Navient,2024-02-29,21700.00,Federal student loans
+Student Loan,student_loan,false,Navient,2024-03-31,21400.00,Federal student loans
+Student Loan,student_loan,false,Navient,2024-04-30,21100.00,Federal student loans
+Student Loan,student_loan,false,Navient,2024-05-31,20800.00,Federal student loans
+Student Loan,student_loan,false,Navient,2024-06-30,20500.00,Federal student loans
+Student Loan,student_loan,false,Navient,2024-07-31,20200.00,Federal student loans
+Student Loan,student_loan,false,Navient,2024-08-31,19900.00,Federal student loans
+Student Loan,student_loan,false,Navient,2024-09-30,19600.00,Federal student loans
+Student Loan,student_loan,false,Navient,2024-10-31,19300.00,Federal student loans
+Student Loan,student_loan,false,Navient,2024-11-30,19000.00,Federal student loans
+Student Loan,student_loan,false,Navient,2024-12-31,18700.00,Federal student loans
+

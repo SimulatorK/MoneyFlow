@@ -1,6 +1,40 @@
-from sqlalchemy import Column, Integer, Float, String, ForeignKey, Boolean
+from sqlalchemy import Column, Integer, Float, String, ForeignKey, Boolean, Date
 from sqlalchemy.orm import relationship
 from app.models import Base
+
+
+class SubscriptionUtility(Base):
+    """Track utilities and subscriptions over time."""
+    __tablename__ = "subscription_utilities"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    name = Column(String(200), nullable=False)
+    utility_type = Column(String(50), default="subscription")  # subscription, utility, service
+    category_type = Column(String(50), default="need")  # need, want
+    is_active = Column(Boolean, default=True)
+    notes = Column(String(500), nullable=True)
+    
+    # Optional link to expense category for auto-tracking
+    expense_category_id = Column(Integer, ForeignKey("categories.id"), nullable=True)
+    expense_subcategory_id = Column(Integer, ForeignKey("subcategories.id"), nullable=True)
+    
+    # Relationships
+    payments = relationship("SubscriptionPayment", back_populates="subscription", cascade="all, delete-orphan")
+
+
+class SubscriptionPayment(Base):
+    """Individual payment records for subscriptions/utilities."""
+    __tablename__ = "subscription_payments"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    subscription_id = Column(Integer, ForeignKey("subscription_utilities.id"), nullable=False)
+    amount = Column(Float, nullable=False)
+    payment_date = Column(Date, nullable=False)
+    notes = Column(String(200), nullable=True)
+    
+    # Relationships
+    subscription = relationship("SubscriptionUtility", back_populates="payments")
 
 
 class BudgetCategory(Base):

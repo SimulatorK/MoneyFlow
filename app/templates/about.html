@@ -27,24 +27,45 @@
             --nav-bg: #161920;
             --accent: #4d8ef0;
         }
-        .app-title {
-          margin: 0;
-          font-size: 2.2em;
-          font-weight: 700;
-          color: #fff;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 0.5rem;
+        /* Professional Header - Logo on left, partially overlayed */
+        .app-header-brand {
+            display: inline-flex;
+            align-items: center;
+            position: relative;
+            padding-left: 30px;
         }
-        
-        .app-title img.app-icon {
-          width: 48px;
-          height: 48px;
-          max-width: 48px;
-          max-height: 48px;
-          border-radius: 6px;
-          flex-shrink: 0;
+        .app-header-logo {
+            position: absolute;
+            left: 0;
+            width: 56px;
+            height: 56px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.25);
+            opacity: 0.85;
+            z-index: 1;
+        }
+        .app-header-text {
+            position: relative;
+            z-index: 2;
+            padding-left: 35px;
+            text-align: left;
+            white-space: nowrap;
+        }
+        .app-title {
+            margin: 0;
+            font-size: 2.2em;
+            font-weight: 800;
+            color: #fff;
+            text-shadow: 2px 2px 8px rgba(0,0,0,0.5), 0 0 25px rgba(56,117,232,0.3);
+            letter-spacing: -0.01em;
+            line-height: 1.1;
+        }
+        .app-subtitle {
+            font-size: 0.8em;
+            color: rgba(255,255,255,0.9);
+            text-shadow: 1px 1px 4px rgba(0,0,0,0.4);
+            margin-top: 0.15em;
+            margin-left: 2px;
         }
         
         * { box-sizing: border-box; }
@@ -178,16 +199,13 @@
   <header class="app-header">
     <div class="header-left"></div>
     <div class="header-center">
-      <h1 class="app-title">
-        <img
-          src="/static/apple-touch-icon.png"
-          alt="MoneyFlow"
-          class="app-icon"
-        />
-        MoneyFlow
-        <span class="app-version">v1.2.0</span>
-      </h1>
-      <p class="app-subtitle">Your personal finance command center</p>
+      <div class="app-header-brand">
+        <img src="/static/apple-touch-icon.png" alt="" class="app-header-logo">
+        <div class="app-header-text">
+          <h1 class="app-title">MoneyFlow</h1>
+          <p class="app-subtitle">Your personal finance command center</p>
+        </div>
+      </div>
     </div>
     <div class="header-right">
       <a href="/about" class="about-link">ℹ️ About</a>
@@ -251,9 +269,11 @@
         <ul class="feature-list">
           <li>Sankey chart showing money flow from income to expenses</li>
           <li>Monthly summary with gross/net income and surplus</li>
+          <li>Budget vs Actual spending summary with variance tracking</li>
+          <li>Net Worth snapshot with performance metrics</li>
           <li>Spending trends by category and subcategory</li>
           <li>Month-over-month comparison charts</li>
-          <li>Quick action links to common tasks</li>
+          <li>Unbudgeted expense warnings</li>
         </ul>
       </div>
       
@@ -265,9 +285,11 @@
           <li>Fixed costs tracking (rent, utilities, subscriptions)</li>
           <li>Variable expense budgeting with categories</li>
           <li>Option to use tracked averages or fixed amounts</li>
-          <li>50/30/20 rule compliance tracking</li>
+          <li>Customizable budget rule targets (default 50/30/20)</li>
+          <li>Utilities & Subscriptions tracker with historical trends</li>
+          <li>Budget vs Actual spending comparison</li>
+          <li>Unbudgeted expense detection with warnings</li>
           <li>Flexible payment frequencies (weekly to annually)</li>
-          <li>Category and subcategory organization</li>
         </ul>
       </div>
       
@@ -307,12 +329,13 @@
         <h2><span class="icon">🔧</span> Financial Tools</h2>
         <p>Helpful calculators and tools for financial planning.</p>
         <ul class="feature-list">
+          <li>Net Worth Manager with monthly aggregation</li>
+          <li>Investment projections with contributions</li>
+          <li>Monte Carlo retirement simulations</li>
           <li>Mortgage/Home loan calculator</li>
           <li>Scenario comparison (compare two mortgages)</li>
           <li>Amortization schedule generation</li>
-          <li>Extra payment impact analysis</li>
-          <li>PMI calculations</li>
-          <li>More tools coming soon!</li>
+          <li>Portfolio allocation tracking</li>
         </ul>
       </div>
       
@@ -366,10 +389,25 @@
     </div>
     {% endif %}
     
-    <div class="version-info">
-      <p><strong>MoneyFlow</strong> v1.2.0 | Built with ❤️ for personal finance management</p>
-      <p>Questions or feedback? This is a personal project for tracking finances.</p>
-      <p>Email Mason Kelchner at <a href="mailto:mason.j.kelchner@gmail.com">mason.j.kelchner@gmail.com</a></p>
+    <div class="version-info" style="background: linear-gradient(135deg, rgba(56,117,232,0.1) 0%, rgba(56,117,232,0.05) 100%); border-radius: 12px; padding: 1.5em;">
+      <div style="display: flex; align-items: center; justify-content: center; gap: 1em; margin-bottom: 1em;">
+        <img src="/static/apple-touch-icon.png" alt="" style="width: 48px; height: 48px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+        <div>
+          <p style="margin: 0; font-size: 1.2em;"><strong>MoneyFlow</strong> <span style="background: var(--accent); color: #fff; padding: 0.2em 0.6em; border-radius: 12px; font-size: 0.7em; font-weight: 700;">v2.0.0</span></p>
+          <p style="margin: 0.2em 0 0 0; font-size: 0.85em; color: var(--text-secondary);">Comprehensive Personal Finance Suite</p>
+        </div>
+      </div>
+      <p style="margin: 0.5em 0;"><strong>What's New in v2.0.0:</strong></p>
+      <ul style="text-align: left; display: inline-block; margin: 0.5em 0; font-size: 0.9em;">
+        <li>📊 Utilities & Subscriptions Tracker - track spending over time</li>
+        <li>📈 Net Worth monthly averaging for cleaner charts</li>
+        <li>🎯 Customizable budget rule targets (beyond 50/30/20)</li>
+        <li>💰 Budget vs Actual spending on Dashboard</li>
+        <li>✨ Refreshed professional UI with enhanced visuals</li>
+        <li>🔍 Improved expense filtering with check/uncheck all</li>
+      </ul>
+      <p style="margin: 1em 0 0.5em 0;">Built with ❤️ for personal finance management</p>
+      <p style="margin: 0;">Questions or feedback? Email <a href="mailto:mason.j.kelchner@gmail.com">mason.j.kelchner@gmail.com</a></p>
     </div>
     </div><!-- End Overview Tab -->
     

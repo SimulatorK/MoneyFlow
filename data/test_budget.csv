@@ -1,0 +1,97 @@
+type,name,amount,frequency,category_type,is_active,amount_mode,tracking_period_months,expense_category,expense_subcategory,use_tracked_average,utility_type,notes,payment_date,parent_subscription
+fixed_cost,Rent/Mortgage,2000,monthly,need,TRUE,fixed,3,,,,,,
+fixed_cost,Auto Insurance,150,monthly,need,TRUE,fixed,3,,,,,,
+fixed_cost,Health Insurance,200,monthly,need,TRUE,fixed,3,,,,,,
+fixed_cost,Phone Bill,85,monthly,need,TRUE,fixed,3,,,,,,
+fixed_cost,Internet,65,monthly,need,TRUE,fixed,3,,,,,,
+fixed_cost,Auto Loan Payment,400,monthly,debt,TRUE,fixed,3,,,,,,
+fixed_cost,Student Loan Payment,300,monthly,debt,TRUE,fixed,3,,,,,,
+budget_item,,600,,need,,,6,Food,Groceries,TRUE,,,,,
+budget_item,,200,,want,,,6,Food,Dining Out,TRUE,,,,,
+budget_item,,100,,need,,,6,Transportation,Gas,TRUE,,,,,
+budget_item,,100,,need,,,6,Utilities,Electric,TRUE,,,,,
+budget_item,,75,,need,,,6,Utilities,Gas,TRUE,,,,,
+budget_item,,50,,need,,,6,Utilities,Water,TRUE,,,,,
+budget_item,,150,,want,,,6,Entertainment,,TRUE,,,,,
+budget_item,,200,,want,,,6,Shopping,,TRUE,,,,,
+budget_item,,75,,want,,,6,Personal Care,,TRUE,,,,,
+budget_item,,300,,want,,,12,Travel,,TRUE,,,,,
+subscription,Netflix,,,want,TRUE,,6,,,,,Monthly streaming service,,
+subscription_payment,,15.99,,,,,,,,,,January payment,2024-01-22,Netflix
+subscription_payment,,15.99,,,,,,,,,,February payment,2024-02-22,Netflix
+subscription_payment,,15.99,,,,,,,,,,March payment,2024-03-22,Netflix
+subscription_payment,,15.99,,,,,,,,,,April payment,2024-04-22,Netflix
+subscription_payment,,15.99,,,,,,,,,,May payment,2024-05-22,Netflix
+subscription_payment,,15.99,,,,,,,,,,June payment,2024-06-22,Netflix
+subscription_payment,,15.99,,,,,,,,,,July payment,2024-07-22,Netflix
+subscription_payment,,15.99,,,,,,,,,,August payment,2024-08-22,Netflix
+subscription_payment,,15.99,,,,,,,,,,September payment,2024-09-22,Netflix
+subscription_payment,,15.99,,,,,,,,,,October payment,2024-10-22,Netflix
+subscription_payment,,15.99,,,,,,,,,,November payment,2024-11-22,Netflix
+subscription_payment,,15.99,,,,,,,,,,December payment,2024-12-22,Netflix
+subscription,Spotify,,,want,TRUE,,6,,,,,Music streaming,,
+subscription_payment,,14.99,,,,,,,,,,January payment,2024-01-22,Spotify
+subscription_payment,,14.99,,,,,,,,,,February payment,2024-02-22,Spotify
+subscription_payment,,14.99,,,,,,,,,,March payment,2024-03-22,Spotify
+subscription_payment,,14.99,,,,,,,,,,April payment,2024-04-22,Spotify
+subscription_payment,,14.99,,,,,,,,,,May payment,2024-05-22,Spotify
+subscription_payment,,14.99,,,,,,,,,,June payment,2024-06-22,Spotify
+subscription_payment,,14.99,,,,,,,,,,July payment,2024-07-22,Spotify
+subscription_payment,,14.99,,,,,,,,,,August payment,2024-08-22,Spotify
+subscription_payment,,14.99,,,,,,,,,,September payment,2024-09-22,Spotify
+subscription_payment,,14.99,,,,,,,,,,October payment,2024-10-22,Spotify
+subscription_payment,,14.99,,,,,,,,,,November payment,2024-11-22,Spotify
+subscription_payment,,14.99,,,,,,,,,,December payment,2024-12-22,Spotify
+subscription,Planet Fitness,,,want,TRUE,,6,,,,,Gym membership,,
+subscription_payment,,65.00,,,,,,,,,,January payment,2024-01-28,Planet Fitness
+subscription_payment,,65.00,,,,,,,,,,February payment,2024-02-28,Planet Fitness
+subscription_payment,,65.00,,,,,,,,,,March payment,2024-03-28,Planet Fitness
+subscription_payment,,65.00,,,,,,,,,,April payment,2024-04-28,Planet Fitness
+subscription_payment,,65.00,,,,,,,,,,May payment,2024-05-28,Planet Fitness
+subscription_payment,,65.00,,,,,,,,,,June payment,2024-06-28,Planet Fitness
+subscription_payment,,65.00,,,,,,,,,,July payment,2024-07-28,Planet Fitness
+subscription_payment,,65.00,,,,,,,,,,August payment,2024-08-28,Planet Fitness
+subscription_payment,,65.00,,,,,,,,,,September payment,2024-09-28,Planet Fitness
+subscription_payment,,65.00,,,,,,,,,,October payment,2024-10-28,Planet Fitness
+subscription_payment,,65.00,,,,,,,,,,November payment,2024-11-28,Planet Fitness
+subscription_payment,,65.00,,,,,,,,,,December payment,2024-12-28,Planet Fitness
+subscription,Electric Bill,,,need,TRUE,,6,Utilities,Electric,utility,Tracked utility - variable by season,,
+subscription_payment,,125.50,,,,,,,,,,January payment,2024-01-08,Electric Bill
+subscription_payment,,142.00,,,,,,,,,,February payment,2024-02-08,Electric Bill
+subscription_payment,,118.00,,,,,,,,,,March payment,2024-03-08,Electric Bill
+subscription_payment,,95.00,,,,,,,,,,April payment,2024-04-08,Electric Bill
+subscription_payment,,135.00,,,,,,,,,,May payment,2024-05-08,Electric Bill
+subscription_payment,,175.00,,,,,,,,,,June payment,2024-06-08,Electric Bill
+subscription_payment,,195.00,,,,,,,,,,July payment,2024-07-08,Electric Bill
+subscription_payment,,210.00,,,,,,,,,,August payment,2024-08-08,Electric Bill
+subscription_payment,,165.00,,,,,,,,,,September payment,2024-09-08,Electric Bill
+subscription_payment,,128.00,,,,,,,,,,October payment,2024-10-08,Electric Bill
+subscription_payment,,145.00,,,,,,,,,,November payment,2024-11-08,Electric Bill
+subscription_payment,,155.00,,,,,,,,,,December payment,2024-12-08,Electric Bill
+subscription,Gas Bill,,,need,TRUE,,6,Utilities,Gas,utility,Tracked utility - higher in winter,,
+subscription_payment,,85.00,,,,,,,,,,January payment,2024-01-10,Gas Bill
+subscription_payment,,92.00,,,,,,,,,,February payment,2024-02-10,Gas Bill
+subscription_payment,,78.00,,,,,,,,,,March payment,2024-03-10,Gas Bill
+subscription_payment,,55.00,,,,,,,,,,April payment,2024-04-10,Gas Bill
+subscription_payment,,42.00,,,,,,,,,,May payment,2024-05-10,Gas Bill
+subscription_payment,,38.00,,,,,,,,,,June payment,2024-06-10,Gas Bill
+subscription_payment,,35.00,,,,,,,,,,July payment,2024-07-10,Gas Bill
+subscription_payment,,32.00,,,,,,,,,,August payment,2024-08-10,Gas Bill
+subscription_payment,,45.00,,,,,,,,,,September payment,2024-09-10,Gas Bill
+subscription_payment,,68.00,,,,,,,,,,October payment,2024-10-10,Gas Bill
+subscription_payment,,95.00,,,,,,,,,,November payment,2024-11-10,Gas Bill
+subscription_payment,,110.00,,,,,,,,,,December payment,2024-12-10,Gas Bill
+subscription,Water Bill,,,need,TRUE,,6,Utilities,Water,utility,City water service,,
+subscription_payment,,45.00,,,,,,,,,,January payment,2024-01-12,Water Bill
+subscription_payment,,45.00,,,,,,,,,,February payment,2024-02-12,Water Bill
+subscription_payment,,45.00,,,,,,,,,,March payment,2024-03-12,Water Bill
+subscription_payment,,45.00,,,,,,,,,,April payment,2024-04-12,Water Bill
+subscription_payment,,48.00,,,,,,,,,,May payment,2024-05-12,Water Bill
+subscription_payment,,52.00,,,,,,,,,,June payment,2024-06-12,Water Bill
+subscription_payment,,55.00,,,,,,,,,,July payment,2024-07-12,Water Bill
+subscription_payment,,50.00,,,,,,,,,,August payment,2024-08-12,Water Bill
+subscription_payment,,48.00,,,,,,,,,,September payment,2024-09-12,Water Bill
+subscription_payment,,45.00,,,,,,,,,,October payment,2024-10-12,Water Bill
+subscription_payment,,45.00,,,,,,,,,,November payment,2024-11-12,Water Bill
+subscription_payment,,45.00,,,,,,,,,,December payment,2024-12-12,Water Bill
+

@@ -40,25 +40,115 @@
             --warning: #ffcd39;
             --danger: #f55;
         }
+        /* Professional Header - Logo on left, partially overlayed */
+        .app-header-brand {
+            display: inline-flex;
+            align-items: center;
+            position: relative;
+            padding-left: 30px;
+        }
+        .app-header-logo {
+            position: absolute;
+            left: 0;
+            width: 56px;
+            height: 56px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.25);
+            opacity: 0.85;
+            z-index: 1;
+        }
+        .app-header-text {
+            position: relative;
+            z-index: 2;
+            padding-left: 35px;
+            text-align: left;
+            white-space: nowrap;
+        }
         .app-title {
-          margin: 0;
-          font-size: 2.2em;
-          font-weight: 700;
-          color: #fff;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 0.5rem;
+            margin: 0;
+            font-size: 2.2em;
+            font-weight: 800;
+            color: #fff;
+            text-shadow: 2px 2px 8px rgba(0,0,0,0.5), 0 0 25px rgba(56,117,232,0.3);
+            letter-spacing: -0.01em;
+            line-height: 1.1;
+        }
+        .app-subtitle {
+            font-size: 0.8em;
+            color: rgba(255,255,255,0.9);
+            text-shadow: 1px 1px 4px rgba(0,0,0,0.4);
+            margin-top: 0.15em;
+            margin-left: 2px;
         }
         
-        .app-title img.app-icon {
-          width: 48px;
-          height: 48px;
-          max-width: 48px;
-          max-height: 48px;
-          border-radius: 6px;
-          flex-shrink: 0;
+        /* Budget Tab Navigation */
+        .budget-tabs {
+          background: var(--bg-card);
+          padding: 0.5em;
+          border-radius: 10px;
+          box-shadow: 0 2px 10px rgba(0,0,0,0.08);
         }
+        .budget-tab-btn {
+          padding: 0.8em 1.5em;
+          border: 2px solid var(--border-light);
+          background: var(--bg-card);
+          border-radius: 8px;
+          cursor: pointer;
+          font-weight: 600;
+          color: var(--text-secondary);
+          transition: all 0.2s;
+          display: flex;
+          align-items: center;
+          gap: 0.5em;
+        }
+        .budget-tab-btn:hover {
+          border-color: var(--accent);
+          color: var(--text-heading);
+        }
+        .budget-tab-btn.active {
+          background: var(--accent);
+          color: #fff;
+          border-color: var(--accent);
+        }
+        .budget-tab-btn .badge {
+          background: rgba(255,255,255,0.2);
+          padding: 0.2em 0.5em;
+          border-radius: 10px;
+          font-size: 0.8em;
+        }
+        .budget-tab-content {
+          display: none;
+        }
+        .budget-tab-content.active {
+          display: contents;
+        }
+        
+        /* Subscription Card Styles */
+        .subscription-card {
+          background: var(--bg-card);
+          border-radius: 10px;
+          padding: 1em;
+          margin-bottom: 0.8em;
+          border-left: 4px solid var(--accent);
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .subscription-card:hover {
+          transform: translateX(4px);
+          box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .subscription-card.utility { border-left-color: #ffc107; }
+        .subscription-card.service { border-left-color: #28a745; }
+        .subscription-info { flex: 1; }
+        .subscription-name { font-weight: 600; color: var(--text-heading); }
+        .subscription-meta { font-size: 0.85em; color: var(--text-secondary); margin-top: 0.2em; }
+        .subscription-amount { font-weight: 700; font-size: 1.1em; }
+        .subscription-trend { font-size: 0.8em; margin-top: 0.2em; }
+        .subscription-trend.up { color: #dc3545; }
+        .subscription-trend.down { color: #28a745; }
+        .subscription-trend.neutral { color: var(--text-secondary); }
         .grid-container-2x2 {
             display: grid;
             /* Creates 2 columns, each taking up an equal fraction of the available space (1fr) */
@@ -368,12 +458,13 @@
   <header class="app-header">
     <div class="header-left"></div>
     <div class="header-center">
-      <h1 class="app-title">
-        <img src="/static/apple-touch-icon.png" alt="MoneyFlow" class="app-icon" />
-        MoneyFlow
-        <span class="app-version">v1.2.0</span>
-      </h1>
-      <p class="app-subtitle">Your personal finance command center</p>
+      <div class="app-header-brand">
+        <img src="/static/apple-touch-icon.png" alt="" class="app-header-logo">
+        <div class="app-header-text">
+          <h1 class="app-title">MoneyFlow</h1>
+          <p class="app-subtitle">Your personal finance command center</p>
+        </div>
+      </div>
     </div>
     <div class="header-right">
       <a href="/about" class="about-link">ℹ️ About</a>
@@ -411,12 +502,50 @@
   </nav>
   
   <div class="page-content">
+    {% if success %}
+    <div class="success-message" style="background: #d4edda; color: #155724; padding: 1em; border-radius: 8px; margin-bottom: 1em; display: flex; justify-content: space-between; align-items: center; width: 100%;">
+      <span>✅ {{ success }}</span>
+      <button onclick="this.parentElement.remove()" style="background: none; border: none; font-size: 1.2em; cursor: pointer;">×</button>
+    </div>
+    {% endif %}
+    {% if error and error != 'duplicate_category' %}
+    <div class="error-message" style="background: #f8d7da; color: #721c24; padding: 1em; border-radius: 8px; margin-bottom: 1em; display: flex; justify-content: space-between; align-items: center; width: 100%;">
+      <span>⚠️ {{ error }}</span>
+      <button onclick="this.parentElement.remove()" style="background: none; border: none; font-size: 1.2em; cursor: pointer;">×</button>
+    </div>
+    {% endif %}
     {% if error == 'duplicate_category' %}
     <div class="error-message" style="background: #f8d7da; color: #721c24; padding: 1em; border-radius: 8px; margin-bottom: 1em; display: flex; justify-content: space-between; align-items: center; width: 100%;">
       <span>⚠️ This category/subcategory combination already exists in your budget. Each category can only be used once.</span>
       <button onclick="this.parentElement.remove()" style="background: none; border: none; font-size: 1.2em; cursor: pointer;">×</button>
     </div>
     {% endif %}
+    
+    <!-- Sub-Tab Navigation for Budget/Subscriptions -->
+    <div class="budget-tabs" style="display: flex; gap: 0.5em; margin-bottom: 1.5em; width: 100%; flex-wrap: wrap; justify-content: space-between;">
+      <div style="display: flex; gap: 0.5em;">
+        <button class="budget-tab-btn {% if active_tab != 'subscriptions' %}active{% endif %}" onclick="showBudgetTab('budget')">
+          📋 Budget Manager
+        </button>
+        <button class="budget-tab-btn {% if active_tab == 'subscriptions' %}active{% endif %}" onclick="showBudgetTab('subscriptions')">
+          🔄 Utilities & Subscriptions
+          {% if subscription_stats.count_active > 0 %}
+          <span class="badge">${{ "{:,.0f}".format(subscription_stats.total_monthly) }}/mo</span>
+          {% endif %}
+        </button>
+      </div>
+      <div style="display: flex; gap: 0.5em; align-items: center;">
+        <a href="/budget/csv-export" class="btn-secondary" style="padding: 0.5em 1em; font-size: 0.85em; text-decoration: none; display: inline-flex; align-items: center; gap: 0.3em;">
+          📥 Export
+        </a>
+        <button class="btn-secondary" style="padding: 0.5em 1em; font-size: 0.85em;" onclick="document.getElementById('budgetImportModal').classList.add('active')">
+          📤 Import
+        </button>
+      </div>
+    </div>
+    
+    <!-- BUDGET TAB CONTENT -->
+    <div id="tab-budget" class="budget-tab-content {% if active_tab != 'subscriptions' %}active{% endif %}">
     
     <!-- LEFT COLUMN - Add Expense Form -->
     <div class="left-column">
@@ -723,10 +852,43 @@
               {% if summary.leftover >= 0 %}+{% endif %}${{ "{:,.0f}".format(summary.leftover) }}
             </div>
             <div class="summary-label">Leftover</div>
+            {% if summary.unbudgeted_monthly and summary.unbudgeted_monthly > 0 %}
+            <div style="font-size: 0.7em; color: var(--text-secondary); margin-top: 0.3em;" title="Leftover includes {{ "{:,.0f}".format(summary.unbudgeted_monthly) }} in unbudgeted expenses">
+              <span style="color: #ffc107;">⚠️</span> Incl. ${{ "{:,.0f}".format(summary.unbudgeted_monthly) }} unbudgeted
+            </div>
+            {% endif %}
           </div>
-          
-          
         </div>
+        
+        {% if summary.unbudgeted_monthly and summary.unbudgeted_monthly > 0 %}
+        <!-- Unbudgeted Expenses Alert -->
+        <div style="background: rgba(255, 193, 7, 0.1); border: 1px solid rgba(255, 193, 7, 0.3); border-radius: 8px; padding: 1em; margin-top: 1em;">
+          <div style="display: flex; align-items: flex-start; gap: 0.8em;">
+            <span style="font-size: 1.5em;">⚠️</span>
+            <div style="flex: 1;">
+              <div style="font-weight: 600; color: var(--text-heading); margin-bottom: 0.3em;">
+                Unbudgeted Expenses Detected
+              </div>
+              <div style="font-size: 0.9em; color: var(--text-secondary); margin-bottom: 0.5em;">
+                You have <strong style="color: #e65100;">${{ "{:,.0f}".format(summary.unbudgeted_monthly) }}</strong> in expenses from the last 30 days that aren't covered by your budget categories.
+              </div>
+              <div style="font-size: 0.85em; color: var(--text-secondary);">
+                {% for item in summary.unbudgeted_details[:5] %}
+                <span style="display: inline-block; background: var(--bg-hover); padding: 0.2em 0.6em; border-radius: 12px; margin: 0.2em 0.2em 0.2em 0;">
+                  {{ item.category_name }}{% if item.subcategory_name %} › {{ item.subcategory_name }}{% endif %}: ${{ "{:,.0f}".format(item.amount) }}
+                </span>
+                {% endfor %}
+                {% if summary.unbudgeted_details|length > 5 %}
+                <span style="color: var(--text-secondary); font-style: italic;">+{{ summary.unbudgeted_details|length - 5 }} more</span>
+                {% endif %}
+              </div>
+              <div style="font-size: 0.8em; color: var(--text-secondary); margin-top: 0.5em; font-style: italic;">
+                💡 Tip: Add these categories to your budget to track them properly.
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endif %}
         
         <!-- Breakdown Bar -->
         {% set total_pct = summary.needs_pct + summary.wants_pct + summary.savings_pct + summary.debt_pct %}
@@ -918,6 +1080,219 @@
           </div>
         </div>
       </div>
+    </div>
+  </div><!-- End budget tab content -->
+  
+  <!-- SUBSCRIPTIONS TAB CONTENT -->
+  <div id="tab-subscriptions" class="budget-tab-content {% if active_tab == 'subscriptions' %}active{% endif %}">
+    <div class="left-column">
+      <!-- Add Subscription Form -->
+      <div class="card">
+        <h3>➕ Add Utility/Subscription</h3>
+        <form method="post" action="/budget/subscription/add">
+          <div class="form-row">
+            <label>Name
+              <input type="text" name="name" placeholder="e.g., Electric Bill, Netflix..." required>
+            </label>
+          </div>
+          <div class="form-row" style="grid-template-columns: 1fr 1fr;">
+            <label>Type
+              <select name="utility_type">
+                {% for key, label in utility_types %}
+                <option value="{{ key }}">{{ label }}</option>
+                {% endfor %}
+              </select>
+            </label>
+            <label>Category
+              <select name="category_type">
+                <option value="need">Need</option>
+                <option value="want">Want</option>
+              </select>
+            </label>
+          </div>
+          <div class="form-row" style="grid-template-columns: 1fr 1fr;">
+            <label>Initial Amount ($)
+              <input type="number" name="initial_amount" step="0.01" min="0" placeholder="Optional">
+            </label>
+            <label>Date
+              <input type="date" name="initial_date" value="{{ today }}">
+            </label>
+          </div>
+          <div class="form-row">
+            <label>Notes
+              <input type="text" name="notes" placeholder="Optional notes...">
+            </label>
+          </div>
+          <div class="form-row" style="grid-template-columns: 1fr 1fr; margin-top: 0.5em;">
+            <label style="display: flex; align-items: center; gap: 0.5em; cursor: pointer;">
+              <input type="checkbox" name="add_to_budget" value="true" checked style="width: auto; margin: 0;" id="addToBudgetCheck" onchange="toggleTrackingPeriod()">
+              <span>Add to Variable Expenses</span>
+            </label>
+            <label id="trackingPeriodLabel">
+              Lookback Period
+              <select name="tracking_period_months">
+                <option value="3">3 months</option>
+                <option value="6" selected>6 months (default)</option>
+                <option value="12">12 months</option>
+              </select>
+            </label>
+          </div>
+          <button type="submit" class="btn-primary">Add Subscription</button>
+        </form>
+      </div>
+      
+      <!-- Quick Add Payment Form -->
+      {% if subscriptions %}
+      <div class="card">
+        <h3>💵 Record Payment</h3>
+        <form method="post" action="/budget/subscription/payment/add">
+          <div class="form-row">
+            <label>Subscription
+              <select name="subscription_id" required>
+                {% for sub in subscriptions %}
+                <option value="{{ sub.id }}">{{ sub.name }}</option>
+                {% endfor %}
+              </select>
+            </label>
+          </div>
+          <div class="form-row" style="grid-template-columns: 1fr 1fr;">
+            <label>Amount ($)
+              <input type="number" name="amount" step="0.01" min="0.01" required placeholder="0.00">
+            </label>
+            <label>Date
+              <input type="date" name="payment_date" value="{{ today }}" required>
+            </label>
+          </div>
+          <div class="form-row">
+            <label>Notes
+              <input type="text" name="notes" placeholder="Optional...">
+            </label>
+          </div>
+          <button type="submit" class="btn-primary">Record Payment</button>
+        </form>
+      </div>
+      {% endif %}
+    </div>
+    
+    <div class="right-column">
+      <!-- Subscription Summary -->
+      <div class="card">
+        <h3>📊 Subscription Summary</h3>
+        <div class="summary-grid" style="grid-template-columns: repeat(3, 1fr);">
+          <div class="summary-box">
+            <div class="summary-value">{{ subscription_stats.count_active }}</div>
+            <div class="summary-label">Active Items</div>
+          </div>
+          <div class="summary-box expense">
+            <div class="summary-value negative">${{ "{:,.0f}".format(subscription_stats.total_monthly) }}</div>
+            <div class="summary-label">Est. Monthly</div>
+          </div>
+          <div class="summary-box">
+            <div class="summary-value">${{ "{:,.0f}".format(subscription_stats.total_monthly * 12) }}</div>
+            <div class="summary-label">Est. Annual</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Subscriptions List -->
+      <div class="card">
+        <h3>🔄 Your Utilities & Subscriptions</h3>
+        {% if subscription_stats.subscriptions %}
+          {% for sub in subscription_stats.subscriptions %}
+          <div class="subscription-card {{ sub.utility_type }}" onclick="showSubscriptionDetails({{ sub.id }})">
+            <div class="subscription-info">
+              <div class="subscription-name">
+                {% if sub.utility_type == 'utility' %}⚡{% elif sub.utility_type == 'service' %}🔧{% else %}📺{% endif %}
+                {{ sub.name }}
+              </div>
+              <div class="subscription-meta">
+                <span class="type-badge type-{{ sub.category_type }}">{{ sub.category_type.title() }}</span>
+                · {{ sub.payment_count }} payments
+                {% if sub.last_payment %}
+                · Last: {{ sub.last_payment.date[:10] }}
+                {% endif %}
+              </div>
+            </div>
+            <div style="text-align: right;">
+              <div class="subscription-amount">${{ "{:,.0f}".format(sub.avg_3m) }}/mo</div>
+              <div class="subscription-trend {% if sub.trend_pct > 5 %}up{% elif sub.trend_pct < -5 %}down{% else %}neutral{% endif %}">
+                {% if sub.trend_pct > 0 %}↑{% elif sub.trend_pct < 0 %}↓{% else %}→{% endif %}
+                {{ "{:.0f}".format(sub.trend_pct|abs) }}% vs prev 3mo
+              </div>
+            </div>
+            <div class="item-actions" style="margin-left: 1em;">
+              <button class="btn-danger" onclick="event.stopPropagation(); deleteSubscription({{ sub.id }})">×</button>
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <p style="color: var(--text-secondary); text-align: center; padding: 2em;">
+            No subscriptions or utilities tracked yet.<br>
+            Add your first one using the form!
+          </p>
+        {% endif %}
+      </div>
+      
+      <!-- Chart placeholder -->
+      <div class="card">
+        <h3>📈 Spending Over Time</h3>
+        <div class="chart-container">
+          <canvas id="subscriptionTrendChart"></canvas>
+        </div>
+        <p style="font-size: 0.8em; color: var(--text-secondary); text-align: center; margin-top: 0.5em;">
+          Track how your utility and subscription costs change month to month, seasonally, and year over year.
+        </p>
+      </div>
+    </div>
+  </div><!-- End subscriptions tab content -->
+  
+  <!-- Subscription Detail Modal -->
+  <div class="modal-overlay" id="subscriptionDetailModal">
+    <div class="modal" style="max-width: 600px;">
+      <h4 id="subscriptionDetailName">Subscription Details</h4>
+      <div id="subscriptionDetailContent">
+        <!-- Populated by JavaScript -->
+      </div>
+      <div class="modal-btns">
+        <button type="button" class="btn-secondary" onclick="closeSubscriptionDetailModal()">Close</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Budget Import Modal -->
+  <div class="modal-overlay" id="budgetImportModal">
+    <div class="modal" style="max-width: 550px;">
+      <h4>📤 Import Budget Data</h4>
+      <p style="color: var(--text-secondary); font-size: 0.9em; margin-bottom: 1em;">
+        Upload a CSV file to import fixed costs, variable expenses, subscriptions, and payment history.
+      </p>
+      
+      <form method="post" action="/budget/csv-import" enctype="multipart/form-data">
+        <div class="form-row">
+          <label>CSV File
+            <input type="file" name="csv_file" accept=".csv" required style="padding: 0.8em;">
+          </label>
+        </div>
+        
+        <div style="background: var(--bg-hover); padding: 1em; border-radius: 8px; margin: 1em 0;">
+          <h5 style="margin: 0 0 0.5em 0;">CSV Format</h5>
+          <p style="font-size: 0.85em; color: var(--text-secondary); margin: 0;">
+            The CSV should have a <code>type</code> column with values:
+          </p>
+          <ul style="font-size: 0.85em; color: var(--text-secondary); margin: 0.5em 0; padding-left: 1.5em;">
+            <li><code>fixed_cost</code> - Fixed/recurring costs</li>
+            <li><code>budget_item</code> - Variable expense categories</li>
+            <li><code>subscription</code> - Utilities & subscriptions</li>
+            <li><code>subscription_payment</code> - Payment records</li>
+          </ul>
+          <a href="/budget/csv-template" style="font-size: 0.85em;">📄 Download template file</a>
+        </div>
+        
+        <div class="modal-btns">
+          <button type="button" class="btn-secondary" onclick="document.getElementById('budgetImportModal').classList.remove('active')">Cancel</button>
+          <button type="submit" class="btn-primary">Import Data</button>
+        </div>
+      </form>
     </div>
   </div>
   
@@ -1499,6 +1874,182 @@
       document.querySelector('input[name="needs_target"]').value = 50;
       document.querySelector('input[name="wants_target"]').value = 30;
       document.querySelector('input[name="savings_target"]').value = 20;
+    }
+    
+    // ===== SUBSCRIPTION FORM HELPERS =====
+    function toggleTrackingPeriod() {
+      const checkbox = document.getElementById('addToBudgetCheck');
+      const label = document.getElementById('trackingPeriodLabel');
+      if (label) {
+        label.style.display = checkbox.checked ? 'block' : 'none';
+      }
+    }
+    
+    // ===== TAB SWITCHING =====
+    function showBudgetTab(tabName) {
+      // Update URL
+      const url = new URL(window.location);
+      url.searchParams.set('tab', tabName);
+      window.history.pushState({}, '', url);
+      
+      // Update tab buttons
+      document.querySelectorAll('.budget-tab-btn').forEach(btn => btn.classList.remove('active'));
+      event.target.closest('.budget-tab-btn').classList.add('active');
+      
+      // Update content
+      document.querySelectorAll('.budget-tab-content').forEach(tab => tab.classList.remove('active'));
+      document.getElementById('tab-' + tabName).classList.add('active');
+    }
+    
+    // ===== SUBSCRIPTION FUNCTIONS =====
+    async function deleteSubscription(subId) {
+      if (!confirm('Delete this subscription and all its payment history?')) return;
+      try {
+        await fetch(`/budget/subscription/${subId}`, { method: 'DELETE' });
+        location.reload();
+      } catch (err) {
+        console.error('Error:', err);
+      }
+    }
+    
+    async function showSubscriptionDetails(subId) {
+      try {
+        const response = await fetch(`/api/subscription/${subId}`);
+        const data = await response.json();
+        
+        if (data.error) {
+          alert(data.error);
+          return;
+        }
+        
+        document.getElementById('subscriptionDetailName').textContent = data.name + ' Details';
+        
+        let html = `
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1em; margin-bottom: 1em;">
+            <div style="background: var(--bg-hover); padding: 1em; border-radius: 8px;">
+              <div style="font-weight: 600;">Type</div>
+              <div>${data.utility_type.charAt(0).toUpperCase() + data.utility_type.slice(1)}</div>
+            </div>
+            <div style="background: var(--bg-hover); padding: 1em; border-radius: 8px;">
+              <div style="font-weight: 600;">Category</div>
+              <div>${data.category_type.charAt(0).toUpperCase() + data.category_type.slice(1)}</div>
+            </div>
+          </div>
+          ${data.notes ? `<p style="margin-bottom: 1em; color: var(--text-secondary);"><em>${data.notes}</em></p>` : ''}
+          <h5 style="margin: 1em 0 0.5em 0;">Recent Payments</h5>
+          <div style="max-height: 200px; overflow-y: auto;">
+        `;
+        
+        if (data.payments.length > 0) {
+          data.payments.forEach(p => {
+            const pdate = new Date(p.date);
+            html += `
+              <div style="display: flex; justify-content: space-between; padding: 0.4em 0; border-bottom: 1px solid var(--border-light);">
+                <span>${pdate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                <span style="font-weight: 600;">$${p.amount.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+                <button onclick="deletePayment(${p.id})" style="background: none; border: none; color: #dc3545; cursor: pointer; font-size: 0.8em;">×</button>
+              </div>
+            `;
+          });
+        } else {
+          html += '<p style="color: var(--text-secondary);">No payments recorded yet.</p>';
+        }
+        
+        html += '</div>';
+        
+        // Add mini chart
+        if (data.monthly_chart.labels.length > 0) {
+          html += '<div style="margin-top: 1em;"><canvas id="subscriptionMiniChart" height="150"></canvas></div>';
+        }
+        
+        document.getElementById('subscriptionDetailContent').innerHTML = html;
+        document.getElementById('subscriptionDetailModal').classList.add('active');
+        
+        // Render mini chart if data exists
+        if (data.monthly_chart.labels.length > 0) {
+          const ctx = document.getElementById('subscriptionMiniChart');
+          new Chart(ctx, {
+            type: 'bar',
+            data: {
+              labels: data.monthly_chart.labels,
+              datasets: [{
+                label: 'Monthly Total',
+                data: data.monthly_chart.data,
+                backgroundColor: 'rgba(56, 117, 232, 0.7)',
+                borderRadius: 4
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { display: false } },
+              scales: {
+                y: { beginAtZero: true, ticks: { callback: v => '$' + v } }
+              }
+            }
+          });
+        }
+      } catch (err) {
+        console.error('Error loading subscription details:', err);
+      }
+    }
+    
+    function closeSubscriptionDetailModal() {
+      document.getElementById('subscriptionDetailModal').classList.remove('active');
+    }
+    
+    async function deletePayment(paymentId) {
+      if (!confirm('Delete this payment?')) return;
+      try {
+        await fetch(`/budget/subscription/payment/${paymentId}`, { method: 'DELETE' });
+        location.reload();
+      } catch (err) {
+        console.error('Error:', err);
+      }
+    }
+    
+    // Initialize subscription trend chart
+    const subTrendCtx = document.getElementById('subscriptionTrendChart');
+    if (subTrendCtx) {
+      const subscriptionData = {{ subscription_stats.subscriptions | tojson if subscription_stats else '[]' }};
+      
+      // Aggregate all subscription spending by type
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      
+      // For now, show a simple placeholder or aggregate data
+      if (subscriptionData.length > 0) {
+        const labels = subscriptionData.map(s => s.name);
+        const data = subscriptionData.map(s => s.avg_3m);
+        
+        new Chart(subTrendCtx, {
+          type: 'doughnut',
+          data: {
+            labels: labels,
+            datasets: [{
+              data: data,
+              backgroundColor: [
+                '#3875e8', '#28a745', '#ffc107', '#dc3545', '#6f42c1',
+                '#17a2b8', '#fd7e14', '#20c997', '#e83e8c', '#6c757d'
+              ],
+              borderWidth: 0
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { position: 'right', labels: { color: isDark ? '#e4e6eb' : '#333' } },
+              tooltip: {
+                callbacks: {
+                  label: function(context) {
+                    return `$${context.parsed.toLocaleString()}/mo`;
+                  }
+                }
+              }
+            }
+          }
+        });
+      }
     }
   </script>
 </body>

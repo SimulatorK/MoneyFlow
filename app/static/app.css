@@ -1,45 +1,166 @@
+/* MoneyFlow v2.0.0 - Enhanced Professional Styling */
 body { background: #f5f6fa; color: #222; font-family: 'Segoe UI', Verdana, sans-serif; margin: 0; }
+
+/* Enhanced Navigation */
 nav .tabs { flex-wrap: wrap; }
-.tab { letter-spacing: 0.03em; font-weight: 500; }
+.tab { letter-spacing: 0.03em; font-weight: 500; transition: all 0.2s ease; }
 .tab.active { box-shadow: 0 4px 8px -5px #3875e8 inset; font-weight: bold; }
+.tab:hover { transform: translateY(-1px); }
+
+/* User Box */
 .user-box {
-    border-radius: 10px;
+    border-radius: 12px;
     background: #fff;
     margin: 2.5em auto 2em auto;
     padding: 2em 2em 2em 2em;
     box-shadow: 0 8px 30px rgba(40,70,160,0.09), 0 1.5px 4px rgba(60,60,70,0.09);
     text-align: center;
     max-width: 410px;
+    position: relative;
+    overflow: hidden;
 }
+.user-box::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #3875e8, #5c9aff, #3875e8);
+    background-size: 200% 100%;
+    animation: shimmer 3s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+    0%, 100% { background-position: 200% 0; }
+    50% { background-position: 0 0; }
+}
+
 h1, h2, h3 { color: #243869; letter-spacing: 0.04em; margin-top: .4em; margin-bottom: .8em; font-weight: 600; }
 input, button {
-    border-radius: 5px; border: 1px solid #ddd; padding: 0.5em 0.95em; font-size: 1em;
+    border-radius: 6px; border: 1px solid #ddd; padding: 0.5em 0.95em; font-size: 1em;
     margin-top: 0.5em;
+    transition: all 0.2s ease;
 }
-button { background: #3875e8; color: #fff; border: none; font-weight: bold; cursor: pointer; transition: background 0.15s; margin-top: 1.3em; }
-button:hover { background: #243869; }
-a { color: #3875e8; text-decoration: none; }
-a:hover { text-decoration: underline; }
+input:focus {
+    outline: none;
+    border-color: #3875e8;
+    box-shadow: 0 0 0 3px rgba(56, 117, 232, 0.15);
+}
+button { 
+    background: linear-gradient(135deg, #3875e8 0%, #2d5cc9 100%);
+    color: #fff; border: none; font-weight: bold; cursor: pointer; 
+    transition: all 0.2s ease; margin-top: 1.3em;
+    box-shadow: 0 2px 8px rgba(56, 117, 232, 0.3);
+}
+button:hover { 
+    background: linear-gradient(135deg, #2d5cc9 0%, #1a3f9c 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(56, 117, 232, 0.4);
+}
+a { color: #3875e8; text-decoration: none; transition: color 0.2s ease; }
+a:hover { text-decoration: underline; color: #2d5cc9; }
+
+/* Responsive */
 @media (max-width: 560px) {
     .user-box { padding: 1em; max-width: 98vw; }
     nav .tabs { gap: 0.8em; }
 }
+
+/* Professional Header - Logo on left, partially overlayed */
+.app-header-brand {
+    display: inline-flex;
+    align-items: center;
+    position: relative;
+    padding-left: 30px; /* Space for the partial logo overlay */
+}
+.app-header-logo {
+    position: absolute;
+    left: 0;
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.25);
+    opacity: 0.85;
+    z-index: 1;
+}
+.app-header-text {
+    position: relative;
+    z-index: 2;
+    padding-left: 35px; /* Overlap with logo */
+    text-align: left;
+    white-space: nowrap;
+}
 .app-title {
     margin: 0;
     font-size: 2.2em;
-    font-weight: 700;
+    font-weight: 800;
     color: #fff;
-    display: flex;
+    text-shadow: 2px 2px 8px rgba(0,0,0,0.5), 0 0 25px rgba(56,117,232,0.3);
+    letter-spacing: -0.01em;
+    line-height: 1.1;
+}
+.app-subtitle {
+    font-size: 0.8em;
+    color: rgba(255,255,255,0.9);
+    text-shadow: 1px 1px 4px rgba(0,0,0,0.4);
+    margin-top: 0.15em;
+    margin-left: 2px;
+}
+
+/* Legacy icon support */
+.app-title img.app-icon {
+    display: none; /* Hidden in new design */
+}
+
+/* Card enhancements */
+.card {
+    position: relative;
+    overflow: hidden;
+}
+.card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.03), transparent);
+    transition: left 0.5s ease;
+}
+.card:hover::after {
+    left: 100%;
+}
+
+/* Decorative elements */
+.decorative-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 0.5em;
+}
+.decorative-dot.success { background: #28a745; }
+.decorative-dot.warning { background: #ffc107; }
+.decorative-dot.danger { background: #dc3545; }
+.decorative-dot.info { background: #3875e8; }
+
+/* Status indicators */
+.status-badge {
+    display: inline-flex;
     align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-  }
-  
-  .app-title img.app-icon {
-    width: 26px;
-    height: 26px;
-    max-width: 26px;
-    max-height: 26px;
-    border-radius: 6px;
-    flex-shrink: 0;
-  }
+    gap: 0.3em;
+    padding: 0.25em 0.6em;
+    border-radius: 20px;
+    font-size: 0.75em;
+    font-weight: 600;
+}
+.status-badge.active { background: rgba(40, 167, 69, 0.15); color: #28a745; }
+.status-badge.inactive { background: rgba(108, 117, 125, 0.15); color: #6c757d; }
+
+/* Subtle animations */
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.animate-in { animation: fadeInUp 0.3s ease-out; }

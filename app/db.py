@@ -5,7 +5,7 @@ from app.models import Base
 from app.models.user import User
 from app.models.income_taxes import IncomeTaxes
 from app.models.expense import Category, SubCategory, Expense, Vendor
-from app.models.budget import BudgetCategory, FixedCost, BudgetItem
+from app.models.budget import BudgetCategory, FixedCost, BudgetItem, SubscriptionUtility, SubscriptionPayment
 from app.models.mortgage import MortgageScenario
 from app.models.networth import Account, AccountBalance, AccountContribution, MonteCarloScenario
 from dotenv import load_dotenv
