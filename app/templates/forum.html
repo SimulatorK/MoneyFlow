@@ -209,10 +209,6 @@
   <header class="app-header">
     <div class="header-left"></div>
     <div class="header-center">
-      <h1 class="app-title">
-      </h1>
-    </div>
-    <div class="header-center">
       <div class="app-header-brand">
         <img src="/static/apple-touch-icon.png" alt="" class="app-header-logo">
         <div class="app-header-text">
@@ -226,7 +222,11 @@
       <div class="profile-dropdown">
         <button class="profile-btn" onclick="toggleProfileDropdown()">
           <div class="profile-avatar">
-            {% if profile_picture_b64 %}<img src="data:{{ profile_picture_type }};base64,{{ profile_picture_b64 }}" alt="">{% else %}{{ user.name[0].upper() }}{% endif %}
+            {% if profile_picture_b64 %}
+            <img src="data:{{ profile_picture_type }};base64,{{ profile_picture_b64 }}" alt="">
+            {% else %}
+            {{ user.name[0].upper() }}
+            {% endif %}
           </div>
           <span>{{ user.name.split()[0] }}</span>
           <span style="font-size:0.7em;">▼</span>

@@ -290,13 +290,9 @@
     </style>
 </head>
 <body>
-  <!-- App Header -->
+  <!-- App Header with Profile Dropdown -->
   <header class="app-header">
     <div class="header-left"></div>
-    <div class="header-center">
-      <h1 class="app-title">
-      </h1>
-    </div>
     <div class="header-center">
       <div class="app-header-brand">
         <img src="/static/apple-touch-icon.png" alt="" class="app-header-logo">
@@ -308,7 +304,9 @@
     </div>
     <div class="header-right">
       <a href="/about" class="about-link">ℹ️ About</a>
-      <a href="/logout" class="header-logout">🚪 Sign Out</a>
+      
+        <a href="/logout" class="dropdown-item danger">🚪 Sign Out</a>
+      </div>
     </div>
   </header>
   

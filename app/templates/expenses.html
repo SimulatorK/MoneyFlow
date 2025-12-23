@@ -91,10 +91,6 @@
         .header-left { flex: 1; }
         .header-center { flex: 2; text-align: center; }
         .header-right { flex: 1; display: flex; justify-content: flex-end; align-items: center; gap: 1em; }
-        .app-title { margin: 0; font-size: 2.2em; font-weight: 700; color: #fff; }
-        .app-title .icon { margin-right: 0.3em; }
-        .app-subtitle { margin: 0.3em 0 0 0; font-size: 0.9em; color: rgba(255,255,255,0.75); }
-        .app-version { display: inline-block; background: rgba(255,255,255,0.15); padding: 0.15em 0.6em; border-radius: 12px; font-size: 0.75em; color: rgba(255,255,255,0.9); margin-left: 0.5em; }
         .about-link { color: rgba(255,255,255,0.8); text-decoration: none; font-size: 0.9em; padding: 0.5em 1em; border-radius: 6px; background: rgba(255,255,255,0.1); }
         .about-link:hover { background: rgba(255,255,255,0.2); color: #fff; }
         
@@ -122,15 +118,64 @@
         .tab.active { color: #fff; background: rgba(255,255,255,0.1); border-bottom-color: var(--accent); font-weight: 600; }
         
         .page-content { 
-            display: flex; gap: 2em; padding: 1.5em; 
-            max-width: 1500px; margin: 0 auto; flex-wrap: wrap;
+            max-width: 1600px; margin: 0 auto; padding: 1.5em 2em;
         }
         
-        /* Left Column */
-        .left-column { flex: 1 1 500px; min-width: 320px; }
+        /* Page Sub-Tab Navigation - Consistent Style */
+        .page-tabs {
+            background: var(--bg-card);
+            padding: 0.5em;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            display: flex;
+            gap: 0.5em;
+            margin-bottom: 1.5em;
+            flex-wrap: wrap;
+        }
+        .page-tab-btn {
+            padding: 0.8em 1.5em;
+            border: 2px solid var(--border-light);
+            background: var(--bg-card);
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5em;
+            font-size: 0.95em;
+        }
+        .page-tab-btn:hover {
+            border-color: var(--accent);
+            color: var(--text-heading);
+        }
+        .page-tab-btn.active {
+            background: var(--accent);
+            color: #fff;
+            border-color: var(--accent);
+        }
+        .page-tab-btn .badge {
+            background: rgba(255,255,255,0.2);
+            padding: 0.2em 0.5em;
+            border-radius: 10px;
+            font-size: 0.8em;
+        }
+        .page-tab-content {
+            display: none;
+        }
+        .page-tab-content.active {
+            display: block;
+        }
         
-        /* Right Column - Visualizations */
-        .right-column { flex: 1 1 450px; min-width: 320px; }
+        /* Two Column Layout for Data Tab */
+        .two-column-layout {
+            display: flex;
+            gap: 2em;
+            flex-wrap: wrap;
+        }
+        .left-column { flex: 1 1 400px; min-width: 320px; }
+        .right-column-data { flex: 1 1 400px; min-width: 320px; }
         
         /* Card styling */
         .card {
@@ -190,18 +235,18 @@
         /* Filter bar */
         .filter-bar {
             display: flex; gap: 1em; margin-bottom: 1em; flex-wrap: wrap;
-            padding: 0.8em; background: #f0f4fa; border-radius: 8px;
+            padding: 0.8em; background: var(--bg-card); border-radius: 8px;
         }
         .filter-bar label {
             display: flex; flex-direction: column; gap: 0.3em;
-            font-size: 0.85em; color: #455a8a;
+            font-size: 0.85em; color: var(--text-secondary);
         }
         .filter-bar select {
-            padding: 0.4em 0.6em; border-radius: 5px; border: 1px solid #c5d4e8;
-            font-size: 0.95em; min-width: 140px;
+            padding: 0.4em 0.6em; border-radius: 5px; border: 1px solid var(--border-color);
+            font-size: 0.95em; min-width: 140px; background: var(--bg-input); color: var(--text-primary);
         }
         .filter-bar .clear-filter {
-            background: none; border: none; color: #3875e8; cursor: pointer;
+            background: none; border: none; color: var(--accent); cursor: pointer;
             font-size: 0.85em; text-decoration: underline; align-self: flex-end;
             padding-bottom: 0.4em;
         }
@@ -214,68 +259,74 @@
         }
         .category-checkbox {
             display: flex; align-items: center; gap: 0.3em;
-            padding: 0.3em 0.6em; background: #f8fafd; border-radius: 4px;
+            padding: 0.3em 0.6em; background: var(--bg-card); border-radius: 4px;
             font-size: 0.85em; cursor: pointer; transition: background 0.15s;
         }
-        .category-checkbox:hover { background: #e8eef8; }
+        .category-checkbox:hover { background: var(--border-light); }
         .category-checkbox input { cursor: pointer; }
         .category-checkbox.checked { background: #d4e8ff; }
         
-        /* Selected categories display */
-        .selected-cats {
-            display: flex; flex-wrap: wrap; gap: 0.4em; margin-top: 0.5em;
+        /* Stats */
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1em; margin-bottom: 1.5em; }
+        .stat-box {
+            background: linear-gradient(135deg, rgba(56,117,232,0.08), rgba(56,117,232,0.12));
+            border-radius: 10px; padding: 1em; text-align: center;
+            border-left: 4px solid var(--accent);
         }
-        .selected-cat-tag {
-            display: inline-flex; align-items: center; gap: 0.3em;
-            padding: 0.2em 0.5em; background: #3875e8; color: #fff;
-            border-radius: 4px; font-size: 0.8em;
+        .stat-value { font-size: 1.4em; font-weight: 700; color: var(--text-heading); }
+        .stat-label { font-size: 0.8em; color: var(--text-secondary); margin-top: 0.3em; }
+        
+        /* Charts - Bigger for Analytics Tab */
+        .chart-container { position: relative; height: 350px; margin-bottom: 1em; }
+        .chart-container.tall { height: 400px; }
+        .chart-container.extra-tall { height: 500px; }
+        
+        /* Charts Grid for Analytics */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5em;
         }
-        .selected-cat-tag button {
-            background: none; border: none; color: #fff; cursor: pointer;
-            padding: 0; font-size: 1em; line-height: 1;
+        .chart-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(60,90,170,0.08);
+            padding: 1.5em;
+        }
+        .chart-card h4 {
+            margin: 0 0 1em 0;
+            color: var(--text-heading);
+            font-size: 1.05em;
+            display: flex;
+            align-items: center;
+            gap: 0.5em;
+        }
+        .chart-card.full-width {
+            grid-column: 1 / -1;
         }
         
-        /* Chart type selector */
-        .chart-type-selector {
-            display: flex; gap: 0.5em; margin-bottom: 0.8em;
-        }
-        .chart-type-btn {
-            padding: 0.4em 0.8em; border: 1px solid #c5d4e8; border-radius: 5px;
-            background: #f8fafd; cursor: pointer; font-size: 0.85em;
-            transition: all 0.15s;
-        }
-        .chart-type-btn:hover { background: #e8eef8; }
-        .chart-type-btn.active { background: #3875e8; color: #fff; border-color: #3875e8; }
+        /* Category averages table */
+        .avg-table { width: 100%; border-collapse: collapse; font-size: 0.9em; }
+        .avg-table th, .avg-table td { padding: 0.5em 0.6em; text-align: left; }
+        .avg-table th { color: var(--text-secondary); font-weight: 600; border-bottom: 2px solid var(--border-light); }
+        .avg-table td { border-bottom: 1px solid var(--border-light); }
+        .avg-table tr:last-child td { border-bottom: none; }
+        .avg-table .amount { text-align: right; font-weight: 500; color: var(--danger); }
+        .avg-table .count { text-align: center; color: var(--text-secondary); }
         
-        .chart-container.tall { height: 300px; }
-        
-        /* Collapsible cards */
-        .collapsible-card .collapsible-header {
-          user-select: none;
+        /* Vendor breakdown with categories */
+        .vendor-breakdown-table .vendor-row:hover { background: var(--bg-hover); }
+        .vendor-breakdown-table .vendor-row.expanded { background: var(--border-light); }
+        .vendor-breakdown-table .vendor-expand-icon { 
+            display: inline-block; 
+            transition: transform 0.2s ease;
+            font-size: 0.8em;
         }
-        .collapsible-card .collapsible-header:hover {
-          background: var(--bg-hover);
-          margin: -0.5em -0.5em 0.5em -0.5em;
-          padding: 0.5em;
-          border-radius: 8px;
+        .vendor-breakdown-table .vendor-category-row td { 
+            border-bottom: 1px solid var(--border-light); 
         }
-        .collapsible-card .collapse-icon {
-          transition: transform 0.2s ease;
-          font-size: 0.8em;
-          color: var(--text-secondary);
-        }
-        .collapsible-card.collapsed .collapse-icon {
-          transform: rotate(-90deg);
-        }
-        .collapsible-card .collapsible-content {
-          overflow: hidden;
-          transition: max-height 0.3s ease, opacity 0.2s ease;
-        }
-        .collapsible-card.collapsed .collapsible-content {
-          max-height: 0 !important;
-          opacity: 0;
-          padding: 0;
-          margin: 0;
+        .vendor-breakdown-table .vendor-category-row:last-of-type td {
+            border-bottom: 2px solid var(--border-light);
         }
         
         /* Expense list */
@@ -286,22 +337,21 @@
             gap: 1em;
             align-items: center;
             padding: 0.8em 1em;
-            background: #f8fafd;
+            background: var(--bg-hover);
             border-radius: 8px;
-            border-left: 4px solid #3875e8;
+            border-left: 4px solid var(--accent);
         }
-        .expense-date { color: #667a9a; font-size: 0.9em; min-width: 80px; }
-        .expense-details { }
-        .expense-category { font-weight: 600; color: #2a4a7a; font-size: 0.95em; }
-        .expense-subcategory { color: #667a9a; font-size: 0.85em; }
-        .expense-notes { color: #889ab0; font-size: 0.85em; font-style: italic; margin-top: 0.2em; }
-        .expense-amount { font-weight: 600; color: #b03030; font-size: 1.05em; white-space: nowrap; }
+        .expense-date { color: var(--text-secondary); font-size: 0.9em; min-width: 80px; }
+        .expense-category { font-weight: 600; color: var(--text-heading); font-size: 0.95em; }
+        .expense-subcategory { color: var(--text-secondary); font-size: 0.85em; }
+        .expense-notes { color: var(--text-secondary); font-size: 0.85em; font-style: italic; margin-top: 0.2em; }
+        .expense-amount { font-weight: 600; color: var(--danger); font-size: 1.05em; white-space: nowrap; }
         .expense-delete, .expense-edit {
             background: none; border: none; cursor: pointer;
             padding: 0.3em; font-size: 1.1em; opacity: 0.6; transition: opacity 0.15s;
         }
         .expense-delete { color: #c44; }
-        .expense-edit { color: #3875e8; }
+        .expense-edit { color: var(--accent); }
         .expense-delete:hover, .expense-edit:hover { opacity: 1; }
         .expense-actions { display: flex; gap: 0.3em; }
         
@@ -310,100 +360,11 @@
             padding: 0.4em 0.8em; border-radius: 4px; text-decoration: none;
             font-size: 0.9em;
         }
-        .pagination a { background: #e8eef8; color: #344a7a; }
-        .pagination a:hover { background: #d4e0f0; }
-        .pagination .current { background: #3875e8; color: #fff; }
+        .pagination a { background: var(--border-light); color: var(--text-heading); }
+        .pagination a:hover { background: var(--accent); color: #fff; }
+        .pagination .current { background: var(--accent); color: #fff; }
         
-        .empty-state { text-align: center; color: #889ab0; padding: 2em; }
-        
-        /* Stats */
-        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1em; margin-bottom: 1.5em; }
-        .stat-box {
-            background: linear-gradient(135deg, #f0f4fa, #e8eef8);
-            border-radius: 10px; padding: 1em; text-align: center;
-        }
-        .stat-value { font-size: 1.4em; font-weight: 700; color: #2a4a7a; }
-        .stat-label { font-size: 0.8em; color: #667a9a; margin-top: 0.3em; }
-        
-        /* Charts */
-        .chart-container { position: relative; height: 220px; margin-bottom: 1em; }
-        
-        /* Category averages table */
-        .avg-table { width: 100%; border-collapse: collapse; font-size: 0.9em; }
-        .avg-table th, .avg-table td { padding: 0.5em 0.6em; text-align: left; }
-        .avg-table th { color: #455a8a; font-weight: 600; border-bottom: 2px solid #e8eef8; }
-        .avg-table td { border-bottom: 1px solid #f0f4fa; }
-        .avg-table tr:last-child td { border-bottom: none; }
-        .avg-table .amount { text-align: right; font-weight: 500; color: #b03030; }
-        .avg-table .count { text-align: center; color: #667a9a; }
-        
-        /* Vendor breakdown with categories */
-        .vendor-breakdown-table .vendor-row:hover { background: var(--bg-hover, #f8fafd); }
-        .vendor-breakdown-table .vendor-row.expanded { background: var(--border-light, #e8eef8); }
-        .vendor-breakdown-table .vendor-expand-icon { 
-            display: inline-block; 
-            transition: transform 0.2s ease;
-            font-size: 0.8em;
-        }
-        .vendor-breakdown-table .vendor-category-row td { 
-            border-bottom: 1px solid var(--border-light, #f0f4fa); 
-        }
-        .vendor-breakdown-table .vendor-category-row:last-of-type td {
-            border-bottom: 2px solid var(--border-light, #e8eef8);
-        }
-        
-        /* Category management */
-        .category-manager {
-            display: flex; flex-direction: column; gap: 0.5em;
-            max-height: 300px; overflow-y: auto;
-        }
-        .cat-item {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 0.5em 0.8em; background: #f8fafd; border-radius: 6px;
-        }
-        .cat-item .cat-name { font-weight: 500; color: #2a4a7a; }
-        .cat-item .cat-count { font-size: 0.85em; color: #889ab0; }
-        .cat-item .cat-actions { display: flex; gap: 0.3em; }
-        .subcat-list { margin-left: 1.5em; }
-        .subcat-item {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 0.3em 0.6em; background: var(--bg-card); border-radius: 4px;
-            margin-top: 0.3em; border: 1px solid var(--border-light);
-        }
-        
-        /* Profile dropdown (positioned in header) */
-        .profile-dropdown { position: relative; }
-        .profile-btn {
-            display: flex; align-items: center; gap: 0.5em;
-            background: rgba(255,255,255,0.1); border: none;
-            padding: 0.4em 0.8em; border-radius: 8px;
-            cursor: pointer; color: #fff; font-size: 0.95em;
-        }
-        .profile-btn:hover { background: rgba(255,255,255,0.2); }
-        .profile-avatar {
-            width: 44px; height: 44px; border-radius: 50%;
-            background: var(--accent); display: flex; align-items: center;
-            justify-content: center; font-weight: 600; font-size: 1.1em; overflow: hidden;
-            border: 2px solid rgba(255,255,255,0.3);
-        }
-        .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
-        .dropdown-menu {
-            display: none; position: absolute; right: 0; top: 100%;
-            background: #fff; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-            min-width: 180px; margin-top: 0.5em; z-index: 1000; overflow: hidden;
-        }
-        .dropdown-menu.active { display: block; }
-        .dropdown-header { padding: 0.8em 1em; background: #f8fafd; border-bottom: 1px solid #e8eef8; }
-        .dropdown-header .name { font-weight: 600; color: #243869; font-size: 0.95em; }
-        .dropdown-header .username { font-size: 0.8em; color: #667a9a; }
-        .dropdown-item {
-            display: block; padding: 0.7em 1em; color: #344a7a;
-            text-decoration: none; font-size: 0.9em;
-        }
-        .dropdown-item:hover { background: #f0f4fa; }
-        .dropdown-item.danger { color: #c44; }
-        .dropdown-item.danger:hover { background: #fee; }
-        .dropdown-divider { height: 1px; background: #e8eef8; }
+        .empty-state { text-align: center; color: var(--text-secondary); padding: 2em; }
         
         /* Autocomplete dropdown styles */
         .autocomplete-wrapper {
@@ -457,20 +418,24 @@
             color: rgba(255,255,255,0.8);
         }
         
-        /* Modal for adding categories */
-        .modal-overlay {
-            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.4); z-index: 1000; justify-content: center; align-items: center;
+        /* Category management */
+        .category-manager {
+            display: flex; flex-direction: column; gap: 0.5em;
+            max-height: 300px; overflow-y: auto;
         }
-        .modal-overlay.active { display: flex; }
-        .modal {
-            background: var(--bg-card); border-radius: 12px; padding: 1.5em 2em;
-            max-width: 500px; width: 90%; box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-            max-height: 80vh; overflow-y: auto;
+        .cat-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0.5em 0.8em; background: var(--bg-hover); border-radius: 6px;
         }
-        .modal h4 { margin: 0 0 1em 0; color: var(--text-heading); }
-        .modal input { width: 100%; padding: 0.6em; font-size: 1em; border: 1px solid var(--border-color); border-radius: 6px; margin-bottom: 1em; background: var(--bg-input); color: var(--text-primary); }
-        .modal-btns { display: flex; gap: 0.8em; justify-content: flex-end; }
+        .cat-item .cat-name { font-weight: 500; color: var(--text-heading); }
+        .cat-item .cat-count { font-size: 0.85em; color: var(--text-secondary); }
+        .cat-item .cat-actions { display: flex; gap: 0.3em; }
+        .subcat-list { margin-left: 1.5em; }
+        .subcat-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0.3em 0.6em; background: var(--bg-card); border-radius: 4px;
+            margin-top: 0.3em; border: 1px solid var(--border-light);
+        }
         
         /* Mini button for check/uncheck all */
         .btn-mini {
@@ -488,8 +453,27 @@
             border-color: var(--accent);
         }
         
+        /* Modal for adding categories */
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.4); z-index: 1000; justify-content: center; align-items: center;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal {
+            background: var(--bg-card); border-radius: 12px; padding: 1.5em 2em;
+            max-width: 500px; width: 90%; box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            max-height: 80vh; overflow-y: auto;
+        }
+        .modal h4 { margin: 0 0 1em 0; color: var(--text-heading); }
+        .modal input { width: 100%; padding: 0.6em; font-size: 1em; border: 1px solid var(--border-color); border-radius: 6px; margin-bottom: 1em; background: var(--bg-input); color: var(--text-primary); }
+        .modal-btns { display: flex; gap: 0.8em; justify-content: flex-end; }
+        
+        @media (max-width: 1200px) {
+            .charts-grid { grid-template-columns: 1fr; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+        }
         @media (max-width: 900px) {
-            .page-content { flex-direction: column; }
+            .two-column-layout { flex-direction: column; }
             .stats-grid { grid-template-columns: 1fr 1fr; }
         }
     </style>
@@ -498,10 +482,6 @@
   <!-- App Header with Profile Dropdown -->
   <header class="app-header">
     <div class="header-left"></div>
-    <div class="header-center">
-      <h1 class="app-title">
-      </h1>
-    </div>
     <div class="header-center">
       <div class="app-header-brand">
         <img src="/static/apple-touch-icon.png" alt="" class="app-header-logo">
@@ -516,7 +496,11 @@
       <div class="profile-dropdown">
         <button class="profile-btn" onclick="toggleProfileDropdown()">
           <div class="profile-avatar">
-            {% if profile_picture_b64 %}<img src="data:{{ profile_picture_type }};base64,{{ profile_picture_b64 }}" alt="">{% else %}{{ user.name[0].upper() }}{% endif %}
+            {% if profile_picture_b64 %}
+            <img src="data:{{ profile_picture_type }};base64,{{ profile_picture_b64 }}" alt="">
+            {% else %}
+            {{ user.name[0].upper() }}
+            {% endif %}
           </div>
           <span>{{ user.name.split()[0] }}</span>
           <span style="font-size:0.7em;">▼</span>
@@ -547,208 +531,226 @@
   </nav>
   
   <div class="page-content">
-    <!-- LEFT COLUMN -->
-    <div class="left-column">
-      <!-- Add Expense Form -->
-      <div class="card">
-        <h3>Add Expense</h3>
-        <form class="expense-form" method="post" action="/expenses/add">
-          <div class="form-row">
-            <label>Date
-              <input type="date" name="expense_date" value="{{ today }}" required>
-            </label>
-            <label>Amount ($)
-              <input type="number" name="amount" step="0.01" min="0.01" required placeholder="0.00">
-            </label>
-          </div>
-          
-          <div class="form-row">
-            <label>Category (Optional)
-              <div class="autocomplete-wrapper">
-                <input type="text" id="categoryInput" placeholder="Start typing or select..." autocomplete="off" onkeyup="filterCategoryOptions()" onfocus="showCategoryDropdown()">
-                <input type="hidden" name="category_id" id="categorySelect" value="">
-                <div class="autocomplete-dropdown" id="categoryDropdown">
-                  <div class="autocomplete-option" data-value="" onclick="selectCategory('', 'None (Uncategorized)')">
-                    <em>None (Uncategorized)</em>
+    <!-- Page Sub-Tabs -->
+    <div class="page-tabs">
+      <button class="page-tab-btn active" onclick="showExpensesTab('data')">
+        ➕ Expense Entry
+        <span class="badge">{{ total_expenses }}</span>
+      </button>
+      <button class="page-tab-btn" onclick="showExpensesTab('analytics')">
+        📊 Analytics & Charts
+      </button>
+    </div>
+    
+    <!-- DATA TAB - Add Expenses & View Data -->
+    <div id="tab-data" class="page-tab-content active">
+      <div class="two-column-layout">
+        <!-- LEFT COLUMN - Forms -->
+        <div class="left-column">
+          <!-- Add Expense Form -->
+          <div class="card">
+            <h3>Add Expense</h3>
+            <form class="expense-form" method="post" action="/expenses/add">
+              <div class="form-row">
+                <label>Date
+                  <input type="date" name="expense_date" value="{{ today }}" required>
+                </label>
+                <label>Amount ($)
+                  <input type="number" name="amount" step="0.01" min="0.01" required placeholder="0.00">
+                </label>
+              </div>
+              
+              <div class="form-row">
+                <label>Category (Optional)
+                  <div class="autocomplete-wrapper">
+                    <input type="text" id="categoryInput" placeholder="Start typing or select..." autocomplete="off" onkeyup="filterCategoryOptions()" onfocus="showCategoryDropdown()">
+                    <input type="hidden" name="category_id" id="categorySelect" value="">
+                    <div class="autocomplete-dropdown" id="categoryDropdown">
+                      <div class="autocomplete-option" data-value="" onclick="selectCategory('', 'None (Uncategorized)')">
+                        <em>None (Uncategorized)</em>
+                      </div>
+                      {% for cat in categories %}
+                      <div class="autocomplete-option" data-value="{{ cat.id }}" onclick="selectCategory('{{ cat.id }}', '{{ cat.name }}')">
+                        {{ cat.name }}
+                      </div>
+                      {% endfor %}
+                    </div>
                   </div>
-                  {% for cat in categories %}
-                  <div class="autocomplete-option" data-value="{{ cat.id }}" onclick="selectCategory('{{ cat.id }}', '{{ cat.name }}')">
-                    {{ cat.name }}
+                </label>
+                <label>Sub-Category (Optional)
+                  <div class="autocomplete-wrapper">
+                    <input type="text" id="subcategoryInput" placeholder="Select category first..." autocomplete="off" onkeyup="filterSubcategoryOptions()" onfocus="showSubcategoryDropdown()" disabled>
+                    <input type="hidden" name="subcategory_id" id="subcategorySelect" value="">
+                    <div class="autocomplete-dropdown" id="subcategoryDropdown">
+                      <div class="autocomplete-option" data-value="" onclick="selectSubcategory('', 'None')">
+                        <em>None</em>
+                      </div>
+                    </div>
                   </div>
-                  {% endfor %}
+                </label>
+              </div>
+              
+              <div class="form-row">
+                <label>Vendor (Optional)
+                  <div class="autocomplete-wrapper">
+                    <input type="text" id="vendorInput" placeholder="Start typing or select..." autocomplete="off" onkeyup="filterVendorOptions()" onfocus="showVendorDropdown()">
+                    <input type="hidden" name="vendor_id" id="vendorSelect" value="">
+                    <div class="autocomplete-dropdown" id="vendorDropdown">
+                      <div class="autocomplete-option" data-value="" onclick="selectVendor('', 'None')">
+                        <em>None</em>
+                      </div>
+                      {% for vendor in vendors %}
+                      <div class="autocomplete-option" data-value="{{ vendor.id }}" onclick="selectVendor('{{ vendor.id }}', '{{ vendor.name }}')">
+                        {{ vendor.name }}
+                      </div>
+                      {% endfor %}
+                    </div>
+                  </div>
+                </label>
+              </div>
+              
+              <!-- Recurring Expense Option -->
+              <div class="form-row" style="align-items: center;">
+                <label style="flex-direction: row; gap: 0.5em; align-items: center;">
+                  <input type="checkbox" name="is_recurring" id="isRecurringCheck" value="yes" onchange="toggleRecurringOptions()">
+                  <span>This is a recurring expense</span>
+                </label>
+              </div>
+              
+              <div id="recurringOptions" style="display: none; background: var(--bg-hover); padding: 0.8em; border-radius: 6px; margin-bottom: 0.8em;">
+                <label style="font-size: 0.9em; color: var(--text-secondary); font-weight: 500;">Frequency
+                  <select name="frequency" style="width: 100%; margin-top: 0.3em; padding: 0.5em; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-input); color: var(--text-primary);">
+                    <option value="weekly">Weekly</option>
+                    <option value="bi-weekly">Bi-Weekly (Every 2 weeks)</option>
+                    <option value="semi-monthly">Semi-Monthly (Twice a month)</option>
+                    <option value="monthly" selected>Monthly</option>
+                    <option value="bi-monthly">Bi-Monthly (Every 2 months)</option>
+                    <option value="quarterly">Quarterly (Every 3 months)</option>
+                    <option value="semi-annually">Semi-Annually (Twice a year)</option>
+                    <option value="annually">Annually</option>
+                  </select>
+                </label>
+              </div>
+              
+              <!-- Category & Vendor Management Section -->
+              <div id="categories" class="btn-row" style="background: linear-gradient(135deg, rgba(56,117,232,0.08), rgba(56,117,232,0.12)); padding: 1em; border-radius: 8px; margin: 0.5em 0; border: 1px dashed var(--accent);">
+                <div style="flex: 1; min-width: 200px;">
+                  <strong style="color: var(--text-heading); font-size: 0.9em;">📂 Categories & Vendors</strong>
+                  <p style="margin: 0.3em 0 0.8em 0; font-size: 0.8em; color: var(--text-secondary);">
+                    Manage your expense categories, subcategories, and vendors here.
+                  </p>
+                  <div style="display: flex; gap: 0.5em; flex-wrap: wrap;">
+                    <button type="button" class="btn-secondary" onclick="showCategoryModal()">+ Category</button>
+                    <button type="button" class="btn-secondary" onclick="showSubcategoryModal()">+ Sub-Category</button>
+                    <button type="button" class="btn-secondary" onclick="showVendorModal()">+ Vendor</button>
+                    <button type="button" class="btn-secondary" onclick="showManageCategoriesModal()">⚙️ Manage All</button>
+                  </div>
                 </div>
               </div>
-            </label>
-            <label>Sub-Category (Optional)
-              <div class="autocomplete-wrapper">
-                <input type="text" id="subcategoryInput" placeholder="Select category first..." autocomplete="off" onkeyup="filterSubcategoryOptions()" onfocus="showSubcategoryDropdown()" disabled>
-                <input type="hidden" name="subcategory_id" id="subcategorySelect" value="">
-                <div class="autocomplete-dropdown" id="subcategoryDropdown">
-                  <div class="autocomplete-option" data-value="" onclick="selectSubcategory('', 'None')">
-                    <em>None</em>
-                  </div>
-                </div>
+              
+              <div class="form-row full-width">
+                <label>Notes (Optional)
+                  <textarea name="notes" placeholder="Add any notes about this expense..."></textarea>
+                </label>
               </div>
-            </label>
-          </div>
-          
-          <div class="form-row">
-            <label>Vendor (Optional)
-              <div class="autocomplete-wrapper">
-                <input type="text" id="vendorInput" placeholder="Start typing or select..." autocomplete="off" onkeyup="filterVendorOptions()" onfocus="showVendorDropdown()">
-                <input type="hidden" name="vendor_id" id="vendorSelect" value="">
-                <div class="autocomplete-dropdown" id="vendorDropdown">
-                  <div class="autocomplete-option" data-value="" onclick="selectVendor('', 'None')">
-                    <em>None</em>
-                  </div>
-                  {% for vendor in vendors %}
-                  <div class="autocomplete-option" data-value="{{ vendor.id }}" onclick="selectVendor('{{ vendor.id }}', '{{ vendor.name }}')">
-                    {{ vendor.name }}
-                  </div>
-                  {% endfor %}
-                </div>
+              
+              <div class="btn-row">
+                <button type="submit" class="btn-primary">Add Expense</button>
               </div>
-            </label>
-          </div>
-          
-          <!-- Recurring Expense Option -->
-          <div class="form-row" style="align-items: center;">
-            <label style="flex-direction: row; gap: 0.5em; align-items: center;">
-              <input type="checkbox" name="is_recurring" id="isRecurringCheck" value="yes" onchange="toggleRecurringOptions()">
-              <span>This is a recurring expense</span>
-            </label>
-          </div>
-          
-          <div id="recurringOptions" style="display: none; background: #f8fafd; padding: 0.8em; border-radius: 6px; margin-bottom: 0.8em;">
-            <label style="font-size: 0.9em; color: #344a7a; font-weight: 500;">Frequency
-              <select name="frequency" style="width: 100%; margin-top: 0.3em; padding: 0.5em; border-radius: 6px; border: 1px solid #ccd;">
-                <option value="weekly">Weekly</option>
-                <option value="bi-weekly">Bi-Weekly (Every 2 weeks)</option>
-                <option value="semi-monthly">Semi-Monthly (Twice a month)</option>
-                <option value="monthly" selected>Monthly</option>
-                <option value="bi-monthly">Bi-Monthly (Every 2 months)</option>
-                <option value="quarterly">Quarterly (Every 3 months)</option>
-                <option value="semi-annually">Semi-Annually (Twice a year)</option>
-                <option value="annually">Annually</option>
-              </select>
-            </label>
-          </div>
-          
-          <!-- Category & Vendor Management Section -->
-          <div id="categories" class="btn-row" style="background: linear-gradient(135deg, rgba(56,117,232,0.08), rgba(56,117,232,0.12)); padding: 1em; border-radius: 8px; margin: 0.5em 0; border: 1px dashed var(--accent);">
-            <div style="flex: 1; min-width: 200px;">
-              <strong style="color: var(--text-heading); font-size: 0.9em;">📂 Categories & Vendors</strong>
-              <p style="margin: 0.3em 0 0.8em 0; font-size: 0.8em; color: var(--text-secondary);">
-                Manage your expense categories, subcategories, and vendors here.
-              </p>
-              <div style="display: flex; gap: 0.5em; flex-wrap: wrap;">
-                <button type="button" class="btn-secondary" onclick="showCategoryModal()">+ Category</button>
-                <button type="button" class="btn-secondary" onclick="showSubcategoryModal()">+ Sub-Category</button>
-                <button type="button" class="btn-secondary" onclick="showVendorModal()">+ Vendor</button>
-                <button type="button" class="btn-secondary" onclick="showManageCategoriesModal()">⚙️ Manage All</button>
-              </div>
-            </div>
-          </div>
-          
-          <div class="form-row full-width">
-            <label>Notes (Optional)
-              <textarea name="notes" placeholder="Add any notes about this expense..."></textarea>
-            </label>
-          </div>
-          
-          <div class="btn-row">
-            <button type="submit" class="btn-primary">Add Expense</button>
-          </div>
-        </form>
-      </div>
-      
-      <!-- Bulk Upload CSV -->
-      <div class="card">
-        <h3>📤 Bulk Upload Expenses</h3>
-        <p style="color: var(--text-secondary); font-size: 0.9em; margin-bottom: 1em;">
-          Import multiple expenses at once from a CSV file.
-        </p>
-        <div style="display: flex; gap: 1em; flex-wrap: wrap; align-items: flex-start;">
-          <a href="/expenses/csv-template" class="btn-secondary" style="text-decoration: none;">
-            📥 Download Template
-          </a>
-          <div style="flex: 1; min-width: 200px;">
-            <form id="csvUploadForm" style="display: flex; gap: 0.5em; align-items: center;">
-              <div class="file-input-wrapper" style="flex: 1; position: relative;">
-                <input type="file" id="csvFileInput" accept=".csv" required 
-                       style="position: absolute; inset: 0; opacity: 0; cursor: pointer;">
-                <button type="button" class="btn-secondary" style="width: 100%; pointer-events: none;">
-                  Choose CSV File
-                </button>
-              </div>
-              <button type="button" class="btn-primary" onclick="uploadCSV()">Upload</button>
             </form>
-            <div id="csvFileName" style="margin-top: 0.3em; font-size: 0.85em; color: var(--text-secondary);"></div>
-            <div id="csvUploadStatus" style="margin-top: 0.5em; font-size: 0.9em;"></div>
           </div>
-        </div>
-      </div>
-      
-      <!-- Recent Expenses -->
-      <div class="card">
-        <h3>Recent Expenses ({{ total_expenses }} total)</h3>
-        {% if recent_expenses %}
-        <div class="expense-list">
-          {% for expense in recent_expenses %}
-          <div class="expense-item" data-id="{{ expense.id }}">
-            <div class="expense-date">{{ expense.expense_date.strftime('%b %d') }}</div>
-            <div class="expense-details">
-              <div class="expense-category">{{ expense.category.name if expense.category else 'Uncategorized' }}</div>
-              {% if expense.subcategory %}
-              <div class="expense-subcategory">{{ expense.subcategory.name }}</div>
-              {% endif %}
-              {% if expense.vendor %}
-              <div class="expense-vendor" style="font-size: 0.8em; color: #e8385a; font-weight: 500;">🏪 {{ expense.vendor.name }}</div>
-              {% endif %}
-              {% if expense.notes %}
-              <div class="expense-notes">{{ expense.notes[:50] }}{% if expense.notes|length > 50 %}...{% endif %}</div>
-              {% endif %}
-            </div>
-            <div class="expense-amount">−${{ "{:,.2f}".format(expense.amount) }}</div>
-            <div class="expense-actions">
-              <button class="expense-edit" onclick="editExpense({{ expense.id }})" title="Edit">✏️</button>
-              <button class="expense-delete" onclick="deleteExpense({{ expense.id }})" title="Delete">🗑</button>
+          
+          <!-- Bulk Upload CSV -->
+          <div class="card">
+            <h3>📤 Bulk Upload Expenses</h3>
+            <p style="color: var(--text-secondary); font-size: 0.9em; margin-bottom: 1em;">
+              Import multiple expenses at once from a CSV file.
+            </p>
+            <div style="display: flex; gap: 1em; flex-wrap: wrap; align-items: flex-start;">
+              <a href="/expenses/csv-template" class="btn-secondary" style="text-decoration: none;">
+                📥 Download Template
+              </a>
+              <div style="flex: 1; min-width: 200px;">
+                <form id="csvUploadForm" style="display: flex; gap: 0.5em; align-items: center;">
+                  <div class="file-input-wrapper" style="flex: 1; position: relative;">
+                    <input type="file" id="csvFileInput" accept=".csv" required 
+                           style="position: absolute; inset: 0; opacity: 0; cursor: pointer;">
+                    <button type="button" class="btn-secondary" style="width: 100%; pointer-events: none;">
+                      Choose CSV File
+                    </button>
+                  </div>
+                  <button type="button" class="btn-primary" onclick="uploadCSV()">Upload</button>
+                </form>
+                <div id="csvFileName" style="margin-top: 0.3em; font-size: 0.85em; color: var(--text-secondary);"></div>
+                <div id="csvUploadStatus" style="margin-top: 0.5em; font-size: 0.9em;"></div>
+              </div>
             </div>
           </div>
-          {% endfor %}
         </div>
         
-        {% if total_expenses > 10 and not show_all %}
-        <div class="pagination">
-          <a href="/expenses?show_all=true&lookback={{ current_lookback }}{% if categories_filter_str %}&categories_filter={{ categories_filter_str }}{% endif %}{% if vendors_filter_str %}&vendors_filter={{ vendors_filter_str }}{% endif %}">View All {{ total_expenses }} Expenses →</a>
+        <!-- RIGHT COLUMN - Recent Expenses -->
+        <div class="right-column-data">
+          <div class="card">
+            <h3>Recent Expenses ({{ total_expenses }} total)</h3>
+            {% if recent_expenses %}
+            <div class="expense-list">
+              {% for expense in recent_expenses %}
+              <div class="expense-item" data-id="{{ expense.id }}">
+                <div class="expense-date">{{ expense.expense_date.strftime('%b %d') }}</div>
+                <div class="expense-details">
+                  <div class="expense-category">{{ expense.category.name if expense.category else 'Uncategorized' }}</div>
+                  {% if expense.subcategory %}
+                  <div class="expense-subcategory">{{ expense.subcategory.name }}</div>
+                  {% endif %}
+                  {% if expense.vendor %}
+                  <div class="expense-vendor" style="font-size: 0.8em; color: #e8385a; font-weight: 500;">🏪 {{ expense.vendor.name }}</div>
+                  {% endif %}
+                  {% if expense.notes %}
+                  <div class="expense-notes">{{ expense.notes[:50] }}{% if expense.notes|length > 50 %}...{% endif %}</div>
+                  {% endif %}
+                </div>
+                <div class="expense-amount">−${{ "{:,.2f}".format(expense.amount) }}</div>
+                <div class="expense-actions">
+                  <button class="expense-edit" onclick="editExpense({{ expense.id }})" title="Edit">✏️</button>
+                  <button class="expense-delete" onclick="deleteExpense({{ expense.id }})" title="Delete">🗑</button>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+            
+            {% if total_expenses > 10 and not show_all %}
+            <div class="pagination">
+              <a href="/expenses?show_all=true&lookback={{ current_lookback }}{% if categories_filter_str %}&categories_filter={{ categories_filter_str }}{% endif %}{% if vendors_filter_str %}&vendors_filter={{ vendors_filter_str }}{% endif %}">View All {{ total_expenses }} Expenses →</a>
+            </div>
+            {% elif show_all and total_pages > 1 %}
+            <div class="pagination">
+              {% if page > 1 %}
+              <a href="/expenses?show_all=true&page={{ page - 1 }}&lookback={{ current_lookback }}{% if categories_filter_str %}&categories_filter={{ categories_filter_str }}{% endif %}{% if vendors_filter_str %}&vendors_filter={{ vendors_filter_str }}{% endif %}">← Prev</a>
+              {% endif %}
+              <span class="current">Page {{ page }} of {{ total_pages }}</span>
+              {% if page < total_pages %}
+              <a href="/expenses?show_all=true&page={{ page + 1 }}&lookback={{ current_lookback }}{% if categories_filter_str %}&categories_filter={{ categories_filter_str }}{% endif %}{% if vendors_filter_str %}&vendors_filter={{ vendors_filter_str }}{% endif %}">Next →</a>
+              {% endif %}
+            </div>
+            {% endif %}
+            
+            {% else %}
+            <div class="empty-state">
+              <p>No expenses recorded yet.</p>
+              <p>Add your first expense above!</p>
+            </div>
+            {% endif %}
+          </div>
         </div>
-        {% elif show_all and total_pages > 1 %}
-        <div class="pagination">
-          {% if page > 1 %}
-          <a href="/expenses?show_all=true&page={{ page - 1 }}&lookback={{ current_lookback }}{% if categories_filter_str %}&categories_filter={{ categories_filter_str }}{% endif %}{% if vendors_filter_str %}&vendors_filter={{ vendors_filter_str }}{% endif %}">← Prev</a>
-          {% endif %}
-          <span class="current">Page {{ page }} of {{ total_pages }}</span>
-          {% if page < total_pages %}
-          <a href="/expenses?show_all=true&page={{ page + 1 }}&lookback={{ current_lookback }}{% if categories_filter_str %}&categories_filter={{ categories_filter_str }}{% endif %}{% if vendors_filter_str %}&vendors_filter={{ vendors_filter_str }}{% endif %}">Next →</a>
-          {% endif %}
-        </div>
-        {% endif %}
-        
-        {% else %}
-        <div class="empty-state">
-          <p>No expenses recorded yet.</p>
-          <p>Add your first expense above!</p>
-        </div>
-        {% endif %}
       </div>
     </div>
     
-    <!-- RIGHT COLUMN - Visualizations -->
-    <div class="right-column">
+    <!-- ANALYTICS TAB - Visualizations & Filtering -->
+    <div id="tab-analytics" class="page-tab-content">
       <!-- Filter Bar -->
       <div class="card">
-        <h3>Visualization Filters</h3>
-        <div class="filter-bar" style="flex-direction: column; gap: 1em;">
+        <h3>🔍 Filter & Export</h3>
+        <div class="filter-bar" style="flex-direction: column; gap: 1em; background: transparent; padding: 0;">
           <div style="display: flex; gap: 1em; flex-wrap: wrap; align-items: flex-end;">
             <label>Time Period
               <select id="lookbackSelect" onchange="applyFilters()">
@@ -758,16 +760,17 @@
               </select>
             </label>
             <div style="display:flex; flex-direction:column; gap:0.5em;">
-              <button class="btn-secondary" onclick="applyFilters()">Apply Filters</button>
+              <button class="btn-primary" onclick="applyFilters()">Apply Filters</button>
               {% if category_filters or vendor_filters %}
-              <button class="clear-filter" onclick="clearAllFilters()">Clear All Filters</button>
+              <button class="btn-secondary" onclick="clearAllFilters()">Clear All Filters</button>
               {% endif %}
             </div>
+            <a href="/expenses/csv-export?lookback={{ current_lookback }}" class="btn-secondary" style="text-decoration:none;">📥 Export CSV</a>
           </div>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1em;">
             <div>
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom:0.3em;">
-                <label style="display:block;">Categories (select multiple)</label>
+                <label style="display:block; font-size: 0.85em; color: var(--text-secondary);">Categories (select multiple)</label>
                 <div style="display: flex; gap: 0.5em;">
                   <button type="button" class="btn-mini" onclick="toggleAllCategories(true)">All</button>
                   <button type="button" class="btn-mini" onclick="toggleAllCategories(false)">None</button>
@@ -785,17 +788,10 @@
                 </label>
                 {% endfor %}
               </div>
-              {% if selected_category_names %}
-              <div class="selected-cats" id="selectedCatsTags" style="margin-top: 0.3em;">
-                {% for name in selected_category_names %}
-                <span class="selected-cat-tag" style="font-size: 0.8em; background: {% if name == 'Uncategorized' %}#ffc107{% else %}var(--accent){% endif %}; color: {% if name == 'Uncategorized' %}#664d03{% else %}#fff{% endif %}; padding: 0.2em 0.5em; border-radius: 4px; margin-right: 0.3em;">{{ name }}</span>
-                {% endfor %}
-              </div>
-              {% endif %}
             </div>
             <div>
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom:0.3em;">
-                <label style="display:block;">Vendors (select multiple)</label>
+                <label style="display:block; font-size: 0.85em; color: var(--text-secondary);">Vendors (select multiple)</label>
                 <div style="display: flex; gap: 0.5em;">
                   <button type="button" class="btn-mini" onclick="toggleAllVendors(true)">All</button>
                   <button type="button" class="btn-mini" onclick="toggleAllVendors(false)">None</button>
@@ -812,177 +808,145 @@
                   {{ vendor.name }}
                 </label>
                 {% endfor %}
-                {% if not vendors %}
-                <span style="color: var(--text-secondary); font-size: 0.85em; font-style: italic;">No vendors yet. Add one when creating an expense!</span>
-                {% endif %}
               </div>
-              {% if selected_vendor_names %}
-              <div class="selected-vendors" style="margin-top: 0.3em;">
-                {% for name in selected_vendor_names %}
-                <span style="font-size: 0.8em; background: {% if name == 'No Vendor' %}#ffc107{% else %}#e8385a{% endif %}; color: {% if name == 'No Vendor' %}#664d03{% else %}#fff{% endif %}; padding: 0.2em 0.5em; border-radius: 4px; margin-right: 0.3em;">{{ name }}</span>
-                {% endfor %}
-              </div>
-              {% endif %}
             </div>
           </div>
         </div>
       </div>
       
       <!-- Stats Overview -->
-      <div class="card">
-        <h3>
-          {{ stats.lookback_label }} Summary
-          {% if selected_category_names %}
-          <span class="filter-label">Filtered: {{ selected_category_names | join(", ") }}</span>
-          {% endif %}
-        </h3>
-        <div class="stats-grid">
-          <div class="stat-box">
-            <div class="stat-value">${{ "{:,.2f}".format(stats.total_in_period) }}</div>
-            <div class="stat-label">Total Spent</div>
-          </div>
-          <div class="stat-box">
-            <div class="stat-value">{{ stats.expense_count }}</div>
-            <div class="stat-label">Transactions</div>
-          </div>
-          <div class="stat-box">
-            <div class="stat-value">${{ "{:,.2f}".format(stats.daily_avg) }}</div>
-            <div class="stat-label">Daily Average</div>
-          </div>
-          <div class="stat-box">
-            <div class="stat-value">${{ "{:,.2f}".format(stats.overall_avg) }}</div>
-            <div class="stat-label">Avg per Expense</div>
-          </div>
+      <div class="stats-grid">
+        <div class="stat-box">
+          <div class="stat-value">${{ "{:,.2f}".format(stats.total_in_period) }}</div>
+          <div class="stat-label">Total Spent ({{ stats.lookback_label }})</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-value">{{ stats.expense_count }}</div>
+          <div class="stat-label">Transactions</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-value">${{ "{:,.2f}".format(stats.daily_avg) }}</div>
+          <div class="stat-label">Daily Average</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-value">${{ "{:,.2f}".format(stats.overall_avg) }}</div>
+          <div class="stat-label">Avg per Expense</div>
         </div>
       </div>
       
-      <!-- Spending Over Time (Stacked Bar) - Collapsible -->
-      <div class="card collapsible-card">
-        <h3 class="collapsible-header" onclick="toggleCollapsible(this)" style="cursor: pointer; display: flex; align-items: center; gap: 0.5em;">
-          <span class="collapse-icon">▼</span>
-          <span>📊 Spending Over Time</span>
-        </h3>
-        <div class="collapsible-content">
-          <div class="chart-container tall">
+      <!-- Charts Grid -->
+      <div class="charts-grid">
+        <!-- Spending Over Time - Full Width -->
+        <div class="chart-card full-width">
+          <h4>📊 Spending Over Time</h4>
+          <div class="chart-container extra-tall">
             <canvas id="stackedChart"></canvas>
           </div>
         </div>
-      </div>
-      
-      <!-- Category Breakdown Chart (Doughnut) - Collapsible -->
-      <div class="card collapsible-card">
-        <h3 class="collapsible-header" onclick="toggleCollapsible(this)" style="cursor: pointer; display: flex; align-items: center; gap: 0.5em;">
-          <span class="collapse-icon">▼</span>
-          <span>🥧 Category Breakdown</span>
-        </h3>
-        <div class="collapsible-content">
-          <div class="chart-container">
+        
+        <!-- Category Breakdown -->
+        <div class="chart-card">
+          <h4>🥧 Category Breakdown</h4>
+          <div class="chart-container tall">
             <canvas id="categoryChart"></canvas>
           </div>
         </div>
-      </div>
-      
-      <!-- Subcategory Breakdown - Collapsible -->
-      <div class="card collapsible-card">
-        <h3 class="collapsible-header" onclick="toggleCollapsible(this)" style="cursor: pointer; display: flex; align-items: center; gap: 0.5em;">
-          <span class="collapse-icon">▼</span>
-          <span>🏷️ Subcategory Breakdown</span>
-        </h3>
-        <div class="collapsible-content">
+        
+        <!-- Subcategory Breakdown -->
+        <div class="chart-card">
+          <h4>🏷️ Subcategory Breakdown</h4>
           <div class="chart-container tall">
             <canvas id="subcategoryChart"></canvas>
           </div>
         </div>
-      </div>
-      
-      <!-- Vendor Breakdown - Collapsible -->
-      {% if vendor_stats %}
-      <div class="card collapsible-card">
-        <h3 class="collapsible-header" onclick="toggleCollapsible(this)" style="cursor: pointer; display: flex; align-items: center; gap: 0.5em;">
-          <span class="collapse-icon">▼</span>
-          <span>🏪 Vendor Breakdown</span>
-        </h3>
-        <div class="collapsible-content">
-          <div class="chart-container">
+        
+        {% if vendor_stats %}
+        <!-- Vendor Breakdown -->
+        <div class="chart-card">
+          <h4>🏪 Vendor Breakdown</h4>
+          <div class="chart-container tall">
             <canvas id="vendorChart"></canvas>
           </div>
-          <table class="avg-table vendor-breakdown-table" style="margin-top: 1em;">
-            <thead>
-              <tr>
-                <th style="width: 30px;"></th>
-                <th>Vendor</th>
-                <th class="count">#</th>
-                <th class="amount">Total</th>
-                <th class="amount">% of Spend</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for v in vendor_stats[:15] %}
-              <tr class="vendor-row" onclick="toggleVendorCategories(this)" style="cursor: pointer;">
-                <td style="text-align: center; color: var(--text-secondary);">
-                  {% if v.categories and v.categories|length > 0 %}
-                  <span class="vendor-expand-icon">▶</span>
-                  {% endif %}
-                </td>
-                <td><strong>{{ v.name }}</strong></td>
-                <td class="count">{{ v.count }}</td>
-                <td class="amount">${{ "{:,.2f}".format(v.total) }}</td>
-                <td class="amount" style="color: var(--accent);">{{ "{:.1f}".format(v.percentage) }}%</td>
-              </tr>
-              {% if v.categories %}
-              {% for cat in v.categories %}
-              <tr class="vendor-category-row" style="display: none; background: var(--bg-primary);">
-                <td></td>
-                <td style="padding-left: 1.5em; font-size: 0.9em;">
-                  <span style="color: var(--text-secondary);">↳</span> {{ cat.name }}
-                </td>
-                <td class="count" style="font-size: 0.85em; color: var(--text-secondary);">{{ cat.count }}</td>
-                <td class="amount" style="font-size: 0.9em;">${{ "{:,.2f}".format(cat.amount) }}</td>
-                <td class="amount" style="font-size: 0.85em; color: var(--text-secondary);">{{ "{:.1f}".format(cat.percentage) }}%</td>
-              </tr>
-              {% endfor %}
-              {% endif %}
-              {% endfor %}
-            </tbody>
-          </table>
-          <p style="font-size: 0.8em; color: var(--text-secondary); margin-top: 0.5em; text-align: center;">
-            💡 Click on a vendor row to see category breakdown
-          </p>
         </div>
+        
+        <!-- Vendor Table -->
+        <div class="chart-card">
+          <h4>🏪 Vendor Details</h4>
+          <div style="max-height: 400px; overflow-y: auto;">
+            <table class="avg-table vendor-breakdown-table">
+              <thead>
+                <tr>
+                  <th style="width: 30px;"></th>
+                  <th>Vendor</th>
+                  <th class="count">#</th>
+                  <th class="amount">Total</th>
+                  <th class="amount">%</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for v in vendor_stats[:15] %}
+                <tr class="vendor-row" onclick="toggleVendorCategories(this)" style="cursor: pointer;">
+                  <td style="text-align: center; color: var(--text-secondary);">
+                    {% if v.categories and v.categories|length > 0 %}
+                    <span class="vendor-expand-icon">▶</span>
+                    {% endif %}
+                  </td>
+                  <td><strong>{{ v.name }}</strong></td>
+                  <td class="count">{{ v.count }}</td>
+                  <td class="amount">${{ "{:,.2f}".format(v.total) }}</td>
+                  <td class="amount" style="color: var(--accent);">{{ "{:.1f}".format(v.percentage) }}%</td>
+                </tr>
+                {% if v.categories %}
+                {% for cat in v.categories %}
+                <tr class="vendor-category-row" style="display: none; background: var(--bg-primary);">
+                  <td></td>
+                  <td style="padding-left: 1.5em; font-size: 0.9em;">
+                    <span style="color: var(--text-secondary);">↳</span> {{ cat.name }}
+                  </td>
+                  <td class="count" style="font-size: 0.85em; color: var(--text-secondary);">{{ cat.count }}</td>
+                  <td class="amount" style="font-size: 0.9em;">${{ "{:,.2f}".format(cat.amount) }}</td>
+                  <td class="amount" style="font-size: 0.85em; color: var(--text-secondary);">{{ "{:.1f}".format(cat.percentage) }}%</td>
+                </tr>
+                {% endfor %}
+                {% endif %}
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        {% endif %}
+        
+        {% if subcategory_stats %}
+        <!-- Category & Subcategory Details Table -->
+        <div class="chart-card full-width">
+          <h4>🔍 Category & Subcategory Details</h4>
+          <div style="max-height: 400px; overflow-y: auto;">
+            <table class="avg-table">
+              <thead>
+                <tr>
+                  <th>Category / Subcategory</th>
+                  <th class="count">#</th>
+                  <th class="amount">Total</th>
+                  <th class="amount">Avg/Month</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for sub in subcategory_stats %}
+                <tr style="{% if not sub.is_subcategory %}font-weight: 600; background: var(--border-light);{% endif %}">
+                  <td style="padding-left: {% if sub.is_subcategory %}1.5em{% else %}0{% endif %};">
+                    {% if sub.is_subcategory %}↳ {% endif %}{{ sub.name }}
+                  </td>
+                  <td class="count">{{ sub.count }}</td>
+                  <td class="amount">${{ "{:,.2f}".format(sub.total) }}</td>
+                  <td class="amount" style="color: var(--accent);">${{ "{:,.2f}".format(sub.monthly_avg) }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        {% endif %}
       </div>
-      {% endif %}
-      
-      <!-- Category & Subcategory Details Table -->
-      {% if subcategory_stats %}
-      <div class="card">
-        <h3 style="display: flex; justify-content: space-between; align-items: center;">
-          <span>🔍 Category & Subcategory Details</span>
-          <a href="/expenses/csv-export?lookback={{ current_lookback }}" class="btn-secondary" style="text-decoration:none; font-size:0.8em; font-weight:normal;">📥 Export CSV</a>
-        </h3>
-        <table class="avg-table">
-          <thead>
-            <tr>
-              <th>Category / Subcategory</th>
-              <th class="count">#</th>
-              <th class="amount">Total</th>
-              <th class="amount">Avg/Month</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for sub in subcategory_stats %}
-            <tr style="{% if not sub.is_subcategory %}font-weight: 600; background: var(--border-light);{% endif %}">
-              <td style="padding-left: {% if sub.is_subcategory %}1.5em{% else %}0{% endif %};">
-                {% if sub.is_subcategory %}↳ {% endif %}{{ sub.name }}
-              </td>
-              <td class="count">{{ sub.count }}</td>
-              <td class="amount">${{ "{:,.2f}".format(sub.total) }}</td>
-              <td class="amount" style="color: var(--accent);">${{ "{:,.2f}".format(sub.monthly_avg) }}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-      {% endif %}
     </div>
   </div>
   
@@ -1002,7 +966,7 @@
   <div class="modal-overlay" id="subcategoryModal">
     <div class="modal">
       <h4>Add New Sub-Category</h4>
-      <p style="font-size:0.9em; color:#667a9a; margin-bottom:1em;">For: <span id="selectedCategoryName">-</span></p>
+      <p style="font-size:0.9em; color:var(--text-secondary); margin-bottom:1em;">For: <span id="selectedCategoryName">-</span></p>
       <input type="text" id="newSubcategoryName" placeholder="Sub-category name...">
       <div class="modal-btns">
         <button class="btn-secondary" onclick="closeSubcategoryModal()">Cancel</button>
@@ -1015,7 +979,7 @@
   <div class="modal-overlay" id="vendorModal">
     <div class="modal">
       <h4>Add New Vendor</h4>
-      <p style="font-size:0.9em; color:#667a9a; margin-bottom:1em;">Track spending by merchant/vendor</p>
+      <p style="font-size:0.9em; color:var(--text-secondary); margin-bottom:1em;">Track spending by merchant/vendor</p>
       <input type="text" id="newVendorName" placeholder="Vendor name (e.g., Amazon, Walmart)...">
       <div class="modal-btns">
         <button class="btn-secondary" onclick="closeVendorModal()">Cancel</button>
@@ -1028,9 +992,9 @@
   <div class="modal-overlay" id="manageCategoriesModal">
     <div class="modal">
       <h4>Manage Categories</h4>
-      <p style="font-size:0.85em; color:#667a9a; margin-bottom:1em;">Delete categories or subcategories. Categories with expenses cannot be deleted.</p>
+      <p style="font-size:0.85em; color:var(--text-secondary); margin-bottom:1em;">Delete categories or subcategories. Categories with expenses cannot be deleted.</p>
       <div class="category-manager" id="categoryManager">
-        <p style="color:#889ab0;">Loading...</p>
+        <p style="color:var(--text-secondary);">Loading...</p>
       </div>
       <div class="modal-btns" style="margin-top:1em;">
         <button class="btn-secondary" onclick="closeManageCategoriesModal()">Close</button>
@@ -1044,11 +1008,11 @@
       <h4>Edit Expense</h4>
       <form id="editExpenseForm" method="post">
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1em; margin-bottom:1em;">
-          <label style="display:flex; flex-direction:column; gap:0.3em; font-size:0.95em; color:#344a7a;">
+          <label style="display:flex; flex-direction:column; gap:0.3em; font-size:0.95em; color:var(--text-secondary);">
             Date
             <input type="date" name="expense_date" id="editExpenseDate" required>
           </label>
-          <label style="display:flex; flex-direction:column; gap:0.3em; font-size:0.95em; color:#344a7a;">
+          <label style="display:flex; flex-direction:column; gap:0.3em; font-size:0.95em; color:var(--text-secondary);">
             Amount ($)
             <input type="number" name="amount" id="editExpenseAmount" step="0.01" min="0.01" required>
           </label>
@@ -1071,7 +1035,7 @@
           </label>
         </div>
         <div style="margin-bottom:1em;">
-          <label style="display:flex; flex-direction:column; gap:0.3em; font-size:0.95em; color:#344a7a;">
+          <label style="display:flex; flex-direction:column; gap:0.3em; font-size:0.95em; color:var(--text-secondary);">
             Vendor (Optional)
             <select name="vendor_id" id="editExpenseVendor">
               <option value="">Select vendor...</option>
@@ -1081,9 +1045,9 @@
             </select>
           </label>
         </div>
-        <label style="display:flex; flex-direction:column; gap:0.3em; font-size:0.95em; color:#344a7a; margin-bottom:1em;">
+        <label style="display:flex; flex-direction:column; gap:0.3em; font-size:0.95em; color:var(--text-secondary); margin-bottom:1em;">
           Notes (Optional)
-          <textarea name="notes" id="editExpenseNotes" style="padding:0.5em; border:1px solid #ccd; border-radius:6px; resize:vertical; min-height:60px;"></textarea>
+          <textarea name="notes" id="editExpenseNotes" style="padding:0.5em; border:1px solid var(--border-color); border-radius:6px; resize:vertical; min-height:60px; background: var(--bg-input); color: var(--text-primary);"></textarea>
         </label>
         <div class="modal-btns">
           <button type="button" class="btn-secondary" onclick="closeEditExpenseModal()">Cancel</button>
@@ -1105,10 +1069,39 @@
       return CATEGORY_COLORS[index % CATEGORY_COLORS.length];
     }
     
+    // Tab switching function
+    function showExpensesTab(tabName) {
+      // Hide all tabs
+      document.querySelectorAll('.page-tab-content').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      
+      // Deactivate all buttons
+      document.querySelectorAll('.page-tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      
+      // Show selected tab
+      document.getElementById('tab-' + tabName).classList.add('active');
+      
+      // Activate clicked button
+      event.target.closest('.page-tab-btn').classList.add('active');
+      
+      // Redraw charts if switching to analytics tab
+      if (tabName === 'analytics') {
+        setTimeout(function() {
+          if (typeof Chart !== 'undefined') {
+            Chart.helpers.each(Chart.instances, function(instance) {
+              instance.resize();
+            });
+          }
+        }, 100);
+      }
+    }
+    
     // Filter functions
     function updateCategorySelection() {
-      // Update visual state of checkboxes
-      document.querySelectorAll('.category-checkbox').forEach(label => {
+      document.querySelectorAll('#categoryCheckboxes .category-checkbox').forEach(label => {
         const checkbox = label.querySelector('input');
         if (checkbox.checked) {
           label.classList.add('checked');
@@ -1120,12 +1113,8 @@
     
     function applyFilters() {
       const lookback = document.getElementById('lookbackSelect').value;
-      
-      // Get all checked category IDs (including "uncategorized")
       const categoryBoxes = document.querySelectorAll('#categoryCheckboxes input:checked');
       const categoryValues = Array.from(categoryBoxes).map(cb => cb.value);
-      
-      // Get all checked vendor IDs (including "no_vendor")
       const vendorBoxes = document.querySelectorAll('#vendorCheckboxes input:checked');
       const vendorValues = Array.from(vendorBoxes).map(cb => cb.value);
       
@@ -1141,10 +1130,6 @@
     
     function clearAllFilters() {
       window.location.href = '/expenses?lookback=' + document.getElementById('lookbackSelect').value;
-    }
-    
-    function clearFilters() {
-      clearAllFilters();
     }
     
     function toggleAllCategories(selectAll) {
@@ -1164,7 +1149,6 @@
     }
     
     function updateVendorSelection() {
-      // Update visual state of vendor checkboxes
       document.querySelectorAll('#vendorCheckboxes .category-checkbox').forEach(label => {
         const checkbox = label.querySelector('input');
         if (checkbox.checked) {
@@ -1175,24 +1159,15 @@
       });
     }
     
-    // Toggle collapsible card sections
-    function toggleCollapsible(header) {
-      const card = header.closest('.collapsible-card');
-      card.classList.toggle('collapsed');
-    }
-    
     // Toggle vendor category breakdown rows
     function toggleVendorCategories(vendorRow) {
       const icon = vendorRow.querySelector('.vendor-expand-icon');
-      if (!icon) return; // No categories to expand
+      if (!icon) return;
       
       const isExpanded = vendorRow.classList.contains('expanded');
       vendorRow.classList.toggle('expanded');
-      
-      // Toggle icon direction
       icon.textContent = isExpanded ? '▶' : '▼';
       
-      // Find and toggle all category rows following this vendor row
       let nextRow = vendorRow.nextElementSibling;
       while (nextRow && nextRow.classList.contains('vendor-category-row')) {
         nextRow.style.display = isExpanded ? 'none' : 'table-row';
@@ -1214,17 +1189,10 @@
     
     // ===== AUTOCOMPLETE FUNCTIONS =====
     
-    // Category autocomplete
     function showCategoryDropdown() {
       const dropdown = document.getElementById('categoryDropdown');
       dropdown.classList.add('show');
       filterCategoryOptions();
-    }
-    
-    function hideCategoryDropdown() {
-      setTimeout(() => {
-        document.getElementById('categoryDropdown').classList.remove('show');
-      }, 200);
     }
     
     function filterCategoryOptions() {
@@ -1232,11 +1200,7 @@
       const options = document.querySelectorAll('#categoryDropdown .autocomplete-option');
       options.forEach(opt => {
         const text = opt.textContent.toLowerCase();
-        if (text.includes(input) || input === '') {
-          opt.classList.remove('hidden');
-        } else {
-          opt.classList.add('hidden');
-        }
+        opt.classList.toggle('hidden', !text.includes(input) && input !== '');
       });
     }
     
@@ -1245,7 +1209,6 @@
       document.getElementById('categoryInput').value = value ? name : '';
       document.getElementById('categoryDropdown').classList.remove('show');
       
-      // Enable/disable subcategory input
       const subcatInput = document.getElementById('subcategoryInput');
       const subcatSelect = document.getElementById('subcategorySelect');
       
@@ -1262,7 +1225,6 @@
       }
     }
     
-    // Subcategory autocomplete
     function showSubcategoryDropdown() {
       if (!document.getElementById('subcategoryInput').disabled) {
         document.getElementById('subcategoryDropdown').classList.add('show');
@@ -1270,22 +1232,12 @@
       }
     }
     
-    function hideSubcategoryDropdown() {
-      setTimeout(() => {
-        document.getElementById('subcategoryDropdown').classList.remove('show');
-      }, 200);
-    }
-    
     function filterSubcategoryOptions() {
       const input = document.getElementById('subcategoryInput').value.toLowerCase();
       const options = document.querySelectorAll('#subcategoryDropdown .autocomplete-option');
       options.forEach(opt => {
         const text = opt.textContent.toLowerCase();
-        if (text.includes(input) || input === '') {
-          opt.classList.remove('hidden');
-        } else {
-          opt.classList.add('hidden');
-        }
+        opt.classList.toggle('hidden', !text.includes(input) && input !== '');
       });
     }
     
@@ -1295,16 +1247,9 @@
       document.getElementById('subcategoryDropdown').classList.remove('show');
     }
     
-    // Vendor autocomplete
     function showVendorDropdown() {
       document.getElementById('vendorDropdown').classList.add('show');
       filterVendorOptions();
-    }
-    
-    function hideVendorDropdown() {
-      setTimeout(() => {
-        document.getElementById('vendorDropdown').classList.remove('show');
-      }, 200);
     }
     
     function filterVendorOptions() {
@@ -1312,11 +1257,7 @@
       const options = document.querySelectorAll('#vendorDropdown .autocomplete-option');
       options.forEach(opt => {
         const text = opt.textContent.toLowerCase();
-        if (text.includes(input) || input === '') {
-          opt.classList.remove('hidden');
-        } else {
-          opt.classList.add('hidden');
-        }
+        opt.classList.toggle('hidden', !text.includes(input) && input !== '');
       });
     }
     
@@ -1326,21 +1267,16 @@
       document.getElementById('vendorDropdown').classList.remove('show');
     }
     
-    // Close dropdowns when clicking outside
     document.addEventListener('click', function(e) {
       if (!e.target.closest('.autocomplete-wrapper')) {
         document.querySelectorAll('.autocomplete-dropdown').forEach(d => d.classList.remove('show'));
       }
     });
     
-    // ===== END AUTOCOMPLETE FUNCTIONS =====
-    
-    // Load subcategories when category changes (for autocomplete)
     async function loadSubcategories() {
       const categoryId = document.getElementById('categorySelect').value;
       const subcategoryDropdown = document.getElementById('subcategoryDropdown');
       
-      // Reset subcategory dropdown
       subcategoryDropdown.innerHTML = '<div class="autocomplete-option" data-value="" onclick="selectSubcategory(\'\', \'None\')"><em>None</em></div>';
       
       if (!categoryId) return;
@@ -1362,7 +1298,7 @@
       }
     }
     
-    // Category modal
+    // Modal functions
     function showCategoryModal() {
       document.getElementById('categoryModal').classList.add('active');
       document.getElementById('newCategoryName').focus();
@@ -1381,14 +1317,9 @@
         const formData = new FormData();
         formData.append('category_name', name);
         
-        const response = await fetch('/expenses/category/add', {
-          method: 'POST',
-          body: formData
-        });
-        
+        const response = await fetch('/expenses/category/add', { method: 'POST', body: formData });
         const data = await response.json();
         
-        // Add to autocomplete dropdown
         const dropdown = document.getElementById('categoryDropdown');
         const option = document.createElement('div');
         option.className = 'autocomplete-option';
@@ -1397,16 +1328,13 @@
         option.onclick = function() { selectCategory(data.id, data.name); };
         dropdown.appendChild(option);
         
-        // Select the new category
         selectCategory(data.id, data.name);
-        
         closeCategoryModal();
       } catch (err) {
         console.error('Error creating category:', err);
       }
     }
     
-    // Subcategory modal
     function showSubcategoryModal() {
       const categorySelect = document.getElementById('categorySelect');
       const categoryInput = document.getElementById('categoryInput');
@@ -1415,7 +1343,6 @@
         return;
       }
       
-      // Get the category name from the visible input field
       document.getElementById('selectedCategoryName').textContent = categoryInput.value || 'Selected Category';
       document.getElementById('subcategoryModal').classList.add('active');
       document.getElementById('newSubcategoryName').focus();
@@ -1436,14 +1363,9 @@
         formData.append('category_id', categoryId);
         formData.append('subcategory_name', name);
         
-        const response = await fetch('/expenses/subcategory/add', {
-          method: 'POST',
-          body: formData
-        });
-        
+        const response = await fetch('/expenses/subcategory/add', { method: 'POST', body: formData });
         const data = await response.json();
         
-        // Add to autocomplete dropdown
         const dropdown = document.getElementById('subcategoryDropdown');
         const option = document.createElement('div');
         option.className = 'autocomplete-option';
@@ -1452,16 +1374,13 @@
         option.onclick = function() { selectSubcategory(data.id, data.name); };
         dropdown.appendChild(option);
         
-        // Select the new subcategory
         selectSubcategory(data.id, data.name);
-        
         closeSubcategoryModal();
       } catch (err) {
         console.error('Error creating subcategory:', err);
       }
     }
     
-    // Vendor modal
     function showVendorModal() {
       document.getElementById('vendorModal').classList.add('active');
       document.getElementById('newVendorName').focus();
@@ -1480,14 +1399,9 @@
         const formData = new FormData();
         formData.append('vendor_name', name);
         
-        const response = await fetch('/expenses/vendor/add', {
-          method: 'POST',
-          body: formData
-        });
-        
+        const response = await fetch('/expenses/vendor/add', { method: 'POST', body: formData });
         const data = await response.json();
         
-        // Add to autocomplete dropdown
         const dropdown = document.getElementById('vendorDropdown');
         const option = document.createElement('div');
         option.className = 'autocomplete-option';
@@ -1496,7 +1410,6 @@
         option.onclick = function() { selectVendor(data.id, data.name); };
         dropdown.appendChild(option);
         
-        // Also add to edit modal select
         const editSelect = document.getElementById('editExpenseVendor');
         if (editSelect) {
           const opt = document.createElement('option');
@@ -1505,16 +1418,13 @@
           editSelect.appendChild(opt);
         }
         
-        // Select the new vendor
         selectVendor(data.id, data.name);
-        
         closeVendorModal();
       } catch (err) {
         console.error('Error creating vendor:', err);
       }
     }
     
-    // Manage categories modal
     function showManageCategoriesModal() {
       document.getElementById('manageCategoriesModal').classList.add('active');
       loadCategoriesForManagement();
@@ -1532,7 +1442,7 @@
         const data = await response.json();
         
         if (!data.categories || data.categories.length === 0) {
-          container.innerHTML = '<p style="color:#889ab0; text-align:center;">No categories yet.</p>';
+          container.innerHTML = '<p style="color:var(--text-secondary); text-align:center;">No categories yet.</p>';
           return;
         }
         
@@ -1573,7 +1483,7 @@
     
     async function deleteCategory(categoryId, expenseCount) {
       if (expenseCount > 0) {
-        alert('Cannot delete a category that has expenses. Delete or reassign the expenses first.');
+        alert('Cannot delete a category that has expenses.');
         return;
       }
       
@@ -1587,7 +1497,7 @@
           alert(data.error);
         } else {
           loadCategoriesForManagement();
-          location.reload(); // Refresh to update dropdowns
+          location.reload();
         }
       } catch (err) {
         console.error('Error deleting category:', err);
@@ -1595,7 +1505,7 @@
     }
     
     async function deleteSubcategory(subcategoryId) {
-      if (!confirm('Delete this subcategory? Expenses using it will have their subcategory cleared.')) return;
+      if (!confirm('Delete this subcategory?')) return;
       
       try {
         const response = await fetch(`/expenses/subcategory/${subcategoryId}`, { method: 'DELETE' });
@@ -1611,7 +1521,6 @@
       }
     }
     
-    // Delete expense
     async function deleteExpense(expenseId) {
       if (!confirm('Delete this expense?')) return;
       
@@ -1623,7 +1532,6 @@
       }
     }
     
-    // Edit expense
     let currentEditExpenseId = null;
     
     async function editExpense(expenseId) {
@@ -1638,29 +1546,18 @@
           return;
         }
         
-        // Set form values
         document.getElementById('editExpenseDate').value = data.expense_date;
         document.getElementById('editExpenseAmount').value = data.amount;
-        document.getElementById('editExpenseCategory').value = data.category_id;
+        document.getElementById('editExpenseCategory').value = data.category_id || '';
         document.getElementById('editExpenseNotes').value = data.notes || '';
         
-        // Load subcategories for this category, then set the value
         await loadEditSubcategories();
         if (data.subcategory_id) {
           document.getElementById('editExpenseSubcategory').value = data.subcategory_id;
         }
         
-        // Set vendor if present
-        if (data.vendor_id) {
-          document.getElementById('editExpenseVendor').value = data.vendor_id;
-        } else {
-          document.getElementById('editExpenseVendor').value = '';
-        }
-        
-        // Update form action
+        document.getElementById('editExpenseVendor').value = data.vendor_id || '';
         document.getElementById('editExpenseForm').action = `/expenses/update/${expenseId}`;
-        
-        // Show modal
         document.getElementById('editExpenseModal').classList.add('active');
       } catch (err) {
         console.error('Error loading expense:', err);
@@ -1696,7 +1593,6 @@
       }
     }
     
-    // Close modals on overlay click
     document.querySelectorAll('.modal-overlay').forEach(overlay => {
       overlay.addEventListener('click', (e) => {
         if (e.target === overlay) {
@@ -1711,11 +1607,9 @@
     const stackedData = {{ stats.stacked_data | tojson }};
     const monthsList = {{ stats.months_list | tojson }};
     
-    // Build category color map for consistent colors
     const categoryColorMap = {};
     let colorIndex = 0;
     
-    // Also build from stacked data for consistency
     stackedData.forEach(cat => {
       if (!categoryColorMap[cat.category]) {
         categoryColorMap[cat.category] = getCategoryColor(colorIndex++);
@@ -1727,7 +1621,7 @@
       }
     });
     
-    // Stacked Bar Chart - Monthly totals by category
+    // Stacked Bar Chart
     const stackedCtx = document.getElementById('stackedChart');
     if (stackedCtx) {
       if (stackedData.length > 0 && monthsList.length > 0) {
@@ -1741,10 +1635,7 @@
         
         new Chart(stackedCtx, {
           type: 'bar',
-          data: {
-            labels: monthsList,
-            datasets: stackedDatasets
-          },
+          data: { labels: monthsList, datasets: stackedDatasets },
           options: {
             responsive: true,
             maintainAspectRatio: false,
@@ -1760,38 +1651,20 @@
             },
             scales: {
               x: { stacked: true },
-              y: {
-                stacked: true,
-                beginAtZero: true,
-                ticks: { callback: v => '$' + v.toLocaleString() }
-              }
+              y: { stacked: true, beginAtZero: true, ticks: { callback: v => '$' + v.toLocaleString() } }
             }
           }
         });
       } else {
-        // Show empty state with placeholder months
         const emptyMonths = monthsList.length > 0 ? monthsList : ['No Data'];
         new Chart(stackedCtx, {
           type: 'bar',
-          data: {
-            labels: emptyMonths,
-            datasets: [{
-              label: 'No expenses',
-              data: emptyMonths.map(() => 0),
-              backgroundColor: '#e8eef8'
-            }]
-          },
+          data: { labels: emptyMonths, datasets: [{ label: 'No expenses', data: emptyMonths.map(() => 0), backgroundColor: '#e8eef8' }] },
           options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: {
-              legend: { display: false },
-              title: { display: true, text: 'No expenses recorded yet', font: { size: 14 }, color: '#889ab0' }
-            },
-            scales: {
-              x: { stacked: true },
-              y: { stacked: true, beginAtZero: true, max: 100, ticks: { callback: v => '$' + v } }
-            }
+            plugins: { legend: { display: false }, title: { display: true, text: 'No expenses recorded yet', font: { size: 14 }, color: '#889ab0' } },
+            scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true, max: 100, ticks: { callback: v => '$' + v } } }
           }
         });
       }
@@ -1803,58 +1676,27 @@
       const subcategoryData = {{ subcategory_chart_data | tojson }};
       
       if (subcategoryData && subcategoryData.length > 0) {
-        // Sort by total and take top 15
         const sortedData = [...subcategoryData].sort((a, b) => b.total - a.total).slice(0, 15);
         
         new Chart(subcategoryCtx, {
           type: 'bar',
           data: {
             labels: sortedData.map(d => d.label),
-            datasets: [{
-              label: 'Spending',
-              data: sortedData.map(d => d.total),
-              backgroundColor: sortedData.map((d, i) => categoryColorMap[d.category] || getCategoryColor(i)),
-              borderRadius: 4
-            }]
+            datasets: [{ label: 'Spending', data: sortedData.map(d => d.total), backgroundColor: sortedData.map((d, i) => categoryColorMap[d.category] || getCategoryColor(i)), borderRadius: 4 }]
           },
           options: {
             responsive: true,
             maintainAspectRatio: false,
             indexAxis: 'y',
-            plugins: {
-              legend: { display: false },
-              tooltip: {
-                callbacks: {
-                  label: function(context) {
-                    return formatCurrency(context.raw);
-                  }
-                }
-              }
-            },
-            scales: {
-              x: {
-                beginAtZero: true,
-                ticks: { callback: v => formatCurrency(v) }
-              },
-              y: {
-                ticks: { font: { size: 11 } }
-              }
-            }
+            plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(context) { return formatCurrency(context.raw); } } } },
+            scales: { x: { beginAtZero: true, ticks: { callback: v => formatCurrency(v) } }, y: { ticks: { font: { size: 11 } } } }
           }
         });
       } else {
         new Chart(subcategoryCtx, {
           type: 'bar',
           data: { labels: ['No Data'], datasets: [{ data: [0] }] },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            indexAxis: 'y',
-            plugins: {
-              legend: { display: false },
-              title: { display: true, text: 'No subcategory data available', font: { size: 14 }, color: '#889ab0' }
-            }
-          }
+          options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false }, title: { display: true, text: 'No subcategory data available', font: { size: 14 }, color: '#889ab0' } } }
         });
       }
     }
@@ -1867,50 +1709,21 @@
       if (categoryData && categoryData.length > 0) {
         new Chart(categoryCtx, {
           type: 'doughnut',
-          data: {
-            labels: categoryData.map(d => d[0]),
-            datasets: [{
-              data: categoryData.map(d => d[1]),
-              backgroundColor: categoryData.map((d, i) => categoryColorMap[d[0]] || getCategoryColor(i))
-            }]
-          },
+          data: { labels: categoryData.map(d => d[0]), datasets: [{ data: categoryData.map(d => d[1]), backgroundColor: categoryData.map((d, i) => categoryColorMap[d[0]] || getCategoryColor(i)) }] },
           options: {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
               legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 } } },
-              tooltip: {
-                callbacks: {
-                  label: function(context) {
-                    const value = context.parsed;
-                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                    const percentage = ((value / total) * 100).toFixed(1);
-                    return `$${value.toLocaleString()} (${percentage}%)`;
-                  }
-                }
-              }
+              tooltip: { callbacks: { label: function(context) { const value = context.parsed; const total = context.dataset.data.reduce((a, b) => a + b, 0); const percentage = ((value / total) * 100).toFixed(1); return `$${value.toLocaleString()} (${percentage}%)`; } } }
             }
           }
         });
       } else {
-        // Empty doughnut chart
         new Chart(categoryCtx, {
           type: 'doughnut',
-          data: {
-            labels: ['No Data'],
-            datasets: [{
-              data: [1],
-              backgroundColor: ['#e8eef8']
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: { display: false },
-              title: { display: true, text: 'No expenses recorded yet', font: { size: 14 }, color: '#889ab0' }
-            }
-          }
+          data: { labels: ['No Data'], datasets: [{ data: [1], backgroundColor: ['#e8eef8'] }] },
+          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, title: { display: true, text: 'No expenses recorded yet', font: { size: 14 }, color: '#889ab0' } } }
         });
       }
     }
@@ -1921,37 +1734,18 @@
       const vendorData = {{ stats.by_vendor | tojson if stats.by_vendor else '[]' }};
       
       if (vendorData && vendorData.length > 0) {
-        // Take top 10 vendors for chart
         const topVendors = vendorData.slice(0, 10);
-        const vendorColors = [
-          '#e8385a', '#38e878', '#e8a838', '#a838e8', '#38c8e8',
-          '#e8e838', '#8838e8', '#38e8a8', '#e85838', '#3875e8'
-        ];
+        const vendorColors = ['#e8385a', '#38e878', '#e8a838', '#a838e8', '#38c8e8', '#e8e838', '#8838e8', '#38e8a8', '#e85838', '#3875e8'];
         
         new Chart(vendorCtx, {
           type: 'doughnut',
-          data: {
-            labels: topVendors.map(d => d[0]),
-            datasets: [{
-              data: topVendors.map(d => d[1]),
-              backgroundColor: topVendors.map((d, i) => vendorColors[i % vendorColors.length])
-            }]
-          },
+          data: { labels: topVendors.map(d => d[0]), datasets: [{ data: topVendors.map(d => d[1]), backgroundColor: topVendors.map((d, i) => vendorColors[i % vendorColors.length]) }] },
           options: {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
               legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 } } },
-              tooltip: {
-                callbacks: {
-                  label: function(context) {
-                    const value = context.parsed;
-                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                    const percentage = ((value / total) * 100).toFixed(1);
-                    return `$${value.toLocaleString()} (${percentage}%)`;
-                  }
-                }
-              }
+              tooltip: { callbacks: { label: function(context) { const value = context.parsed; const total = context.dataset.data.reduce((a, b) => a + b, 0); const percentage = ((value / total) * 100).toFixed(1); return `$${value.toLocaleString()} (${percentage}%)`; } } }
             }
           }
         });
@@ -1991,29 +1785,18 @@
       statusDiv.innerHTML = '<span style="color:var(--accent);">Uploading...</span>';
       
       try {
-        const response = await fetch('/expenses/bulk-upload', {
-          method: 'POST',
-          body: formData
-        });
-        
+        const response = await fetch('/expenses/bulk-upload', { method: 'POST', body: formData });
         const data = await response.json();
         
         if (data.success) {
           let msg = `<span style="color:#28a745;">✓ ${data.imported} expense(s) imported</span>`;
-          if (data.skipped > 0) {
-            msg += `<br><span style="color:#ffc107;">⚠ ${data.skipped} row(s) skipped</span>`;
-          }
-          if (data.new_categories?.length > 0) {
-            msg += `<br><small>New categories created: ${data.new_categories.join(', ')}</small>`;
-          }
+          if (data.skipped > 0) msg += `<br><span style="color:#ffc107;">⚠ ${data.skipped} row(s) skipped</span>`;
+          if (data.new_categories?.length > 0) msg += `<br><small>New categories created: ${data.new_categories.join(', ')}</small>`;
           statusDiv.innerHTML = msg;
-          // Reload page after a short delay to show new expenses
           setTimeout(() => window.location.reload(), 1500);
         } else {
           statusDiv.innerHTML = `<span style="color:var(--danger);">✗ ${data.error || 'Upload failed'}</span>`;
-          if (data.details) {
-            statusDiv.innerHTML += `<br><small>${data.details}</small>`;
-          }
+          if (data.details) statusDiv.innerHTML += `<br><small>${data.details}</small>`;
         }
       } catch (err) {
         statusDiv.innerHTML = `<span style="color:var(--danger);">✗ Upload failed: ${err.message}</span>`;

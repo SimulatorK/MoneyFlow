@@ -149,6 +149,28 @@
         .subscription-trend.up { color: #dc3545; }
         .subscription-trend.down { color: #28a745; }
         .subscription-trend.neutral { color: var(--text-secondary); }
+        
+        /* Time Period Filter Buttons */
+        .time-period-btn {
+            padding: 0.4em 0.7em;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 0.8em;
+            font-weight: 600;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .time-period-btn:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+        .time-period-btn.active {
+            background: var(--accent);
+            color: #fff;
+        }
+        
         .grid-container-2x2 {
             display: grid;
             /* Creates 2 columns, each taking up an equal fraction of the available space (1fr) */
@@ -471,7 +493,11 @@
       <div class="profile-dropdown">
         <button class="profile-btn" onclick="toggleProfileDropdown()">
           <div class="profile-avatar">
-            {% if profile_picture_b64 %}<img src="data:{{ profile_picture_type }};base64,{{ profile_picture_b64 }}" alt="">{% else %}{{ user.name[0].upper() }}{% endif %}
+            {% if profile_picture_b64 %}
+            <img src="data:{{ profile_picture_type }};base64,{{ profile_picture_b64 }}" alt="">
+            {% else %}
+            {{ user.name[0].upper() }}
+            {% endif %}
           </div>
           <span>{{ user.name.split()[0] }}</span>
           <span style="font-size:0.7em;">▼</span>
@@ -691,7 +717,7 @@
           No income data. <a href="/income-taxes" style="color: var(--accent);">Set up income →</a>
         </p>
         {% endif %}
-      </div> --> -->
+      </div> -->
       
       <!-- Budget Rule Check -->
       <div class="card rule-card">
@@ -1248,8 +1274,17 @@
       <div class="card" style="grid-column: span 2;">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1em;">
           <h3 style="margin: 0;">📈 Spending Over Time</h3>
-          <div style="display: flex; align-items: center; gap: 0.5em;">
-            <label style="font-size: 0.85em; color: var(--text-secondary);">Filter:</label>
+          <div style="display: flex; align-items: center; gap: 1em; flex-wrap: wrap;">
+            <!-- Time Period Filter -->
+            <div class="time-period-filter" style="display: flex; gap: 0.25em; background: var(--bg-primary); border-radius: 6px; padding: 0.25em;">
+              <button type="button" class="time-period-btn" data-period="1W" onclick="setTimePeriod('1W')">1W</button>
+              <button type="button" class="time-period-btn" data-period="1M" onclick="setTimePeriod('1M')">1M</button>
+              <button type="button" class="time-period-btn" data-period="3M" onclick="setTimePeriod('3M')">3M</button>
+              <button type="button" class="time-period-btn active" data-period="6M" onclick="setTimePeriod('6M')">6M</button>
+              <button type="button" class="time-period-btn" data-period="1Y" onclick="setTimePeriod('1Y')">1Y</button>
+              <button type="button" class="time-period-btn" data-period="2Y" onclick="setTimePeriod('2Y')">2Y</button>
+            </div>
+            <!-- Subscription Filter -->
             <div class="subscription-filter-container" style="position: relative;">
               <button type="button" class="btn-secondary" onclick="toggleSubscriptionFilter()" style="padding: 0.4em 0.8em; font-size: 0.85em;">
                 Select Items ▼
@@ -2093,7 +2128,35 @@
     
     // Initialize spending over time line chart
     let spendingTrendChart = null;
+    let currentTimePeriod = '6M';  // Default time period
     const subTrendCtx = document.getElementById('subscriptionTrendChart');
+    
+    // Time period helper - get cutoff date
+    function getTimePeriodCutoff(period) {
+      const now = new Date();
+      switch(period) {
+        case '1W': return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        case '1M': return new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+        case '3M': return new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
+        case '6M': return new Date(now.getFullYear(), now.getMonth() - 6, now.getDate());
+        case '1Y': return new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+        case '2Y': return new Date(now.getFullYear() - 2, now.getMonth(), now.getDate());
+        default: return new Date(now.getFullYear(), now.getMonth() - 6, now.getDate());
+      }
+    }
+    
+    // Set time period and rebuild chart
+    function setTimePeriod(period) {
+      currentTimePeriod = period;
+      
+      // Update button states
+      document.querySelectorAll('.time-period-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.period === period);
+      });
+      
+      // Rebuild chart
+      updateSpendingChart();
+    }
     
     function buildSpendingTrendChart(filteredSubs) {
       if (!subTrendCtx) return;
@@ -2119,14 +2182,19 @@
         return;
       }
       
-      // Get all unique months from all subscriptions
+      // Get time period cutoff
+      const cutoffDate = getTimePeriodCutoff(currentTimePeriod);
+      
+      // Get all unique months from all subscriptions within time period
       const allMonths = new Set();
       filteredSubs.forEach(sub => {
         if (sub.payments && sub.payments.length > 0) {
           sub.payments.forEach(p => {
             const date = new Date(p.payment_date);
-            const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-            allMonths.add(monthKey);
+            if (date >= cutoffDate) {
+              const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+              allMonths.add(monthKey);
+            }
           });
         }
       });
@@ -2142,13 +2210,15 @@
       
       // Create datasets for each subscription
       const datasets = filteredSubs.map((sub, index) => {
-        // Aggregate payments by month
+        // Aggregate payments by month (filtered by time period)
         const monthlyData = {};
         if (sub.payments && sub.payments.length > 0) {
           sub.payments.forEach(p => {
             const date = new Date(p.payment_date);
-            const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-            monthlyData[monthKey] = (monthlyData[monthKey] || 0) + p.amount;
+            if (date >= cutoffDate) {
+              const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+              monthlyData[monthKey] = (monthlyData[monthKey] || 0) + p.amount;
+            }
           });
         }
         

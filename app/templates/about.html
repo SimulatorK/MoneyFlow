@@ -195,7 +195,7 @@
     </style>
 </head>
 <body>
-  <!-- App Header -->
+  <!-- App Header with Profile Dropdown -->
   <header class="app-header">
     <div class="header-left"></div>
     <div class="header-center">
@@ -209,11 +209,14 @@
     </div>
     <div class="header-right">
       <a href="/about" class="about-link">ℹ️ About</a>
-      {% if user %}
       <div class="profile-dropdown">
         <button class="profile-btn" onclick="toggleProfileDropdown()">
           <div class="profile-avatar">
-            {% if profile_picture_b64 %}<img src="data:{{ profile_picture_type }};base64,{{ profile_picture_b64 }}" alt="">{% else %}{{ user.name[0].upper() }}{% endif %}
+            {% if profile_picture_b64 %}
+            <img src="data:{{ profile_picture_type }};base64,{{ profile_picture_b64 }}" alt="">
+            {% else %}
+            {{ user.name[0].upper() }}
+            {% endif %}
           </div>
           <span>{{ user.name.split()[0] }}</span>
           <span style="font-size:0.7em;">▼</span>
@@ -229,9 +232,6 @@
           <a href="/logout" class="dropdown-item danger">🚪 Sign Out</a>
         </div>
       </div>
-      {% else %}
-      <a href="/login" class="about-link">Sign In</a>
-      {% endif %}
     </div>
   </header>
   

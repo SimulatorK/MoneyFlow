@@ -222,8 +222,16 @@ def calculate_budget_vs_actual(db: Session, user_id: int, summary: dict, actual_
     # Get all expense categories the user has spent in
     spent_categories = set(actual_spending["by_category"].keys())
     
-    # Track which categories are covered by budget items
+    # Track which categories are covered by budget items (fixed or variable)
     budgeted_category_keys = set()  # (cat_id, subcat_id or None)
+    
+    # Process fixed costs - these categories are considered "budgeted"
+    for cost in summary.get("fixed_costs", []):
+        if hasattr(cost, 'expense_category_id') and cost.expense_category_id:
+            if cost.expense_subcategory_id:
+                budgeted_category_keys.add((cost.expense_category_id, cost.expense_subcategory_id))
+            else:
+                budgeted_category_keys.add((cost.expense_category_id, None))
     
     # Process variable budget items
     for item in summary.get("budget_items", []):
@@ -670,8 +678,8 @@ def add_fixed_cost(
     amount: float = Form(0),
     frequency: str = Form("monthly"),
     category_type: str = Form("need"),
-    expense_category_id: Optional[int] = Form(None),
-    expense_subcategory_id: Optional[int] = Form(None),
+    expense_category_id: Optional[str] = Form(None),
+    expense_subcategory_id: Optional[str] = Form(None),
     amount_mode: str = Form("fixed"),
     tracking_period_months: int = Form(3)
 ):
@@ -679,9 +687,21 @@ def add_fixed_cost(
     if not user:
         return RedirectResponse("/login")
     
-    # Normalize IDs
-    cat_id = expense_category_id if expense_category_id and expense_category_id > 0 else None
-    subcat_id = expense_subcategory_id if expense_subcategory_id and expense_subcategory_id > 0 else None
+    # Normalize category ID - convert string to int, handle empty/None
+    cat_id = None
+    if expense_category_id and expense_category_id.strip() and expense_category_id != "0":
+        try:
+            cat_id = int(expense_category_id)
+        except ValueError:
+            cat_id = None
+    
+    # Normalize subcategory ID
+    subcat_id = None
+    if expense_subcategory_id and expense_subcategory_id.strip() and expense_subcategory_id != "0":
+        try:
+            subcat_id = int(expense_subcategory_id)
+        except ValueError:
+            subcat_id = None
     
     # Check for duplicate category/subcategory in fixed costs
     if cat_id:
@@ -760,14 +780,30 @@ def update_fixed_cost(
     amount: float = Form(0),
     frequency: str = Form("monthly"),
     category_type: str = Form("need"),
-    expense_category_id: Optional[int] = Form(None),
-    expense_subcategory_id: Optional[int] = Form(None),
+    expense_category_id: Optional[str] = Form(None),
+    expense_subcategory_id: Optional[str] = Form(None),
     amount_mode: str = Form("fixed"),
     tracking_period_months: int = Form(3)
 ):
     user = get_current_user(request, db)
     if not user:
         return RedirectResponse("/login")
+    
+    # Normalize category ID
+    cat_id = None
+    if expense_category_id and expense_category_id.strip() and expense_category_id != "0":
+        try:
+            cat_id = int(expense_category_id)
+        except ValueError:
+            cat_id = None
+    
+    # Normalize subcategory ID
+    subcat_id = None
+    if expense_subcategory_id and expense_subcategory_id.strip() and expense_subcategory_id != "0":
+        try:
+            subcat_id = int(expense_subcategory_id)
+        except ValueError:
+            subcat_id = None
     
     cost = db.query(FixedCost).filter(
         FixedCost.id == cost_id,
@@ -779,8 +815,8 @@ def update_fixed_cost(
         cost.amount = amount
         cost.frequency = frequency
         cost.category_type = category_type
-        cost.expense_category_id = expense_category_id if expense_category_id and expense_category_id > 0 else None
-        cost.expense_subcategory_id = expense_subcategory_id if expense_subcategory_id and expense_subcategory_id > 0 else None
+        cost.expense_category_id = cat_id
+        cost.expense_subcategory_id = subcat_id
         cost.amount_mode = amount_mode
         cost.tracking_period_months = tracking_period_months
         db.commit()
@@ -811,8 +847,8 @@ def delete_fixed_cost(cost_id: int, request: Request, db: Session = Depends(get_
 def add_budget_item(
     request: Request,
     db: Session = Depends(get_db),
-    expense_category_id: int = Form(...),
-    expense_subcategory_id: Optional[int] = Form(None),
+    expense_category_id: Optional[str] = Form(None),
+    expense_subcategory_id: Optional[str] = Form(None),
     use_tracked_average: bool = Form(True),
     specified_amount: float = Form(0),
     tracking_period_months: int = Form(3),
@@ -822,13 +858,29 @@ def add_budget_item(
     if not user:
         return RedirectResponse("/login")
     
-    # Normalize subcategory ID
-    subcat_id = expense_subcategory_id if expense_subcategory_id else None
+    # Normalize category ID - required for variable expenses
+    cat_id = None
+    if expense_category_id and expense_category_id.strip() and expense_category_id != "0":
+        try:
+            cat_id = int(expense_category_id)
+        except ValueError:
+            cat_id = None
+    
+    if not cat_id:
+        return RedirectResponse("/budget?error=category_required", status_code=303)
+    
+    # Normalize subcategory ID - 0 or empty means "all subcategories"
+    subcat_id = None
+    if expense_subcategory_id and expense_subcategory_id.strip() and expense_subcategory_id != "0":
+        try:
+            subcat_id = int(expense_subcategory_id)
+        except ValueError:
+            subcat_id = None
     
     # Check if this category/subcategory already exists in fixed costs
     existing_fixed = db.query(FixedCost).filter(
         FixedCost.user_id == user.id,
-        FixedCost.expense_category_id == expense_category_id,
+        FixedCost.expense_category_id == cat_id,
         FixedCost.expense_subcategory_id == subcat_id,
         FixedCost.is_active == True
     ).first()
@@ -839,7 +891,7 @@ def add_budget_item(
     # Check if this category/subcategory already has a budget item
     existing = db.query(BudgetItem).filter(
         BudgetItem.user_id == user.id,
-        BudgetItem.expense_category_id == expense_category_id,
+        BudgetItem.expense_category_id == cat_id,
         BudgetItem.expense_subcategory_id == subcat_id
     ).first()
     
@@ -849,7 +901,7 @@ def add_budget_item(
     # Create new
     item = BudgetItem(
         user_id=user.id,
-        expense_category_id=expense_category_id,
+        expense_category_id=cat_id,
         expense_subcategory_id=subcat_id,
         use_tracked_average=use_tracked_average,
         specified_amount=specified_amount,

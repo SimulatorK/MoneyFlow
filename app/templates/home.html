@@ -31,51 +31,10 @@
             --accent: #4d8ef0;
             --accent-glow: rgba(77, 142, 240, 0.15);
         }
-        .app-title {
-          margin: 0;
-          font-size: 2.2em;
-          font-weight: 700;
-          color: #fff;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 0.5rem;
-        }
-        
-        .app-title img.app-icon {
-          width: 48px;
-          height: 48px;
-          max-width: 48px;
-          max-height: 48px;
-          border-radius: 6px;
-          flex-shrink: 0;
-        }
         
         * { box-sizing: border-box; }
         body { margin: 0; font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-primary); color: var(--text-primary); }
         
-        /* App Header with Profile */
-        .app-header {
-            background: var(--bg-header);
-            padding: 1em 2em;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border-bottom: 3px solid var(--accent);
-            position: relative;
-        }
-        .header-left { flex: 1; }
-        .header-center {
-            flex: 2;
-            text-align: center;
-        }
-        .header-right {
-            flex: 1;
-            display: flex;
-            justify-content: flex-end;
-            align-items: center;
-            gap: 1em;
-        }
         /* Professional Header - Logo on left, partially overlayed */
         .app-header-brand {
             display: inline-flex;
@@ -115,6 +74,26 @@
             text-shadow: 1px 1px 4px rgba(0,0,0,0.4);
             margin-top: 0.15em;
             margin-left: 2px;
+        }
+        
+        /* App Header with Profile */
+        .app-header {
+            background: var(--bg-header);
+            padding: 1em 2em;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 3px solid var(--accent);
+            position: relative;
+        }
+        .header-left { flex: 1; }
+        .header-center { flex: 2; text-align: center; }
+        .header-right {
+            flex: 1;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 1em;
         }
         .about-link {
             color: rgba(255,255,255,0.8); text-decoration: none;
@@ -178,10 +157,57 @@
         .welcome-section h2 { margin: 0; color: var(--text-heading); font-size: 1.5em; }
         .welcome-section p { color: var(--text-secondary); margin: 0.5em 0 0 0; }
         
-        /* Dashboard Grid - Wider Sankey */
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: 1fr 320px;
+        /* Page Sub-Tab Navigation - Consistent Style */
+        .page-tabs {
+            background: var(--bg-card);
+            padding: 0.5em;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            display: flex;
+            gap: 0.5em;
+            margin-bottom: 1.5em;
+            flex-wrap: wrap;
+        }
+        .page-tab-btn {
+            padding: 0.8em 1.5em;
+            border: 2px solid var(--border-light);
+            background: var(--bg-card);
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5em;
+            font-size: 0.95em;
+        }
+        .page-tab-btn:hover {
+            border-color: var(--accent);
+            color: var(--text-heading);
+        }
+        .page-tab-btn.active {
+            background: var(--accent);
+            color: #fff;
+            border-color: var(--accent);
+        }
+        .page-tab-btn .badge {
+            background: rgba(255,255,255,0.2);
+            padding: 0.2em 0.5em;
+            border-radius: 10px;
+            font-size: 0.8em;
+        }
+        .page-tab-content {
+            display: none;
+        }
+        .page-tab-content.active {
+            display: block;
+        }
+        
+        /* Dashboard Container */
+        .dashboard-container {
+            display: flex;
+            flex-direction: column;
             gap: 1.5em;
         }
         
@@ -196,25 +222,59 @@
             border-bottom: 2px solid var(--border-light); padding-bottom: 0.5em;
         }
         
-        /* Sankey Chart - Taller for better vertical flow */
+        /* Sankey Chart - Full Width */
         .sankey-card {
-            grid-column: 1 / 2;
+            width: 100%;
         }
         .sankey-container {
-            min-height: 700px;
+            min-height: 550px;
             padding: 1em 0;
         }
         #sankeyChart {
             width: 100%;
-            height: 700px;
+            height: 550px;
         }
         .no-data-message {
             text-align: center; padding: 3em; color: var(--text-secondary);
         }
         .no-data-message .icon { font-size: 3em; margin-bottom: 0.3em; }
         
-        /* Quick Stats Sidebar - Compact */
-        .sidebar { grid-column: 2 / 3; }
+        /* Quick Metrics Row - Compact Horizontal */
+        .quick-metrics-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1em;
+            margin-top: 1.5em;
+        }
+        .quick-metric {
+            background: var(--accent-glow);
+            border-radius: 10px;
+            padding: 1em;
+            text-align: center;
+            border-left: 4px solid var(--accent);
+        }
+        .quick-metric .metric-label {
+            font-size: 0.8em;
+            color: var(--text-secondary);
+            margin-bottom: 0.3em;
+        }
+        .quick-metric .metric-value {
+            font-size: 1.4em;
+            font-weight: 700;
+            color: var(--text-heading);
+        }
+        .quick-metric .metric-value.positive { color: #1a8754; }
+        .quick-metric .metric-value.negative { color: #dc3545; }
+        
+        /* Summary Cards Row - Side by Side */
+        .summary-cards-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5em;
+        }
+        .summary-card { height: 100%; }
+        
+        /* Quick Stats */
         .quick-stats { display: flex; flex-direction: column; gap: 0.8em; }
         .stat-card {
             background: var(--accent-glow); border-radius: 10px;
@@ -225,6 +285,49 @@
         .stat-card .value.positive { color: #1a8754; }
         .stat-card .value.negative { color: #dc3545; }
         .stat-card .detail { font-size: 0.75em; color: var(--text-secondary); margin-top: 0.2em; }
+        
+        /* Quick Links - Horizontal for new layout */
+        .quick-links-horizontal {
+            display: flex;
+            gap: 0.5em;
+            flex-wrap: wrap;
+            margin-top: 1em;
+        }
+        .quick-link-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4em;
+            padding: 0.5em 1em;
+            background: var(--border-light);
+            border-radius: 6px;
+            text-decoration: none;
+            color: var(--text-primary);
+            font-size: 0.85em;
+            transition: background 0.2s;
+        }
+        .quick-link-btn:hover { background: var(--accent-glow); color: var(--accent); }
+        
+        /* Alerts Section */
+        .alerts-section {
+            margin-bottom: 1.5em;
+        }
+        .alert-item {
+            display: flex;
+            align-items: center;
+            gap: 1em;
+            padding: 0.8em 1em;
+            background: var(--bg-card);
+            border-radius: 8px;
+            margin-bottom: 0.5em;
+            border-left: 4px solid;
+        }
+        .alert-item.warning { border-left-color: #ffc107; background: rgba(255,193,7,0.1); }
+        .alert-item.danger { border-left-color: #dc3545; background: rgba(220,53,69,0.1); }
+        .alert-item.info { border-left-color: var(--accent); background: rgba(56,117,232,0.1); }
+        .alert-item .alert-icon { font-size: 1.5em; }
+        .alert-item .alert-content { flex: 1; }
+        .alert-item .alert-title { font-weight: 600; color: var(--text-heading); }
+        .alert-item .alert-detail { font-size: 0.85em; color: var(--text-secondary); }
         
         /* Trends Section */
         .trends-section {
@@ -259,18 +362,6 @@
         .trend-item .change.down { background: #d1fae5; color: #059669; }
         .trend-item .change.neutral { background: var(--border-light); color: var(--text-secondary); }
         
-        /* Quick Links */
-        .quick-links { margin-top: 1em; }
-        .quick-links h4 { margin: 0 0 0.6em 0; color: var(--text-heading); font-size: 0.9em; }
-        .quick-link {
-            display: flex; align-items: center; gap: 0.5em;
-            padding: 0.6em 0.7em; margin-bottom: 0.4em;
-            background: var(--border-light); border-radius: 6px;
-            text-decoration: none; color: var(--text-primary);
-            font-size: 0.85em;
-        }
-        .quick-link:hover { background: var(--accent-glow); }
-        
         /* Charts Row */
         .charts-row {
             display: grid;
@@ -282,10 +373,14 @@
             height: 280px;
         }
         
-        @media (max-width: 1000px) {
-            .dashboard-grid { grid-template-columns: 1fr; }
-            .sidebar { grid-column: 1; }
-            .sankey-card { grid-column: 1; }
+        @media (max-width: 1200px) {
+            .summary-cards-row { grid-template-columns: 1fr 1fr; }
+            .quick-metrics-row { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 800px) {
+            .summary-cards-row { grid-template-columns: 1fr; }
+            .quick-metrics-row { grid-template-columns: 1fr; }
+            .quick-links-horizontal { flex-direction: column; }
         }
     </style>
 </head>
@@ -348,35 +443,118 @@
       <p>Here's your financial overview at a glance</p>
     </div>
     
-    <div class="dashboard-grid">
-      <!-- Main Sankey Chart - Full Width -->
-      <div class="card sankey-card">
-        <h3 style="display:flex; justify-content:space-between; align-items:center;">
-          <span>💰 Money Flow Overview</span>
-          {% if sankey_data and sankey_data|length > 0 %}
-          <label style="font-size:0.75em; font-weight:normal; display:flex; align-items:center; gap:0.4em; cursor:pointer;">
-            <input type="checkbox" id="showSubcategories" onchange="toggleSankeyDetail()">
-            Show Details
-          </label>
-          {% endif %}
-        </h3>
-        <div class="sankey-container">
-          {% if sankey_data and sankey_data|length > 0 %}
-          <div id="sankeyChart"></div>
-          {% else %}
-          <div class="no-data-message">
-            <div class="icon">📊</div>
-            <h4>No Budget Data Yet</h4>
-            <p>Set up your income and budget to see your money flow visualization.</p>
-            <a href="/income-taxes" style="color:var(--accent); margin-top:1em; display:inline-block;">Start with Income & Taxes →</a>
+    <!-- Page Sub-Tabs -->
+    <div class="page-tabs">
+      <button class="page-tab-btn active" onclick="showDashboardTab('overview')">
+        📊 Overview
+      </button>
+      <button class="page-tab-btn" onclick="showDashboardTab('details')">
+        📈 Detailed Analysis
+        {% if budget_vs_actual and budget_vs_actual.get('comparisons') %}
+        {% set over_budget_count = budget_vs_actual.get('comparisons', []) | selectattr('is_over', 'equalto', true) | list | length %}
+        {% if over_budget_count > 0 %}
+        <span class="badge" style="background: #dc3545;">{{ over_budget_count }} alerts</span>
+        {% endif %}
+        {% endif %}
+      </button>
+    </div>
+    
+    <!-- OVERVIEW TAB -->
+    <div id="tab-overview" class="page-tab-content active">
+      <div class="dashboard-container">
+        <!-- Main Sankey Chart - Full Width -->
+        <div class="card sankey-card">
+          <h3 style="display:flex; justify-content:space-between; align-items:center;">
+            <span>💰 Money Flow Overview</span>
+            {% if sankey_data and sankey_data|length > 0 %}
+            <label style="font-size:0.75em; font-weight:normal; display:flex; align-items:center; gap:0.4em; cursor:pointer;">
+              <input type="checkbox" id="showSubcategories" onchange="toggleSankeyDetail()">
+              Show Details
+            </label>
+            {% endif %}
+          </h3>
+          <div class="sankey-container">
+            {% if sankey_data and sankey_data|length > 0 %}
+            <div id="sankeyChart"></div>
+            {% else %}
+            <div class="no-data-message">
+              <div class="icon">📊</div>
+              <h4>No Budget Data Yet</h4>
+              <p>Set up your income and budget to see your money flow visualization.</p>
+              <a href="/income-taxes" style="color:var(--accent); margin-top:1em; display:inline-block;">Start with Income & Taxes →</a>
+            </div>
+            {% endif %}
           </div>
-          {% endif %}
+          
+          <!-- Quick Actions - Horizontal below sankey -->
+          <div class="quick-links-horizontal">
+            <a href="/expenses" class="quick-link-btn">➕ Add Expense</a>
+            <a href="/budget" class="quick-link-btn">📋 Review Budget</a>
+            <a href="/income-taxes" class="quick-link-btn">💼 Update Income</a>
+            <a href="/tools?tab=networth" class="quick-link-btn">💰 Net Worth</a>
+          </div>
+        </div>
+        
+        <!-- Quick Metrics Row -->
+        <div class="quick-metrics-row">
+          <div class="quick-metric">
+            <div class="metric-label">Net Monthly Income</div>
+            <div class="metric-value">${{ "{:,.0f}".format(summary.get('net_monthly', 0)) if summary else "0" }}</div>
+          </div>
+          <div class="quick-metric">
+            <div class="metric-label">Total Expenses</div>
+            <div class="metric-value">${{ "{:,.0f}".format(summary.get('total_expenses', 0)) if summary else "0" }}</div>
+          </div>
+          <div class="quick-metric">
+            <div class="metric-label">Monthly Surplus</div>
+            <div class="metric-value {% if summary and summary.get('leftover', 0) >= 0 %}positive{% else %}negative{% endif %}">
+              {% if summary %}
+              {{ "+" if summary.get('leftover', 0) >= 0 else "" }}${{ "{:,.0f}".format(summary.get('leftover', 0)) }}
+              {% else %}
+              $0
+              {% endif %}
+            </div>
+          </div>
+          <div class="quick-metric" style="border-left-color: {% if networth_summary and networth_summary.net_worth >= 0 %}#28a745{% else %}#dc3545{% endif %};">
+            <div class="metric-label">Net Worth</div>
+            <div class="metric-value" style="color: {% if networth_summary and networth_summary.net_worth >= 0 %}#28a745{% else %}#dc3545{% endif %};">
+              {% if networth_summary %}
+              ${{ "{:,.0f}".format(networth_summary.net_worth) }}
+              {% else %}
+              $0
+              {% endif %}
+            </div>
+          </div>
         </div>
       </div>
+    </div>
+    
+    <!-- DETAILS TAB -->
+    <div id="tab-details" class="page-tab-content">
+      <!-- Budget Alerts Section -->
+      {% if budget_vs_actual and budget_vs_actual.get('comparisons') %}
+      {% set over_budget_items = budget_vs_actual.get('comparisons', []) | selectattr('is_over', 'equalto', true) | list %}
+      {% if over_budget_items | length > 0 %}
+      <div class="alerts-section">
+        <h3 style="margin: 0 0 0.8em 0; color: var(--text-heading); font-size: 1.1em;">⚠️ Budget Alerts</h3>
+        {% for item in over_budget_items %}
+        {% set over_pct = ((item.actual / item.budgeted) * 100 - 100) if item.budgeted > 0 else 0 %}
+        <div class="alert-item {% if over_pct > 50 %}danger{% else %}warning{% endif %}">
+          <span class="alert-icon">{% if over_pct > 50 %}🚨{% else %}⚠️{% endif %}</span>
+          <div class="alert-content">
+            <div class="alert-title">{{ item.name }} - Over Budget by {{ "{:.0f}".format(over_pct) }}%</div>
+            <div class="alert-detail">Spent ${{ "{:,.0f}".format(item.actual) }} of ${{ "{:,.0f}".format(item.budgeted) }} budgeted ({{ "{:+,.0f}".format(item.actual - item.budgeted) }})</div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% endif %}
       
-      <!-- Quick Stats Sidebar -->
-      <div class="sidebar">
-        <div class="card">
+      <!-- Summary Cards Row - Side by Side -->
+      <div class="summary-cards-row">
+        <!-- Monthly Summary -->
+        <div class="card summary-card">
           <h3>📈 Monthly Summary</h3>
           <div class="quick-stats">
             <div class="stat-card">
@@ -403,25 +581,12 @@
               </div>
             </div>
           </div>
-          
-          <div class="quick-links">
-            <h4>Quick Actions</h4>
-            <a href="/expenses" class="quick-link">
-              <span class="icon">➕</span> Add New Expense
-            </a>
-            <a href="/budget" class="quick-link">
-              <span class="icon">📋</span> Review Budget
-            </a>
-            <a href="/income-taxes" class="quick-link">
-              <span class="icon">💼</span> Update Income
-            </a>
-          </div>
         </div>
         
         <!-- Net Worth Summary Card -->
-        {% if networth_summary %}
-        <div class="card" style="margin-top: 1em;">
+        <div class="card summary-card">
           <h3>💰 Net Worth Snapshot</h3>
+          {% if networth_summary %}
           <div class="quick-stats">
             <div class="stat-card" style="border-left-color: #28a745;">
               <div class="label">Total Assets</div>
@@ -442,44 +607,31 @@
               <div class="label">YTD Change</div>
               <div class="value {% if networth_summary.performance.cumulative_change >= 0 %}positive{% else %}negative{% endif %}">
                 {{ "+" if networth_summary.performance.cumulative_change >= 0 else "" }}${{ "{:,.0f}".format(networth_summary.performance.cumulative_change) }}
-                <span style="font-size: 0.7em; margin-left: 0.3em;">({{ "{:.1f}".format(networth_summary.performance.cumulative_pct) }}%)</span>
+                <span style="font-size: 0.7em;">({{ "{:.1f}".format(networth_summary.performance.cumulative_pct) }}%)</span>
               </div>
-              <div class="detail">{{ networth_summary.performance.days_tracked }} days tracked</div>
             </div>
             {% endif %}
           </div>
-          {% if networth_summary.tax_analysis and networth_summary.tax_analysis.total_assets > 0 %}
-          <div style="margin-top: 1em; padding-top: 1em; border-top: 1px solid var(--border-light);">
-            <div class="label" style="margin-bottom: 0.5em;">Tax Treatment Breakdown</div>
-            <div style="display: flex; gap: 0.5em; flex-wrap: wrap; font-size: 0.85em;">
-              <span style="background: rgba(40,167,69,0.15); padding: 0.3em 0.6em; border-radius: 4px; color: #28a745;">
-                Tax-Free: {{ "{:.0f}".format(networth_summary.tax_analysis.tax_free.percentage) }}%
-              </span>
-              <span style="background: rgba(255,193,7,0.15); padding: 0.3em 0.6em; border-radius: 4px; color: #d4a000;">
-                Tax-Deferred: {{ "{:.0f}".format(networth_summary.tax_analysis.tax_deferred.percentage) }}%
-              </span>
-              <span style="background: rgba(220,53,69,0.15); padding: 0.3em 0.6em; border-radius: 4px; color: #dc3545;">
-                Taxable: {{ "{:.0f}".format(networth_summary.tax_analysis.taxable.percentage) }}%
-              </span>
-            </div>
+          <a href="/tools?tab=networth" style="display: block; text-align: center; margin-top: 1em; color: var(--accent); font-size: 0.9em;">View Details →</a>
+          {% else %}
+          <div class="no-data-message" style="padding: 1.5em;">
+            <p style="margin:0;">No net worth data yet</p>
+            <a href="/tools?tab=networth" style="color:var(--accent);">Add Accounts →</a>
           </div>
           {% endif %}
-          <a href="/tools?tab=networth" style="display: block; text-align: center; margin-top: 1em; color: var(--accent); font-size: 0.9em;">View Full Net Worth Details →</a>
         </div>
-        {% endif %}
         
         <!-- Budget vs Actual Spending Card -->
-        {% if budget_vs_actual and budget_vs_actual.get('comparisons') %}
-        {% set bva_budgeted = budget_vs_actual.get('total_budgeted', 0) %}
-        {% set bva_actual = budget_vs_actual.get('total_actual', 0) %}
-        {% set bva_remaining = bva_budgeted - bva_actual %}
-        <div class="card" style="margin-top: 1em;">
+        <div class="card summary-card">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8em;">
-            <h3 style="margin: 0;">📊 Budget vs Actual (This Month)</h3>
-            <a href="/budget" style="font-size: 0.85em; color: var(--accent);">View Full Budget →</a>
+            <h3 style="margin: 0; border: none; padding: 0;">📊 Budget vs Actual</h3>
+            <a href="/budget" style="font-size: 0.8em; color: var(--accent);">Details →</a>
           </div>
-          
-          <div class="quick-stats" style="margin-bottom: 1em;">
+          {% if budget_vs_actual and budget_vs_actual.get('comparisons') %}
+          {% set bva_budgeted = budget_vs_actual.get('total_budgeted', 0) %}
+          {% set bva_actual = budget_vs_actual.get('total_actual', 0) %}
+          {% set bva_remaining = bva_budgeted - bva_actual %}
+          <div class="quick-stats">
             <div class="stat-card" style="border-left-color: var(--accent);">
               <div class="label">Total Budgeted</div>
               <div class="value">${{ "{:,.0f}".format(bva_budgeted) }}</div>
@@ -495,104 +647,113 @@
               </div>
             </div>
           </div>
-          
-          <!-- Top Variances -->
-          <div style="font-size: 0.9em;">
-            <div style="font-weight: 600; margin-bottom: 0.5em; color: var(--text-secondary);">Top Categories by Variance</div>
-            {% for item in budget_vs_actual.get('comparisons', [])[:5] %}
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.4em 0; border-bottom: 1px solid var(--border-light);">
-              <span style="flex: 1;">{{ item.name }}</span>
-              <span style="width: 80px; text-align: right; font-weight: 500;">${{ "{:,.0f}".format(item.actual) }}</span>
-              <span style="width: 80px; text-align: right; color: var(--text-secondary);">/ ${{ "{:,.0f}".format(item.budgeted) }}</span>
-              <span style="width: 60px; text-align: right; font-weight: 600; color: {% if item.actual <= item.budgeted %}#28a745{% else %}#dc3545{% endif %};">
-                {% if item.budgeted > 0 %}{{ "{:.0f}".format((item.actual / item.budgeted) * 100) }}%{% else %}—{% endif %}
-              </span>
-            </div>
-            {% endfor %}
-          </div>
-          
           {% if budget_vs_actual.get('unbudgeted') %}
-          <div style="margin-top: 1em; padding-top: 0.8em; border-top: 1px solid var(--border-light);">
-            <div style="font-weight: 600; margin-bottom: 0.5em; color: #ffc107;">⚠️ Unbudgeted Spending</div>
-            {% for item in budget_vs_actual.get('unbudgeted', [])[:3] %}
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.3em 0; font-size: 0.85em;">
-              <span>{{ item.category_name }}{% if item.get('subcategory_name') %} › {{ item.subcategory_name }}{% endif %}</span>
-              <span style="font-weight: 500; color: #ffc107;">${{ "{:,.0f}".format(item.amount) }}</span>
-            </div>
-            {% endfor %}
-            {% if budget_vs_actual.get('unbudgeted', []) | length > 3 %}
-            <div style="font-size: 0.8em; color: var(--text-secondary); margin-top: 0.3em;">
-              +{{ budget_vs_actual.get('unbudgeted', []) | length - 3 }} more categories
-            </div>
-            {% endif %}
+          <div style="margin-top: 0.8em; padding-top: 0.8em; border-top: 1px solid var(--border-light); font-size: 0.85em;">
+            <span style="color: #ffc107; font-weight: 600;">⚠️ ${{ "{:,.0f}".format(budget_vs_actual.get('total_unbudgeted', 0)) }}</span>
+            <span style="color: var(--text-secondary);"> in unbudgeted spending</span>
+          </div>
+          {% endif %}
+          {% else %}
+          <div class="no-data-message" style="padding: 1.5em;">
+            <p style="margin:0;">No budget data yet</p>
+            <a href="/budget" style="color:var(--accent);">Set Up Budget →</a>
           </div>
           {% endif %}
         </div>
-        {% endif %}
       </div>
-    </div>
-    
-    <!-- Spending Trends Section -->
-    {% if spending_trends %}
-    <div class="trends-section">
-      <div class="trends-grid">
-        <!-- Top Categories -->
-        <div class="trend-card">
-          <h4>📊 Top Spending Categories (This Month)</h4>
-          {% for item in spending_trends.top_categories[:6] %}
-          <div class="trend-item">
-            <span class="name">{{ item.name }}</span>
-            <span class="amount">${{ "{:,.0f}".format(item.amount) }}</span>
-            {% if item.change is defined %}
-            <span class="change {% if item.change > 5 %}up{% elif item.change < -5 %}down{% else %}neutral{% endif %}">
-              {{ "+" if item.change > 0 else "" }}{{ "{:.0f}".format(item.change) }}%
-            </span>
-            {% endif %}
+      
+      <!-- Spending Trends Section -->
+      {% if spending_trends %}
+      <div class="trends-section">
+        <div class="trends-grid">
+          <!-- Top Categories -->
+          <div class="trend-card">
+            <h4>📊 Top Spending Categories (This Month)</h4>
+            {% for item in spending_trends.top_categories[:6] %}
+            <div class="trend-item">
+              <span class="name">{{ item.name }}</span>
+              <span class="amount">${{ "{:,.0f}".format(item.amount) }}</span>
+              {% if item.change is defined %}
+              <span class="change {% if item.change > 5 %}up{% elif item.change < -5 %}down{% else %}neutral{% endif %}">
+                {{ "+" if item.change > 0 else "" }}{{ "{:.0f}".format(item.change) }}%
+              </span>
+              {% endif %}
+            </div>
+            {% else %}
+            <p style="color:var(--text-secondary); font-size:0.9em;">No spending data this month</p>
+            {% endfor %}
           </div>
-          {% else %}
-          <p style="color:var(--text-secondary); font-size:0.9em;">No spending data this month</p>
-          {% endfor %}
-        </div>
-        
-        <!-- Top Subcategories -->
-        <div class="trend-card">
-          <h4>🏷️ Top Subcategories (This Month)</h4>
-          {% for item in spending_trends.top_subcategories[:6] %}
-          <div class="trend-item">
-            <span class="name">{{ item.name }}</span>
-            <span class="amount">${{ "{:,.0f}".format(item.amount) }}</span>
-            {% if item.change is defined %}
-            <span class="change {% if item.change > 5 %}up{% elif item.change < -5 %}down{% else %}neutral{% endif %}">
-              {{ "+" if item.change > 0 else "" }}{{ "{:.0f}".format(item.change) }}%
-            </span>
-            {% endif %}
+          
+          <!-- Top Subcategories -->
+          <div class="trend-card">
+            <h4>🏷️ Top Subcategories (This Month)</h4>
+            {% for item in spending_trends.top_subcategories[:6] %}
+            <div class="trend-item">
+              <span class="name">{{ item.name }}</span>
+              <span class="amount">${{ "{:,.0f}".format(item.amount) }}</span>
+              {% if item.change is defined %}
+              <span class="change {% if item.change > 5 %}up{% elif item.change < -5 %}down{% else %}neutral{% endif %}">
+                {{ "+" if item.change > 0 else "" }}{{ "{:.0f}".format(item.change) }}%
+              </span>
+              {% endif %}
+            </div>
+            {% else %}
+            <p style="color:var(--text-secondary); font-size:0.9em;">No subcategory data this month</p>
+            {% endfor %}
           </div>
-          {% else %}
-          <p style="color:var(--text-secondary); font-size:0.9em;">No subcategory data this month</p>
-          {% endfor %}
-        </div>
-        
-        <!-- Monthly Comparison Chart -->
-        <div class="trend-card">
-          <h4>📈 Monthly Spending Trend</h4>
-          <div class="chart-container">
-            <canvas id="monthlyTrendChart"></canvas>
+          
+          <!-- Monthly Comparison Chart -->
+          <div class="trend-card">
+            <h4>📈 Monthly Spending Trend</h4>
+            <div class="chart-container">
+              <canvas id="monthlyTrendChart"></canvas>
+            </div>
           </div>
-        </div>
-        
-        <!-- Category Breakdown Pie -->
-        <div class="trend-card">
-          <h4>🥧 Category Breakdown</h4>
-          <div class="chart-container">
-            <canvas id="categoryPieChart"></canvas>
+          
+          <!-- Category Breakdown Pie -->
+          <div class="trend-card">
+            <h4>🥧 Category Breakdown</h4>
+            <div class="chart-container">
+              <canvas id="categoryPieChart"></canvas>
+            </div>
           </div>
         </div>
       </div>
+      {% endif %}
     </div>
-    {% endif %}
   </div>
   
   <script>
+    // Tab switching function
+    function showDashboardTab(tabName) {
+      // Hide all tabs
+      document.querySelectorAll('.page-tab-content').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      
+      // Deactivate all buttons
+      document.querySelectorAll('.page-tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      
+      // Show selected tab
+      document.getElementById('tab-' + tabName).classList.add('active');
+      
+      // Activate clicked button
+      event.target.closest('.page-tab-btn').classList.add('active');
+      
+      // Redraw charts if switching to details tab
+      if (tabName === 'details') {
+        setTimeout(function() {
+          if (typeof Chart !== 'undefined') {
+            Chart.helpers.each(Chart.instances, function(instance) {
+              instance.resize();
+            });
+          }
+        }, 100);
+      }
+    }
+    
     // Format currency helper
     function formatCurrency(value) {
       return '$' + value.toLocaleString('en-US', { maximumFractionDigits: 0 });
@@ -658,7 +819,7 @@
       
       const options = {
         width: width,
-        height: 700,
+        height: 550,
         sankey: {
           node: {
             colors: ['#3875e8', '#28a745', '#ffc107', '#dc3545', '#6f42c1', '#17a2b8', '#fd7e14', '#20c997', '#e83e8c', '#6c757d'],
@@ -668,8 +829,8 @@
               color: isDark ? '#e4e6eb' : '#333',
               bold: true
             },
-            nodePadding: showDetails ? 30 : 45,
-            width: 22,
+            nodePadding: showDetails ? 25 : 35,
+            width: 20,
             interactivity: true
           },
           link: {

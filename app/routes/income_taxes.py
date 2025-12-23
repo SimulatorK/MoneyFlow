@@ -339,7 +339,7 @@ TAX_DATA = {
         },
         "ss_wage_base": 176100,
         "amt_exemption": {
-            "married_filing_jointly": 140200, "married_filing_separately": 70100,
+            "married_filing_jointly": 137000, "married_filing_separately": 70100,
             "single": 90100, "head_of_household": 90100,
         },
         "amt_phaseout_start": {
