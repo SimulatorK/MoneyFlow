@@ -526,11 +526,11 @@ def add_expense(
     
     # Verify category belongs to user (if provided)
     if category_id_parsed and category_id_parsed > 0:
-    category = db.query(Category).filter(
+        category = db.query(Category).filter(
             Category.id == category_id_parsed,
-        Category.user_id == user.id
-    ).first()
-    if not category:
+            Category.user_id == user.id
+        ).first()
+        if not category:
             category_id_parsed = None
     
     # Verify vendor belongs to user (if provided)
@@ -714,11 +714,11 @@ def update_expense(
     
     # Verify category belongs to user (if provided)
     if category_id_parsed and category_id_parsed > 0:
-    category = db.query(Category).filter(
+        category = db.query(Category).filter(
             Category.id == category_id_parsed,
-        Category.user_id == user.id
-    ).first()
-    if not category:
+            Category.user_id == user.id
+        ).first()
+        if not category:
             category_id_parsed = None
     
     # Verify vendor belongs to user (if provided)
